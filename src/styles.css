@@ -1920,21 +1920,24 @@ button {
 }
 .sk-toolgrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
+/* Icon over a short label, so three fit side by side even in the narrow tools column. */
 .sk-tool {
-  min-height: 44px;
+  min-width: 0;
+  min-height: 56px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 4px;
-  padding: 0 10px;
+  padding: 6px 2px;
   border-radius: 8px;
   border: 1px solid var(--chip-line);
   background: transparent;
-  font-size: 13px;
-  text-align: left;
+  font-size: 12px;
+  line-height: 1.1;
 }
 .sk-tool:hover {
   border-color: var(--accent);
@@ -1944,14 +1947,19 @@ button {
   border-color: var(--accent);
   color: var(--on-accent);
 }
-.sk-tool kbd {
+.sk-tool svg {
+  flex: none;
+}
+.sk-kbd {
   font-family: var(--mono);
   font-size: 11px;
-  opacity: 0.65;
+  padding: 1px 5px;
+  border: 1px solid var(--chip-line);
+  border-radius: 4px;
 }
 .sk-toolhelp {
   margin: 0;
-  min-height: 3.6em;
+  min-height: 5.2em;
 }
 .sk-color input[type='color'] {
   width: 48px;
@@ -2075,11 +2083,14 @@ button {
   margin-top: 12px;
 }
 .sk-history {
+  position: relative;
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 240px;
+  /* Fixed, so the panel doesn't grow (and push things around) as steps pile up. */
+  height: 240px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2171,7 +2182,7 @@ button {
     display: flex;
   }
   .sk-toolgrid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
   .sk-open-grid {
     grid-template-columns: minmax(0, 1fr);

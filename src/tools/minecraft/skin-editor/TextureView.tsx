@@ -17,6 +17,8 @@ type Props = {
   onFloatMove: (x: number, y: number) => void;
   onFloatDrop: () => void;
   highlight: { part: PartId; layer: Layer }[];
+  /** Marks the middle of the head and body, where mirrored painting flips sides. */
+  mirror: boolean;
   onPick: (hex: string) => void;
   onMessage: (msg: string) => void;
 };
@@ -90,6 +92,21 @@ export function TextureView(p: Props) {
       ctx.lineWidth = 2;
       for (const r of allRegions(model))
         if (highlight.some((h) => h.part === r.part && h.layer === r.layer)) ctx.strokeRect(r.rect.x * z + 1, r.rect.y * z + 1, r.rect.w * z - 2, r.rect.h * z - 2);
+    }
+
+    if (p.mirror) {
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      for (const r of allRegions(model)) {
+        if ((r.part !== 'head' && r.part !== 'body') || r.face === 'right' || r.face === 'left') continue;
+        const x = (r.rect.x + r.rect.w / 2) * z;
+        ctx.moveTo(x, r.rect.y * z);
+        ctx.lineTo(x, (r.rect.y + r.rect.h) * z);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     // The pasted pixels are already in the doc as a live preview; just frame them.

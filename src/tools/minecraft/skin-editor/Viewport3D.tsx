@@ -14,6 +14,8 @@ type Props = {
   showOverlay: boolean;
   hidden: Set<PartId>;
   highlight: PartId[];
+  /** Shows the line where mirrored painting flips sides. */
+  mirror?: boolean;
   /** Pixel hovered in the 2D view, shown here too. */
   hoverPx?: [number, number] | null;
   onHover?: (px: [number, number] | null) => void;
@@ -65,6 +67,10 @@ export function Viewport3D(p: Props) {
   useEffect(() => {
     if (p.view) scene.current?.view(p.view.name);
   }, [p.view]);
+
+  useEffect(() => {
+    scene.current?.setMirror(!!p.mirror);
+  }, [p.mirror]);
 
   // A pixel hovered in the 2D view gets the same frame here, if it's on the shell being shown.
   useEffect(() => {
