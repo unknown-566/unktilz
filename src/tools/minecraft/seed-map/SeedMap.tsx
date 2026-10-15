@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'rea
 import { useSearchParams } from 'react-router-dom';
 import { Help } from '../../../components/Help';
 import { CopyButton, Toggle } from '../../../components/ui';
-import { STRUCTURES, STRUCTURE_ICONS, SeedMapEngine, VERSIONS, biomeLabel, inVersion, randomSeed, type World } from '../../../lib/mc/seedmap';
+import { STRUCTURES, STRUCTURE_ICONS, SeedMapEngine, VERSIONS, biomeLabel, inVersion, randomSeed, worldKey, type World } from '../../../lib/mc/seedmap';
 import { parseSeed } from '../../../lib/mc/slime';
 import type { MetaResult } from '../../../workers/seedmap.worker';
 import { MAX_BPP, MIN_BPP, MapCanvas, type Command, type Pick, type View } from './MapCanvas';
@@ -19,6 +19,19 @@ function StructIcon({ i }: { i: number }) {
   );
 }
 const fmt = (n: number) => n.toLocaleString('en-US');
+
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const t = document.createElement('textarea');
+    t.value = text;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    t.remove();
+  }
+}
 
 function loadEnabled(): boolean[] {
   try {
@@ -65,6 +78,10 @@ export default function SeedMap() {
   const [inView, setInView] = useState<number[]>([]);
   const [spawn, setSpawn] = useState<{ x: number; z: number } | null>(null);
   const [showSpawn, setShowSpawn] = useState(true);
+  const [toast, setToast] = useState('');
+  // Y for spots that were hovered or clicked, by world and position.
+  const heights = useRef(new Map<string, number | 'loading'>());
+  const [, setHeightsVersion] = useState(0);
   const [command, setCommand] = useState<Command>();
   const [gx, setGx] = useState('');
   const [gz, setGz] = useState('');
@@ -116,6 +133,58 @@ export default function SeedMap() {
 
   useEffect(() => setSelected(null), [world.seed, version, large]);
 
+  const hKey = (p: { x: number; z: number }) => `${worldKey(world)}|${p.x}|${p.z}`;
+  /** Y to stand at for a spot, or undefined while it's being worked out. */
+  const yOf = (p: { x: number; z: number } | null) => {
+    if (!p) return undefined;
+    const v = heights.current.get(hKey(p));
+    return typeof v === 'number' ? v : undefined;
+  };
+  const standY = (p: { x: number; z: number }): Promise<number> => {
+    const key = hKey(p);
+    const v = heights.current.get(key);
+    if (typeof v === 'number') return Promise.resolve(v);
+    if (!engine) return Promise.reject(new Error('not ready'));
+    heights.current.set(key, 'loading');
+    return engine.standY(world, p.x, p.z).then(
+      (y) => {
+        heights.current.set(key, y);
+        setHeightsVersion((n) => n + 1);
+        return y;
+      },
+      (err) => {
+        heights.current.delete(key);
+        throw err;
+      },
+    );
+  };
+  const isPlace = (p: Pick | null) => !!p && (p.structure !== undefined || !!p.spawn);
+  // Work out the Y of a structure as soon as it's hovered, so the label can show it.
+  useEffect(() => {
+    if (hover && isPlace(hover) && !heights.current.has(hKey(hover))) standY(hover).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hover?.x, hover?.z, hover?.structure, hover?.spawn, engine, world]);
+  useEffect(() => {
+    if (selected && !heights.current.has(hKey(selected))) standY(selected).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, engine, world]);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  /** Clicking a structure (or the spawn) copies its coordinates as "X Y Z". */
+  const select = (p: Pick | null) => {
+    setSelected(p);
+    if (!p || !isPlace(p)) return;
+    standY(p)
+      .then((y) => `${p.x} ${y} ${p.z}`)
+      .catch(() => `${p.x} ~ ${p.z}`)
+      .then((text) => copyText(text).then(() => setToast(`Copied ${text}`)));
+  };
+  const coords = (p: { x: number; z: number }) => `${p.x} ${yOf(p) ?? '…'} ${p.z}`;
+
   useEffect(() => {
     if (!engine) return;
     let alive = true;
@@ -155,7 +224,7 @@ export default function SeedMap() {
           spawn={showSpawn ? spawn : null}
         onView={setView}
         onHover={setHover}
-        onSelect={setSelected}
+        onSelect={select}
           onBiomesInView={setInView}
         />
       ) : (
@@ -175,6 +244,7 @@ export default function SeedMap() {
       {hover?.sx !== undefined && (hover.structure !== undefined || hover.spawn) && (
         <div className="sm-tip" style={{ left: hover.sx + 16, top: hover.sy! - 12 }}>
           {hover.spawn ? 'World spawn' : STRUCTURES[hover.structure!].name}
+          <span className="sm-tip-xyz mono">{coords(hover)}</span>
         </div>
       )}
       <div className="sm-hover mono" aria-live="off">
@@ -193,6 +263,11 @@ export default function SeedMap() {
         {fmt(bar.blocks)} blocks
       </div>
       {hiddenByZoom && <div className="sm-zoomnote mono">zoom in to see all structures</div>}
+      {toast && (
+        <div className="sm-toast mono" role="status">
+          {toast}
+        </div>
+      )}
     </div>
   );
 
@@ -205,17 +280,16 @@ export default function SeedMap() {
         </button>
       </div>
       <p className="mono sm-coords">
-        X {fmt(selected.x)} · Z {fmt(selected.z)} <span className="muted">· {name(selected.biome)}</span>
+        {coords(selected)} <span className="muted">· {name(selected.biome)}</span>
       </p>
       <div className="seg">
-        <CopyButton text={`/tp @s ${selected.x} ~ ${selected.z}`} label="copy /tp command" />
-        <CopyButton text={`${selected.x} ${selected.z}`} label="copy X Z" />
+        <CopyButton text={`${selected.x} ${yOf(selected) ?? '~'} ${selected.z}`} label="copy X Y Z" />
+        <CopyButton text={`/tp @s ${selected.x} ${yOf(selected) ?? '~'} ${selected.z}`} label="copy /tp command" />
       </div>
-      {selected.structure !== undefined && (
-        <p className="note">
-          The position is where the structure starts generating; the buildings spread out around it. Y depends on the terrain, so the /tp keeps your current height (~).
-        </p>
-      )}
+      <p className="note">
+        Y is where you’d stand: the ground there, or the water surface over the sea.
+        {selected.structure !== undefined && ' The position is where the structure starts generating; the buildings spread out around it, and underground ones (ancient cities, trial chambers) are below this.'}
+      </p>
     </section>
   );
 

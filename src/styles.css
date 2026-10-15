@@ -2641,3 +2641,25 @@ textarea,
   width: 2px;
   margin-left: -1px;
 }
+.sm-tip-xyz {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #b6f24a;
+}
+/* "Copied 123 64 -23" after clicking a structure. */
+.sm-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(11, 13, 16, 0.92);
+  border: 1px solid rgba(182, 242, 74, 0.5);
+  color: #e8ebef;
+  font-size: 13px;
+  pointer-events: none;
+  animation: tipIn 160ms ease both;
+}

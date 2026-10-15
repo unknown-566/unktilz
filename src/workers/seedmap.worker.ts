@@ -13,6 +13,7 @@ type Exports = {
   sm_structures: (type: number, x0: number, z0: number, x1: number, z1: number) => number;
   sm_out: () => number;
   sm_spawn: () => number;
+  sm_ground: (x: number, z: number) => number;
   sm_biome_name: (id: number) => number;
   sm_biome_color: (id: number) => number;
   sm_const: (i: number) => number;
@@ -24,7 +25,8 @@ export type SeedMapRequest =
   | { id: number; kind: 'tile'; world: World; scale: number; x: number; z: number; size: number }
   | { id: number; kind: 'structures'; world: World; types: number[]; x0: number; z0: number; x1: number; z1: number }
   | { id: number; kind: 'meta'; world: World }
-  | { id: number; kind: 'spawn'; world: World };
+  | { id: number; kind: 'spawn'; world: World }
+  | { id: number; kind: 'ground'; world: World; x: number; z: number };
 
 export type TileResult = { bitmap: ImageBitmap; ids: Uint8Array };
 export type StructuresResult = { type: number; x: number; z: number }[][];
@@ -111,6 +113,7 @@ async function handle(req: SeedMapRequest): Promise<{ result: unknown; transfer:
     }
     return { result: out, transfer: [] };
   }
+  if (req.kind === 'ground') return { result: w.sm_ground(req.x, req.z), transfer: [] };
   if (req.kind === 'spawn') {
     const p = w.sm_spawn();
     const xz = new Int32Array(w.memory.buffer, p, 2);

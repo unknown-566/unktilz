@@ -7,12 +7,16 @@
 #include "generator.h"
 #include "finders.h"
 #include "util.h"
+#include "terrainnoise.h"
 
 #define EXPORT __attribute__((visibility("default")))
 
 static Generator g;
 static int g_mc;
 static uint64_t g_seed;
+static int g_flags;
+static TerrainNoise tn;
+static int tn_ready;
 
 static int *biome_buf;
 static size_t biome_cap;
@@ -30,7 +34,9 @@ EXPORT char *sm_str(void) { return str_buf; }
 
 EXPORT void sm_init(int mc, uint64_t seed, int large)
 {
-    setupGenerator(&g, mc, large ? LARGE_BIOMES : 0);
+    g_flags = large ? LARGE_BIOMES : 0;
+    setupGenerator(&g, mc, g_flags);
+    tn_ready = 0;
     applySeed(&g, DIM_OVERWORLD, seed);
     g_mc = mc;
     g_seed = seed;
@@ -89,6 +95,27 @@ EXPORT int sm_structures(int type, int x0, int z0, int x1, int z1)
 }
 
 EXPORT int *sm_out(void) { return out_buf; }
+
+/**
+ * The Y you'd stand at on (x, z): the lowest air block above the ground, from real terrain
+ * generation of that one chunk (a few milliseconds). Water isn't generated, so in oceans this is
+ * the sea floor.
+ */
+EXPORT int sm_ground(int x, int z)
+{
+    if (!tn_ready)
+    {
+        // Setting up over an already used struct crashes; start from zeros every time.
+        memset(&tn, 0, sizeof tn);
+        setupTerrainNoise(&tn, g_mc, g_flags);
+        initTerrainNoise(&tn, g_seed, DIM_OVERWORLD);
+        tn_ready = 1;
+    }
+    int ys[256];
+    // Full overworld column: 49 cells of 8 blocks from 1.18 (y -64..320), 33 before (0..256).
+    generateRegion(&tn, x >> 4, z >> 4, 1, 1, NULL, 0, g_mc >= MC_1_18 ? 48 : 32, ys, 1);
+    return ys[(x & 15) * 16 + (z & 15)];
+}
 
 /** World spawn (the full search the game does; tens of milliseconds). x,z go to sm_out(). */
 EXPORT int *sm_spawn(void)

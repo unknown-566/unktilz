@@ -46,6 +46,8 @@ export const STRUCTURES = [
 ] as const;
 export type StructureKey = (typeof STRUCTURES)[number]['key'];
 
+const SEA_LEVEL = 63;
+
 /** Biome samples per tile side. Smaller tiles appear sooner; 1.18+ generation is ~8 µs a sample. */
 export const TILE = 128;
 /** Structures are looked up in squares this many blocks wide. */
@@ -131,6 +133,15 @@ export class SeedMapEngine {
     const x0 = rx * SREGION;
     const z0 = rz * SREGION;
     return this.run<StructuresResult>({ kind: 'structures', world, types, x0, z0, x1: x0 + SREGION, z1: z0 + SREGION }, priority);
+  }
+
+  /**
+   * Y to stand at on (x, z): ground level from the real terrain, or the water surface (63) when
+   * the ground is under the sea. Costs a few milliseconds, so it's asked for one spot at a time.
+   */
+  async standY(world: World, x: number, z: number) {
+    const ground = await this.run<number>({ kind: 'ground', world, x, z }, () => -2);
+    return Math.max(ground, SEA_LEVEL);
   }
 
   /** Where the player first appears in the world. */
