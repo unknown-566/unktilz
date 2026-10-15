@@ -1,0 +1,51 @@
+/// <reference lib="webworker" />
+import type { ImagePayload } from './tasks/image';
+import type { MapExportPayload, MapGridPayload, MapGridResult } from './tasks/mapArt';
+import type { ImagesToPdfPayload, MergePdfPayload } from './tasks/pdf';
+
+export type TaskOutput = { name: string; blob: Blob }[];
+export type Report = (progress: number) => void;
+
+type Tasks = {
+  image: [ImagePayload, TaskOutput];
+  'merge-pdf': [MergePdfPayload, TaskOutput];
+  'images-to-pdf': [ImagesToPdfPayload, TaskOutput];
+  'map-grid': [MapGridPayload, MapGridResult];
+  'map-export': [MapExportPayload, TaskOutput];
+};
+export type TaskName = keyof Tasks;
+export type TaskPayload<T extends TaskName> = Tasks[T][0];
+export type TaskResult<T extends TaskName> = Tasks[T][1];
+/** Tasks whose result is a list of files, so the queue can run them. */
+export type FileTaskName = { [K in TaskName]: Tasks[K][1] extends TaskOutput ? K : never }[TaskName];
+
+type Handler = (payload: never, report: Report) => Promise<unknown>;
+
+// Each task module loads only when a job needs it.
+const tasks: Record<TaskName, () => Promise<Handler>> = {
+  image: () => import('./tasks/image').then((m) => m.processImage as Handler),
+  'merge-pdf': () => import('./tasks/pdf').then((m) => m.mergePdf as Handler),
+  'images-to-pdf': () => import('./tasks/pdf').then((m) => m.imagesToPdf as Handler),
+  'map-grid': () => import('./tasks/mapArt').then((m) => m.mapGrid as Handler),
+  'map-export': () => import('./tasks/mapArt').then((m) => m.mapExport as Handler),
+};
+
+const ctx = self as unknown as DedicatedWorkerGlobalScope;
+
+ctx.onmessage = async (e: MessageEvent<{ id: number; task: TaskName; payload: never }>) => {
+  const { id, task, payload } = e.data;
+  let last = 0;
+  const report: Report = (value) => {
+    const now = performance.now();
+    if (now - last < 60) return;
+    last = now;
+    ctx.postMessage({ id, type: 'progress', value });
+  };
+  try {
+    const handler = await tasks[task]();
+    const result = await handler(payload, report);
+    ctx.postMessage({ id, type: 'done', result });
+  } catch (err) {
+    ctx.postMessage({ id, type: 'error', message: err instanceof Error ? err.message : String(err) });
+  }
+};

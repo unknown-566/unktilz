@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OGG and MP3 converter</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+a.rel{text-decoration:none}
+a.rel:hover{border-color:var(--accent)}
+a.rel{transition:transform 160ms ease,border-color 160ms ease}
+a.rel:hover{transform:translateX(2px)}
+button.swap{transition:border-color 150ms ease}
+button.swap:hover{border-color:var(--accent)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes swapin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.rise{animation:rise 420ms cubic-bezier(.2,.7,.2,1) both}
+.swapin{animation:swapin 260ms ease both}
+@keyframes blockOut{from{transform:scale(1.02)}to{transform:scale(0)}}
+@keyframes bootLabel{0%{opacity:0;transform:translateY(4px)}20%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.boot{position:fixed;inset:0;z-index:50;pointer-events:none;display:grid;grid-template-columns:repeat(16,minmax(0,1fr));grid-template-rows:repeat(10,minmax(0,1fr))}
+.cell{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);animation:blockOut 340ms cubic-bezier(.7,0,.3,1) both}
+.bootlabel{position:fixed;inset:0;z-index:51;pointer-events:none;display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:15px;color:#b6f24a;animation:bootLabel 520ms ease both}
+.bootcaret{display:inline-block;width:0.55em;height:1.05em;margin-left:4px;background:currentColor;animation:blink 0.5s steps(1) infinite}
+@media (prefers-reduced-motion: reduce){.boot,.bootlabel{display:none !important}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+<div style="--bg: {{bg}}; --surface: {{surface}}; --line: {{line}}; --fg: {{fg}}; --muted: {{muted}}; --accent: {{accent}}; --accentText: {{accentText}}; min-height: 960px; background: var(--bg); color: var(--fg); font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column">
+
+<header style="position: relative; border-bottom: 1px solid var(--line)">
+<div style="padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="Main.dc.html" onClick="{{goHome}}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; font-size: 18px">
+<span style="width: 28px; height: 28px; border-radius: 6px; background: var(--accent); color: #0b0d10; display: flex; align-items: center; justify-content: center; font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 500">&gt;_</span>
+<span>unktilz</span>
+</a>
+<nav style="display: flex; align-items: center; gap: 24px; font-size: 14px; color: var(--muted)">
+<a href="Main.dc.html" onClick="{{goHome}}" style="text-decoration: none; color: var(--fg)">All tools</a>
+<a href="Main.dc.html" onClick="{{goHome}}" style="text-decoration: none">How it works</a>
+<button onClick="{{toggleTheme}}" aria-label="Toggle light and dark theme" style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-family: 'Geist Mono', monospace; font-size: 12px; cursor: pointer">theme: {{themeLabel}}</button>
+</nav>
+</div>
+</header>
+
+<div style="flex: 1; display: flex">
+
+<div style="position: relative; flex: none; width: 72px">
+<aside aria-label="Process queue" onMouseEnter="{{openRail}}" onMouseLeave="{{closeRail}}" style="position: absolute; top: 0; left: 0; bottom: 0; z-index: 5; width: {{railW}}; overflow: hidden; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--line); box-shadow: {{railShadow}}; transition: width 180ms ease, box-shadow 180ms ease">
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line)">
+<button onClick="{{togglePin}}" aria-expanded="{{open}}" aria-label="{{pinLabel}}" style="flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid {{pinBorder}}; background: transparent; color: var(--fg); display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+</button>
+<sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; white-space: nowrap">
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px">queue · {{jobCount}}</span>
+<button onClick="{{clearDone}}" style="min-height: 36px; padding: 0 8px; border-radius: 6px; border: 0; background: transparent; color: var(--muted); font-family: 'Geist Mono', monospace; font-size: 12px; cursor: pointer">clear done</button>
+</div>
+</sc-if>
+</div>
+
+<div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 10px 14px">
+<sc-for list="{{jobs}}" as="j" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px">
+<div title="{{j.name}}" style="position: relative; flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid {{j.tileBorder}}; background: var(--bg); color: {{j.iconColor}}; display: flex; align-items: center; justify-content: center; overflow: hidden">
+<sc-if value="{{j.isAudio}}" hint-placeholder-val="{{ true }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></sc-if>
+<sc-if value="{{j.isVideo}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></sc-if>
+<sc-if value="{{j.isImage}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></sc-if>
+<sc-if value="{{j.isPdf}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg></sc-if>
+<sc-if value="{{j.isData}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4c-2 0-3 1-3 3v2c0 1.5-1 3-2 3 1 0 2 1.5 2 3v2c0 2 1 3 3 3"/><path d="M15 4c2 0 3 1 3 3v2c0 1.5 1 3 2 3-1 0-2 1.5-2 3v2c0 2-1 3-3 3"/></svg></sc-if>
+<sc-if value="{{j.isMc}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg></sc-if>
+<div style="position: absolute; left: 6px; right: 6px; bottom: 4px; height: 3px; border-radius: 2px; background: {{j.trackColor}}; overflow: hidden"><div style="width: {{j.pct}}; height: 100%; background: var(--accent); transition: width 250ms linear"></div></div>
+</div>
+<sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; white-space: nowrap">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span style="font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis">{{j.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: {{j.statusColor}}">{{j.status}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<div style="flex: 1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden"><div style="width: {{j.pct}}; height: 100%; background: var(--accent); transition: width 250ms linear"></div></div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted); min-width: 34px; text-align: right">{{j.pct}}</span>
+</div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis">{{j.file}}</span>
+</div>
+<button onClick="{{j.remove}}" aria-label="Remove from queue" style="flex: none; width: 36px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer">&times;</button>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{showEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px 0; font-size: 14px; color: var(--muted); white-space: nowrap">Queue is empty.</div>
+</sc-if>
+</div>
+
+<sc-if value="{{showPicker}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-top: 1px solid var(--line); background: var(--bg); max-height: 320px; overflow-y: auto">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="6">
+<button onClick="{{o.add}}" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-family: 'Geist', sans-serif; font-size: 14px; cursor: pointer; text-align: left; white-space: nowrap"><span>{{o.name}}</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">{{o.badge}}</span></button>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line)">
+<button onClick="{{togglePick}}" aria-label="Add process" aria-expanded="{{picking}}" style="flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px dashed var(--accentText); background: transparent; color: var(--accentText); font-size: 22px; line-height: 1; cursor: pointer">+</button>
+<sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 14px; font-weight: 600; color: var(--accentText); white-space: nowrap">Add process</span>
+</sc-if>
+</div>
+</aside>
+</div>
+
+<main style="flex: 1; min-width: 0">
+<div style="max-width: 1120px; margin: 0 auto; padding: 32px 24px 72px; display: flex; flex-direction: column; gap: 32px">
+
+<nav aria-label="Breadcrumb" style="font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Main.dc.html" onClick="{{goHome}}" style="text-decoration: none">tools</a><span>/</span><a href="Main.dc.html" onClick="{{goHome}}" style="text-decoration: none">audio</a><span>/</span><span style="color: var(--fg)">{{slug}}</span>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<h1 aria-label="{{titleFull}}" style="margin: 0; min-width: 300px; font-size: 44px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; white-space: nowrap"><span aria-hidden="true">{{titleShown}}</span></h1>
+<button class="swap" onClick="{{swap}}" aria-label="{{swapLabel}}" style="min-height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-family: 'Geist Mono', monospace; font-size: 13px; cursor: pointer">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accentText); transform: rotate({{rot}}); transition: transform 300ms cubic-bezier(.2,.7,.2,1)"><path d="M4 8h14"/><path d="M14 4l4 4-4 4"/><path d="M20 16H6"/><path d="M10 12l-4 4 4 4"/></svg>
+<span>swap</span>
+</button>
+</div>
+<p style="margin: 0; font-size: 17px; line-height: 1.55; color: var(--muted); max-width: 560px; text-wrap: pretty">Turn {{fromU}} files into {{toU}}. Pick a bitrate, drop your files, download the results.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 48px 24px; border-radius: 14px; border: 2px dashed var(--line); background: var(--surface); text-align: center">
+<svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accentText)"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+<div style="font-size: 18px; font-weight: 600">Drop .{{from}} files here</div>
+<button onClick="{{addFile}}" style="min-height: 48px; padding: 0 24px; border-radius: 10px; border: 0; background: var(--accent); color: #0b0d10; font-family: 'Geist', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer">Choose files</button>
+</div>
+
+<section aria-labelledby="opts" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface)">
+<h2 id="opts" style="margin: 0; font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 500; color: var(--muted)">// options</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<span id="br" style="font-size: 15px; font-weight: 500">Bitrate</span>
+<div role="group" aria-labelledby="br" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{rates}}" as="r" hint-placeholder-count="4">
+<button onClick="{{r.pick}}" aria-pressed="{{r.on}}" style="min-height: 44px; min-width: 76px; padding: 0 14px; border-radius: 8px; border: 1px solid {{r.border}}; background: {{r.bg}}; color: {{r.fg}}; font-family: 'Geist Mono', monospace; font-size: 13px; cursor: pointer">{{r.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="height: 1px; background: var(--line)"></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 15px; font-weight: 500">Sample rate</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--muted)">keep original</span>
+</div>
+<div style="height: 1px; background: var(--line)"></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 15px; font-weight: 500">Channels</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--muted)">keep original</span>
+</div>
+</section>
+</div>
+
+<div style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+<div style="font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--muted)">// related</div>
+<a class="rel" href="Tool.dc.html" onClick="{{openTool}}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 500"><span>Trim audio</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">.mp3 .wav</span></a>
+<a class="rel" href="Tool.dc.html" onClick="{{openTool}}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 500"><span>MP4 to GIF</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">.mp4</span></a>
+<a class="rel" href="Tool.dc.html" onClick="{{openTool}}" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; font-weight: 500"><span>Compress video</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">.mp4 .mov</span></a>
+</div>
+
+</div>
+</div>
+</main>
+</div>
+
+<sc-if value="{{booting}}" hint-placeholder-val="{{ false }}">
+<div class="boot" aria-hidden="true">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="160">
+<div class="cell" style="background: {{c.bg}}; animation-delay: {{c.delay}}"></div>
+</sc-for>
+</div>
+<div class="bootlabel" aria-hidden="true">› unktilz/{{slug}}<span class="bootcaret"></span></div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"light","section":"Look"},"accent":{"editor":"color","default":"#b6f24a","options":["#b6f24a","#5eead4","#fbbf24","#a5b4fc"],"section":"Look"},"origin":{"editor":null},"onHome":{"editor":null},"onOpen":{"editor":null},"noBoot":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { theme: null, rate: '192 kbps', dir: 'ogg', rot: 0, picking: false, hover: false, pinned: false, booting: !props.noBoot, scr: 0 };
+    this.cells = [];
+    const o = (props.origin && typeof props.origin.ox === 'number') ? props.origin : { ox: 8, oy: 5 };
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 16; c++) {
+        const lit = (c * 7 + r * 13) % 11 === 0;
+        this.cells.push({ bg: lit ? '#b6f24a' : '#0b0d10', delay: (220 + Math.round(Math.hypot(c - o.ox, r - o.oy) * 22)) + 'ms' });
+      }
+    }
+    this.qInit();
+  }
+  componentDidMount() {
+    this.syncTimer = setInterval(() => this.qSync(), 250);
+    if (this.state.booting) this.bootTimer = setTimeout(() => this.setState({ booting: false }), 1100);
+    this.scrTimer = setTimeout(() => this.startScramble(), this.props.noBoot ? 380 : 520);
+  }
+  componentWillUnmount() {
+    clearInterval(this.syncTimer);
+    clearInterval(this.sc);
+    clearTimeout(this.bootTimer);
+    clearTimeout(this.scrTimer);
+  }
+  startScramble() {
+    clearInterval(this.sc);
+    let f = 0;
+    const total = 14;
+    this.setState({ scr: 0 });
+    this.sc = setInterval(() => {
+      f++;
+      if (f > total) { clearInterval(this.sc); this.setState({ scr: null }); return; }
+      this.setState({ scr: f / total });
+    }, 32);
+  }
+  scrambled(full) {
+    if (this.state.scr === null) return full;
+    const glyphs = '<>/\\[]{}=+*#01_';
+    const shown = Math.floor(this.state.scr * full.length);
+    return full.split('').map((ch, i) => (i < shown || ch === ' ') ? ch : glyphs[Math.floor(Math.random() * glyphs.length)]).join('');
+  }
+  titleText() { return this.state.dir === 'ogg' ? 'OGG to MP3' : 'MP3 to OGG'; }
+
+  /* shared queue: every page reads and writes the same stored queue */
+  qLoad() { try { const r = window.localStorage.getItem('unktilz-queue-v2'); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  qSave(q) { try { window.localStorage.setItem('unktilz-queue-v2', JSON.stringify(q)); } catch (e) {} }
+  qSeed() {
+    const now = Date.now();
+    const ogg = now - 7400;
+    const mk = (id, name, cat, file, dur, start) => ({ id: id, name: name, cat: cat, file: file, dur: dur, start: start });
+    return { nextId: 6, jobs: [
+      mk(1, 'Merge PDF', 'pdf', '[3 files].pdf', 6000, now - 40000),
+      mk(2, 'JSON formatter', 'data', '[config].json', 3000, now - 30000),
+      mk(3, 'OGG to MP3', 'audio', '[file-name].ogg', 12000, ogg),
+      mk(4, 'Map art converter', 'mc', '[image].png', 9000, ogg + 12000),
+      mk(5, 'Video to GIF', 'video', '[clip].mp4', 14000, ogg + 21000)
+    ] };
+  }
+  qInit() { const s = this.qLoad(); this.q = s || this.qSeed(); if (!s) this.qSave(this.q); }
+  qSync() { const s = this.qLoad(); if (s) this.q = s; this.forceUpdate(); }
+  qMutate(fn) { const base = this.qLoad() || this.q; this.q = fn(base); this.qSave(this.q); this.forceUpdate(); }
+  qReflow(jobs, now) {
+    let prevEnd = now;
+    jobs.forEach((j) => { if (j.start <= now) prevEnd = Math.max(prevEnd, j.start + j.dur); });
+    return jobs.map((j) => {
+      if (j.start <= now) return j;
+      const s = Math.max(now, prevEnd);
+      prevEnd = s + j.dur;
+      return Object.assign({}, j, { start: s });
+    });
+  }
+  qAdd(name, cat, file) {
+    this.qMutate((q) => {
+      const now = Date.now();
+      const lastEnd = q.jobs.reduce((m, j) => Math.max(m, j.start + j.dur), now);
+      const dur = 6000 + Math.floor(Math.random() * 8000);
+      return { nextId: q.nextId + 1, jobs: q.jobs.concat([{ id: q.nextId, name: name, cat: cat, file: file, dur: dur, start: lastEnd }]) };
+    });
+  }
+  qRemove(id) { this.qMutate((q) => ({ nextId: q.nextId, jobs: this.qReflow(q.jobs.filter((j) => j.id !== id), Date.now()) })); }
+  qClearDone() { this.qMutate((q) => { const now = Date.now(); return { nextId: q.nextId, jobs: q.jobs.filter((j) => j.start + j.dur > now) }; }); }
+  qView(dark, accent, accentText, muted, line) {
+    const now = Date.now();
+    return (this.q ? this.q.jobs : []).map((j) => {
+      const end = j.start + j.dur;
+      const status = now >= end ? 'done' : (now >= j.start ? 'running' : 'queued');
+      const pct = status === 'done' ? 100 : (status === 'running' ? Math.floor((now - j.start) / j.dur * 100) : 0);
+      return {
+        name: j.name, file: j.file, status: status, pct: pct + '%',
+        isAudio: j.cat === 'audio', isVideo: j.cat === 'video', isImage: j.cat === 'image',
+        isPdf: j.cat === 'pdf', isData: j.cat === 'data', isMc: j.cat === 'mc',
+        tileBorder: status === 'running' ? accent : line,
+        iconColor: status === 'queued' ? muted : (dark ? '#e8ebef' : '#11140f'),
+        trackColor: status === 'queued' ? 'transparent' : line,
+        statusColor: status === 'queued' ? muted : accentText,
+        remove: () => this.qRemove(j.id)
+      };
+    });
+  }
+
+  renderVals() {
+    const theme = this.state.theme || this.props.theme || 'light';
+    const dark = theme === 'dark';
+    const accent = this.props.accent ?? '#b6f24a';
+    const accentText = dark ? accent : '#3b7000';
+    const muted = dark ? '#9aa4b0' : '#586053';
+    const line = dark ? '#242a32' : '#dcdfd4';
+    const cur = this.state.rate;
+    const open = this.state.hover || this.state.pinned;
+    const from = this.state.dir === 'ogg' ? 'ogg' : 'mp3';
+    const to = from === 'ogg' ? 'mp3' : 'ogg';
+    const full = this.titleText();
+    const rates = ['128 kbps', '192 kbps', '256 kbps', '320 kbps'].map((n) => {
+      const on = n === cur;
+      return {
+        label: n.replace(' kbps', ''), on: on,
+        bg: on ? accent : 'transparent',
+        fg: on ? '#0b0d10' : (dark ? '#e8ebef' : '#11140f'),
+        border: on ? accent : (dark ? '#2a3038' : '#cfd3c8'),
+        pick: () => this.setState({ rate: n })
+      };
+    });
+    const jobs = this.qView(dark, accent, accentText, muted, line);
+    return {
+      bg: dark ? '#0b0d10' : '#f6f7f3',
+      surface: dark ? '#12161b' : '#ffffff',
+      line: line,
+      fg: dark ? '#e8ebef' : '#11140f',
+      muted: muted,
+      accent: accent,
+      accentText: accentText,
+      themeLabel: theme,
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+      from: from,
+      fromU: from.toUpperCase(),
+      toU: to.toUpperCase(),
+      slug: from + '-to-' + to,
+      openTool: (e) => { if (this.props.onOpen) { e.preventDefault(); const s = e.currentTarget.querySelector('span'); this.props.onOpen(e, s ? s.textContent : 'tool'); } },
+      goHome: (e) => { if (this.props.onHome) { e.preventDefault(); this.props.onHome(); } },
+      titleFull: full,
+      titleShown: this.scrambled(full),
+      booting: this.state.booting,
+      cells: this.cells,
+      rot: this.state.rot + 'deg',
+      swapLabel: 'Swap direction: convert ' + to.toUpperCase() + ' to ' + from.toUpperCase(),
+      swap: () => { this.setState({ dir: to, rot: this.state.rot + 180 }); this.startScramble(); },
+      addFile: () => this.qAdd(full, 'audio', '[file-name].' + from),
+      rates: rates,
+      open: open,
+      railW: open ? '320px' : '72px',
+      railShadow: open && !this.state.pinned ? '0 12px 40px rgba(0,0,0,0.22)' : 'none',
+      openRail: () => this.setState({ hover: true }),
+      closeRail: () => this.setState({ hover: false, picking: this.state.pinned ? this.state.picking : false }),
+      togglePin: () => this.setState({ pinned: !this.state.pinned }),
+      pinLabel: this.state.pinned ? 'Unpin queue panel' : 'Pin queue panel open',
+      pinBorder: this.state.pinned ? accent : line,
+      picking: this.state.picking,
+      showPicker: this.state.picking && open,
+      togglePick: () => this.setState({ picking: !this.state.picking, hover: true }),
+      clearDone: () => this.qClearDone(),
+      jobCount: jobs.filter((j) => j.status !== 'done').length + ' active',
+      showEmpty: open && jobs.length === 0,
+      jobs: jobs,
+      options: [
+        ['OGG to MP3', '.ogg', 'audio'], ['MP3 to OGG', '.mp3', 'audio'], ['Map art converter', '.png', 'mc'],
+        ['Skin downloader', 'name', 'mc'], ['Video to GIF', '.mp4', 'video'], ['Compress video', '.mp4 .mov', 'video'],
+        ['Remove background', '.jpg .png', 'image'], ['Image converter', '.png .webp', 'image'],
+        ['Merge PDF', '.pdf', 'pdf'], ['JSON formatter', '{ }', 'data']
+      ].map((o) => ({
+        name: o[0], badge: o[1],
+        add: () => { this.qAdd(o[0], o[2], 'waiting for file'); this.setState({ picking: false }); }
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

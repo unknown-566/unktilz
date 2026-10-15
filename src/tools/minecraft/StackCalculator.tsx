@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { NumberField, Panel, Segmented, Stat, num } from '../../components/ui';
+import { Help } from '../../components/Help';
+
+type Size = '64' | '16' | '1';
+
+const fmt = (n: number) => n.toLocaleString('en-US');
+
+export default function StackCalculator() {
+  const [items, setItems] = useState('5000');
+  const [size, setSize] = useState<Size>('64');
+  const [shulkers, setShulkers] = useState('0');
+  const [stacks, setStacks] = useState('0');
+  const [loose, setLoose] = useState('0');
+
+  const s = Number(size);
+  const n = Math.max(0, Math.floor(num(items)));
+  const perShulker = 27 * s;
+  const perDouble = 54 * s;
+
+  const sh = Math.floor(n / perShulker);
+  const st = Math.floor((n % perShulker) / s);
+  const rest = n % s;
+
+  const back = Math.max(0, Math.floor(num(shulkers))) * perShulker + Math.max(0, Math.floor(num(stacks))) * s + Math.max(0, Math.floor(num(loose)));
+
+  const parts = [sh && `${fmt(sh)} shulker${sh > 1 ? 's' : ''}`, st && `${st} stack${st > 1 ? 's' : ''}`, rest && `${rest} item${rest > 1 ? 's' : ''}`].filter(Boolean);
+
+  return (
+    <>
+      <Panel title="items → storage">
+        <div className="inline">
+          <NumberField label="Items" value={items} onChange={setItems} min={0} />
+          <div className="field">
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <span className="field-label" id="ss">
+                Stack size
+              </span>
+              <Help label="stack size" text="Most items stack to 64. Ender pearls, eggs, snowballs, signs, banners and buckets of snow stack to 16. Tools, armor, potions and most buckets don’t stack (1)." />
+            </span>
+            <Segmented
+              labelledBy="ss"
+              value={size}
+              onChange={setSize}
+              compact
+              options={[
+                { value: '64', label: '64' },
+                { value: '16', label: '16' },
+                { value: '1', label: '1' },
+              ]}
+            />
+          </div>
+        </div>
+        <div className="stats" aria-live="polite">
+          <Stat label="stacks" value={`${fmt(Math.floor(n / s))}${n % s ? ` + ${n % s}` : ''}`} />
+          <Stat label="shulker boxes" value={(n / perShulker).toFixed(2).replace(/\.00$/, '')} />
+          <Stat label="double chests" value={(n / perDouble).toFixed(2).replace(/\.00$/, '')} />
+        </div>
+        <p className="note" style={{ color: 'var(--fg)' }}>
+          {parts.length ? parts.join(' + ') : 'nothing'}
+        </p>
+      </Panel>
+
+      <Panel title="storage → items">
+        <div className="fields">
+          <NumberField label="Shulker boxes" value={shulkers} onChange={setShulkers} min={0} />
+          <NumberField label="Stacks" value={stacks} onChange={setStacks} min={0} />
+          <NumberField label="Loose items" value={loose} onChange={setLoose} min={0} />
+        </div>
+        <div className="stats" aria-live="polite">
+          <Stat label="items" value={fmt(back)} />
+        </div>
+        <p className="note">A shulker box and a single chest hold 27 slots; a double chest holds 54.</p>
+      </Panel>
+    </>
+  );
+}
