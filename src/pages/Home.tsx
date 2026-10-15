@@ -102,6 +102,19 @@ export default function Home() {
   const hero = useRef<HTMLElement>(null);
   useParallax(hero);
 
+  // The search field draws the same green block caret as the typing animation instead of the
+  // browser's thin one: measure the text up to the caret and put the block there.
+  const measure = useRef<HTMLSpanElement>(null);
+  const [caret, setCaret] = useState<{ x: number; n: number } | null>(null);
+  const placeCaret = () => {
+    const el = input.current;
+    const m = measure.current;
+    if (!el || !m || document.activeElement !== el || el.selectionStart !== el.selectionEnd) return setCaret(null);
+    m.textContent = el.value.slice(0, el.selectionStart ?? 0);
+    // n changes on every move, which restarts the blink so the caret stays solid while typing.
+    setCaret((c) => ({ x: m.offsetWidth - el.scrollLeft, n: (c?.n ?? 0) + 1 }));
+  };
+
   const catParam = params.get('cat') as Category | null;
   const cat = catParam && groups.some((g) => g.id === catParam) ? catParam : 'all';
 
@@ -157,6 +170,11 @@ export default function Home() {
                   setQ(e.target.value);
                   setTypedOnce(true);
                 }}
+                onFocus={placeCaret}
+                onBlur={() => setCaret(null)}
+                onSelect={placeCaret}
+                onKeyUp={placeCaret}
+                onScroll={placeCaret}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && shown[0]?.tools[0]) launch(null, shown[0].tools[0].slug);
                   if (e.key === 'Escape') setQ('');
@@ -169,11 +187,14 @@ export default function Home() {
                   ) : (
                     <>
                       Search tools, try <span className="mono">{typed}</span>
-                      <span className="caret" />
+                      {/* While the field has focus the real caret blinks instead, so there's only one. */}
+                      {!caret && <span className="caret" />}
                     </>
                   )}
                 </span>
               )}
+              <span ref={measure} className="search-measure" aria-hidden="true" />
+              {caret && <span key={caret.n} className="caret search-caret" style={{ left: caret.x }} aria-hidden="true" />}
             </div>
             <span className="kbd" aria-hidden="true">
               {isMac ? '⌘ K' : 'Ctrl K'}

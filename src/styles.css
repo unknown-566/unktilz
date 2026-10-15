@@ -581,6 +581,23 @@ button {
   outline: 0;
   background: transparent;
   font-size: 16px;
+  /* The block caret below replaces the browser's own. */
+  caret-color: transparent;
+}
+/* Same font as the input, used to measure where the caret goes. */
+.search-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  font-size: 16px;
+}
+.search-caret {
+  font-size: 16px;
+  position: absolute;
+  top: 50%;
+  margin-left: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 .search-hint {
   position: absolute;
