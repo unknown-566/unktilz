@@ -1,13 +1,33 @@
 # unktilz
 
-A web toolbox: Minecraft utilities, dev tools, file converters and everyday helpers. Vite + React + TypeScript, static build, everything runs in the browser.
+A web toolbox: Minecraft utilities, dev tools, file converters and everyday helpers. Vite + React + TypeScript, static build, everything runs in the browser. Made for desktop browsers.
+
+## Getting started
+
+1. Install [Node.js](https://nodejs.org) (the LTS version; 18 or newer).
+2. Get the code: `git clone https://github.com/unknown-566/unktilz.git`, or on GitHub click **Code → Download ZIP** and unzip it.
+3. Open a terminal in the project folder and run:
 
 ```bash
-npm install
+npm install       # once, downloads the dependencies
 npm run dev       # http://localhost:5173
 npm run build     # typecheck + production build into dist/
 npm run preview   # serve dist/ locally
 ```
+
+### Windows: “running scripts is disabled on this system”
+
+PowerShell blocks `npm` by default, because there `npm` is a script (`npm.ps1`). Any one of these fixes it:
+
+- Type `npm.cmd` instead of `npm`, e.g. `npm.cmd install` and `npm.cmd run dev`.
+- Use **Command Prompt** (cmd) instead of PowerShell; plain `npm` works there.
+- Allow local scripts for your user account once (then plain `npm` works in PowerShell too):
+
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+  ```
+
+  This changes a Windows security setting for your account only: your own scripts run, downloaded ones must be signed.
 
 `design/` holds the original mockups and `HANDOFF.md` the spec. They are reference only and are not part of the build.
 
@@ -42,4 +62,8 @@ Option types are `choice` (segmented buttons), `range`, `number` and `toggle`. A
 
 ## Third-party services
 
-Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, and skin and head images come from `mc-heads.net`. Everything else works offline once loaded.
+Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, skin and head images come from `mc-heads.net`, and the skin editor loads skins from `textures.minecraft.net`. Everything else works offline once loaded.
+
+## Seed map (cubiomes)
+
+The seed map runs [xpple's fork](https://github.com/xpple/cubiomes) of [cubiomes](https://github.com/Cubitect/cubiomes) (MIT) compiled to WebAssembly. The built `src/workers/cubiomes.wasm` is committed, so `npm install` / `npm run build` don't need anything extra. To rebuild it (e.g. to move to a newer cubiomes commit for a new Minecraft version), install [Zig](https://ziglang.org) (`winget install zig.zig`), update `COMMIT` in `scripts/build-cubiomes.mjs` and run `npm run build:cubiomes`.
