@@ -15,13 +15,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if not exist "node_modules" (
+if not exist "node_modules\vite\bin\vite.js" (
   echo.
   echo  Prvni spusteni: instaluji, co web potrebuje. Chvili to potrva...
   echo.
   call npm.cmd install --no-audit --no-fund
   if errorlevel 1 goto failed
 )
+if not exist "node_modules\vite\bin\vite.js" goto failed
 
 echo.
 echo  ============================================================
@@ -29,7 +30,9 @@ echo   unktilz bezi. Prohlizec se otevre sam.
 echo   Tohle okno nech otevrene - jeho zavrenim web vypnes.
 echo  ============================================================
 echo.
-call npm.cmd run dev -- --open
+rem Vite is started with node directly instead of "npm run dev": npm's launcher scripts break
+rem when the folder path contains characters like & (e.g. "Minecraft & games").
+node "%~dp0node_modules\vite\bin\vite.js" --open
 goto end
 
 :failed
