@@ -2766,3 +2766,39 @@ textarea,
   font-size: 16px;
   padding: 0 6px;
 }
+.skin-lib-desc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.skin-lib-head {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  border-radius: 2px;
+}
+.footer-links {
+  display: inline-flex;
+  gap: 18px;
+  align-items: center;
+}
+.footer-links a {
+  color: var(--muted);
+}
+.footer-links a:hover {
+  color: var(--fg);
+}
+.backup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.backup-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}

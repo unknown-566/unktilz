@@ -9,6 +9,7 @@ import { SkinDoc, useDoc } from './doc';
 import { fileBase, loadPlayer, loadSaved, save, type Loaded } from './load';
 import type { Settings, ToolId } from './paint';
 import { HistoryPanel, OpenSkin, PartTransfer, Row, Toolbox } from './Panels';
+import { SavedPanel } from '../../../components/SavedPanel';
 import type { ViewName } from './scene';
 import { TextureView, type Float } from './TextureView';
 import { Viewport3D } from './Viewport3D';
@@ -20,6 +21,25 @@ const TOOL_KEYS: Record<string, ToolId> = { b: 'pencil', e: 'eraser', g: 'fill',
 const FACE_LABEL = { top: 'top', bottom: 'bottom', front: 'front', back: 'back', right: 'right side', left: 'left side' } as const;
 
 type Item = { part: PartId; layer: Layer };
+type SavedSkin = { name: string; model: Model; pixels: Uint8Array };
+
+/** The front of a skin's head (with its hat), as a tiny icon for the library. */
+function SkinHead({ pixels }: { pixels: Uint8Array }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current?.getContext('2d');
+    if (!c) return;
+    const img = new ImageData(new Uint8ClampedArray(pixels), SKIN, SKIN);
+    const tmp = document.createElement('canvas');
+    tmp.width = tmp.height = SKIN;
+    tmp.getContext('2d')!.putImageData(img, 0, 0);
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, 8, 8);
+    c.drawImage(tmp, 8, 8, 8, 8, 0, 0, 8, 8);
+    c.drawImage(tmp, 40, 8, 8, 8, 0, 0, 8, 8);
+  }, [pixels]);
+  return <canvas ref={ref} width={8} height={8} className="skin-lib-head" aria-hidden="true" />;
+}
 
 // Laid out like the player seen from the front, so their right arm is on the left.
 const PICKER: { part: PartId; area: string }[] = [
@@ -557,6 +577,24 @@ export default function SkinEditor() {
             onHighlight={setHighlight}
           />
           <HistoryPanel doc={doc} />
+          <SavedPanel<SavedSkin>
+            slug="skin-editor"
+            title="skin library"
+            help="Keep skins you made or like. Opening one puts it in the skin you're editing now (Ctrl+Z brings the old one back)."
+            saveLabel="save skin"
+            loadLabel="Open"
+            undoable={false}
+            suggestName={() => doc.name}
+            getData={() => ({ name: doc.name, model: doc.steps[doc.index].model, pixels: new Uint8Array(doc.steps[doc.index].pixels) })}
+            onLoad={(d, item) => put(active, { name: item.name, model: d.model, pixels: new Uint8ClampedArray(d.pixels) })}
+            describe={(i) => (
+              <span className="skin-lib-desc">
+                <SkinHead pixels={i.data.pixels} />
+                {i.data.model === 'slim' ? 'slim arms' : 'classic arms'}
+              </span>
+            )}
+            emptyText="No saved skins yet."
+          />
 
           <details className="panel sk-howto">
             <summary className="mono muted">how to wear it in the game</summary>

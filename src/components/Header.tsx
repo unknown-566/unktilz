@@ -33,7 +33,10 @@ export function Footer() {
     <footer className="footer">
       <div className="footer-inner">
         <span>unktilz</span>
-        <span>made by unknown_56</span>
+        <span className="footer-links">
+          <Link to="/backup">backup</Link>
+          <span>made by unknown_56</span>
+        </span>
       </div>
     </footer>
   );

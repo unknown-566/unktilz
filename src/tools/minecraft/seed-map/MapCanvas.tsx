@@ -4,7 +4,8 @@ import type { TileResult } from '../../../workers/seedmap.worker';
 
 export type View = { x: number; z: number; bpp: number };
 /** A spot on the map; `sx`/`sy` is where it is on screen (for the hover label). */
-export type Pick = { x: number; z: number; biome: number | null; structure?: number; spawn?: boolean; sx?: number; sy?: number };
+export type Pick = { x: number; z: number; biome: number | null; structure?: number; spawn?: boolean; pin?: string; sx?: number; sy?: number };
+export type Pin = { x: number; z: number; name: string };
 
 const ICON_PATHS = new Map<number, Path2D>();
 const iconPath = (i: number) => {
@@ -25,6 +26,8 @@ type Props = {
   selected: Pick | null;
   /** World spawn, drawn as a red + that keeps its size at every zoom. */
   spawn: { x: number; z: number } | null;
+  /** Saved places in this world, drawn as labelled pins. */
+  pins: Pin[];
   onView: (v: View) => void;
   onHover: (p: Pick | null) => void;
   onSelect: (p: Pick | null) => void;
@@ -172,6 +175,31 @@ export function MapCanvas(p: Props) {
       g.restore();
     }
     markers.current = list;
+
+    // Saved places: a white diamond and the name next to it.
+    g.font = '600 12px system-ui, sans-serif';
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    for (const pin of props.current.pins) {
+      const X = sx(pin.x + 0.5);
+      const Y = sy(pin.z + 0.5);
+      if (X < -100 || Y < -20 || X > W + 20 || Y > H + 20) continue;
+      g.beginPath();
+      g.moveTo(X, Y - 8);
+      g.lineTo(X + 7, Y);
+      g.lineTo(X, Y + 8);
+      g.lineTo(X - 7, Y);
+      g.closePath();
+      g.fillStyle = '#ffffff';
+      g.fill();
+      g.lineWidth = 2;
+      g.strokeStyle = '#0b0d10';
+      g.stroke();
+      g.lineWidth = 3;
+      g.strokeText(pin.name, X + 11, Y);
+      g.fillStyle = '#ffffff';
+      g.fillText(pin.name, X + 11, Y);
+    }
 
     const sp = props.current.spawn;
     if (sp) {
@@ -337,8 +365,16 @@ export function MapCanvas(p: Props) {
       }
     }
     if (best) return { ...pickAt(best.sx, best.sy), x: best.x, z: best.z, structure: best.i, sx: best.sx, sy: best.sy };
-    const sp = props.current.spawn;
     const host = box.current;
+    if (host) {
+      const { x, z, bpp } = view.current;
+      for (const pin of props.current.pins) {
+        const X = (pin.x + 0.5 - x) / bpp + host.clientWidth / 2;
+        const Y = (pin.z + 0.5 - z) / bpp + host.clientHeight / 2;
+        if (Math.hypot(X - px, Y - py) < 11) return { ...pickAt(X, Y), x: pin.x, z: pin.z, pin: pin.name, sx: X, sy: Y };
+      }
+    }
+    const sp = props.current.spawn;
     if (sp && host) {
       const { x, z, bpp } = view.current;
       const X = (sp.x - x) / bpp + host.clientWidth / 2;
@@ -383,7 +419,7 @@ export function MapCanvas(p: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  useEffect(redraw, [p.enabled, p.structureIds, p.selected, p.spawn]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(redraw, [p.enabled, p.structureIds, p.selected, p.spawn, p.pins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const c = p.command;

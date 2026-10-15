@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
 import { QueueRail } from './components/QueueRail';
@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import ToolPage from './pages/ToolPage';
 import Request from './pages/Request';
 import NotFound from './pages/NotFound';
+
+const Backup = lazy(() => import('./pages/Backup'));
 
 function Shortcuts() {
   const navigate = useNavigate();
@@ -46,6 +48,14 @@ export default function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/t/:slug" element={<ToolPage />} />
                   <Route path="/request" element={<Request />} />
+                  <Route
+                    path="/backup"
+                    element={
+                      <Suspense fallback={<div className="wrap muted mono">loading…</div>}>
+                        <Backup />
+                      </Suspense>
+                    }
+                  />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
