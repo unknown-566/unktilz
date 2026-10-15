@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>unktilz home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:inherit}
+a.card{text-decoration:none;color:inherit;transition:transform 160ms ease,border-color 160ms ease,background-color 160ms ease}
+a.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+a.card:active{transform:scale(0.97);transition-duration:80ms}
+button.chip{transition:background-color 150ms ease,color 150ms ease,border-color 150ms ease}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.caret{display:inline-block;width:0.55em;height:1.1em;margin-left:2px;vertical-align:text-bottom;background:currentColor;animation:blink 1s steps(1) infinite}
+.rise{animation:rise 420ms cubic-bezier(.2,.7,.2,1) both}
+@keyframes blockIn{from{transform:scale(0)}to{transform:scale(1.02)}}
+.boot{position:fixed;inset:0;z-index:50;display:grid;grid-template-columns:repeat(16,minmax(0,1fr));grid-template-rows:repeat(10,minmax(0,1fr))}
+.cell{transform:scale(0);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);animation:blockIn 300ms cubic-bezier(.7,0,.3,1) both}
+@keyframes blockOut{from{transform:scale(1.02)}to{transform:scale(0)}}
+.cellOut{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);animation:blockOut 340ms cubic-bezier(.7,0,.3,1) both}
+@keyframes bootLabel{0%{opacity:0;transform:translateY(4px)}20%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0}}
+.bootlabel{position:fixed;inset:0;z-index:51;pointer-events:none;display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:15px;color:#b6f24a;animation:bootLabel 560ms ease both}
+.bootcaret{display:inline-block;width:0.55em;height:1.05em;margin-left:4px;background:currentColor;animation:blink 0.5s steps(1) infinite}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}.boot,.bootlabel{display:none !important}}
+</style>
+</helmet>
+<div style="--bg: {{bg}}; --surface: {{surface}}; --line: {{line}}; --fg: {{fg}}; --muted: {{muted}}; --accent: {{accent}}; --accentText: {{accentText}}; --grid: {{grid}}; min-height: {{rootMinH}}; background: var(--bg); color: var(--fg); font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; transition: background-color 200ms ease, color 200ms ease">
+
+<sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
+<header style="border-bottom: 1px solid var(--line)">
+<div style="padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="Main.dc.html" onClick="{{goHome}}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; font-size: 18px">
+<span style="width: 28px; height: 28px; border-radius: 6px; background: var(--accent); color: #0b0d10; display: flex; align-items: center; justify-content: center; font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 500">&gt;_</span>
+<span>unktilz</span>
+</a>
+<nav style="display: flex; align-items: center; gap: 24px; font-size: 14px; color: var(--muted)">
+<a href="Main.dc.html" onClick="{{goHome}}" style="text-decoration: none; color: var(--fg)">All tools</a>
+<a href="Main.dc.html" onClick="{{goHome}}" style="text-decoration: none">Request a tool</a>
+<button onClick="{{toggleTheme}}" aria-label="Toggle light and dark theme" style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-family: 'Geist Mono', monospace; font-size: 12px; cursor: pointer">theme: {{themeLabel}}</button>
+</nav>
+</div>
+</header>
+
+<div style="flex: 1; display: flex">
+
+<div style="position: relative; flex: none; width: 72px">
+<aside aria-label="Process queue" onMouseEnter="{{openRail}}" onMouseLeave="{{closeRail}}" style="position: absolute; top: 0; left: 0; bottom: 0; z-index: 5; width: {{railW}}; overflow: hidden; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--line); box-shadow: {{railShadow}}; transition: width 180ms ease, box-shadow 180ms ease">
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line)">
+<button onClick="{{togglePin}}" aria-expanded="{{open}}" aria-label="{{pinLabel}}" style="flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid {{pinBorder}}; background: transparent; color: var(--fg); display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+</button>
+<sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; white-space: nowrap">
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px">queue · {{jobCount}}</span>
+<button onClick="{{clearDone}}" style="min-height: 36px; padding: 0 8px; border-radius: 6px; border: 0; background: transparent; color: var(--muted); font-family: 'Geist Mono', monospace; font-size: 12px; cursor: pointer">clear done</button>
+</div>
+</sc-if>
+</div>
+
+<div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 10px 14px">
+<sc-for list="{{jobs}}" as="j" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px">
+<div title="{{j.name}}" style="position: relative; flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid {{j.tileBorder}}; background: var(--bg); color: {{j.iconColor}}; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: border-color 200ms ease, color 200ms ease">
+<sc-if value="{{j.isAudio}}" hint-placeholder-val="{{ true }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></sc-if>
+<sc-if value="{{j.isVideo}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></sc-if>
+<sc-if value="{{j.isImage}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></sc-if>
+<sc-if value="{{j.isPdf}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg></sc-if>
+<sc-if value="{{j.isData}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4c-2 0-3 1-3 3v2c0 1.5-1 3-2 3 1 0 2 1.5 2 3v2c0 2 1 3 3 3"/><path d="M15 4c2 0 3 1 3 3v2c0 1.5 1 3 2 3-1 0-2 1.5-2 3v2c0 2-1 3-3 3"/></svg></sc-if>
+<sc-if value="{{j.isMc}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg></sc-if>
+<div style="position: absolute; left: 6px; right: 6px; bottom: 4px; height: 3px; border-radius: 2px; background: {{j.trackColor}}; overflow: hidden"><div style="width: {{j.pct}}; height: 100%; background: var(--accent); transition: width 250ms linear"></div></div>
+</div>
+<sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; white-space: nowrap">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span style="font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis">{{j.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: {{j.statusColor}}">{{j.status}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<div style="flex: 1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden"><div style="width: {{j.pct}}; height: 100%; background: var(--accent); transition: width 250ms linear"></div></div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted); min-width: 34px; text-align: right">{{j.pct}}</span>
+</div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis">{{j.file}}</span>
+</div>
+<button onClick="{{j.remove}}" aria-label="Remove from queue" style="flex: none; width: 36px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer">&times;</button>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{showEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px 0; font-size: 14px; color: var(--muted); white-space: nowrap">Queue is empty.</div>
+</sc-if>
+</div>
+
+<sc-if value="{{showPicker}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-top: 1px solid var(--line); background: var(--bg); max-height: 320px; overflow-y: auto">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="6">
+<button onClick="{{o.add}}" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-family: 'Geist', sans-serif; font-size: 14px; cursor: pointer; text-align: left; white-space: nowrap"><span>{{o.name}}</span><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">{{o.badge}}</span></button>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line)">
+<button onClick="{{togglePick}}" aria-label="Add process" aria-expanded="{{picking}}" style="flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px dashed var(--accentText); background: transparent; color: var(--accentText); font-size: 22px; line-height: 1; cursor: pointer">+</button>
+<sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 14px; font-weight: 600; color: var(--accentText); white-space: nowrap">Add process</span>
+</sc-if>
+</div>
+</aside>
+</div>
+
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+
+<section style="border-bottom: 1px solid var(--line); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 48px 48px">
+<div style="max-width: 1120px; margin: 0 auto; padding: 80px 24px 64px; display: flex; flex-direction: column; gap: 22px">
+<div style="font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--accentText)">// {{toolCount}} tools · {{groupCount}} categories</div>
+<h1 style="margin: 0; font-size: 60px; line-height: 1.04; letter-spacing: -0.03em; font-weight: 600; max-width: 780px; text-wrap: balance">Every tool you keep searching for.</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: var(--muted); max-width: 580px; text-wrap: pretty">Minecraft utilities, dev tools, file converters and everyday helpers, in one place.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; max-width: 640px; margin-top: 8px">
+<div style="flex: 1 1 320px; display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 56px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface)">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color: var(--muted); flex: none"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+<div style="position: relative; flex: 1; min-width: 0; display: flex; align-items: center">
+<label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0)">Search tools</label>
+<input id="q" type="text" onInput="{{onQuery}}" style="position: relative; z-index: 1; width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font-family: 'Geist', sans-serif; font-size: 16px">
+<sc-if value="{{showHint}}" hint-placeholder-val="{{ true }}">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); font-size: 16px; white-space: nowrap">Search tools, try <span style="font-family: 'Geist Mono', monospace; color: var(--fg)">{{typed}}</span><span class="caret" style="color: var(--accentText)"></span></span>
+</sc-if>
+</div>
+<span style="flex: none; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px">Ctrl K</span>
+</div>
+</div>
+</div>
+</section>
+
+<main style="flex: 1">
+<div style="max-width: 1120px; margin: 0 auto; padding: 32px 24px 72px; display: flex; flex-direction: column; gap: 40px">
+<div role="group" aria-label="Filter by category" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="9">
+<button class="chip" onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="min-height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.bg}}; color: {{c.fg}}; font-family: 'Geist Mono', monospace; font-size: 13px; cursor: pointer"><span>{{c.label}}</span><span style="opacity: 0.6">{{c.count}}</span></button>
+</sc-for>
+</div>
+
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<section aria-label="{{g.label}}" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em">{{g.label}}</h2>
+<span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">{{g.count}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 10px">
+<sc-for list="{{g.tools}}" as="t" hint-placeholder-count="8">
+<a class="card" href="Tool.dc.html" onClick="{{t.go}}" style="display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); min-height: 78px; box-sizing: border-box">
+<span style="font-size: 15px; font-weight: 500; line-height: 1.3">{{t.name}}</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--muted)">{{t.meta}}</span>
+</a>
+</sc-for>
+</div>
+</section>
+</sc-for>
+
+<sc-if value="{{noResults}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 48px 0; text-align: center; font-size: 16px; color: var(--muted)">No tool matches “{{q}}”.</div>
+</sc-if>
+</div>
+</main>
+
+<footer style="border-top: 1px solid var(--line)">
+<div style="max-width: 1120px; margin: 0 auto; padding: 24px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--muted)">
+<span>unktilz</span>
+<span>[YEAR]</span>
+</div>
+</footer>
+
+</div>
+</div>
+
+</sc-if>
+
+<sc-if value="{{isToolA}}" hint-placeholder-val="{{ false }}">
+<dc-import name="Tool" theme="{{themeLabel}}" accent="{{accent}}" no-boot="{{ true }}" on-home="{{goHome}}" on-open="{{openFromTool}}" hint-size="100%,960px"></dc-import>
+</sc-if>
+<sc-if value="{{isToolB}}" hint-placeholder-val="{{ false }}">
+<dc-import name="Tool" theme="{{themeLabel}}" accent="{{accent}}" no-boot="{{ true }}" on-home="{{goHome}}" on-open="{{openFromTool}}" hint-size="100%,960px"></dc-import>
+</sc-if>
+<sc-if value="{{isCover}}" hint-placeholder-val="{{ false }}">
+<div class="boot" aria-hidden="true">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="160">
+<div class="cell" style="background: {{c.bg}}; animation-delay: {{c.inDelay}}"></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{isUncover}}" hint-placeholder-val="{{ false }}">
+<div class="boot" aria-hidden="true" style="pointer-events: none">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="160">
+<div class="cellOut" style="background: {{c.bg}}; animation-delay: {{c.outDelay}}"></div>
+</sc-for>
+</div>
+<div class="bootlabel" aria-hidden="true">› unktilz/{{slug}}<span class="bootcaret"></span></div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark","section":"Look"},"accent":{"editor":"color","default":"#b6f24a","options":["#b6f24a","#5eead4","#fbbf24","#a5b4fc"],"section":"Look"},"typing":{"editor":"boolean","default":true,"section":"Motion"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.phrases = ['server status', 'ogg to mp3', 'json formatter', 'remove background', 'nether portal'];
+    this.catalog = [
+      ['Minecraft', [
+        ['Server status checker', 'java · bedrock'], ['Skin viewer & downloader', '.png'], ['Player UUID lookup', 'name → uuid'],
+        ['Player head command', 'skin → /give'], ['MOTD generator', '§ codes'], ['Color codes & MiniMessage', '§a · <green>'],
+        ['Tellraw / JSON text builder', '/tellraw'], ['Command generator', '/give · /summon'], ['Nether portal calculator', 'xyz ÷ 8'],
+        ['Chunk & region finder', 'xyz → r.x.z'], ['Slime chunk finder', 'seed'], ['Circle & sphere generator', 'blocks'],
+        ['Enchanting order optimizer', 'anvil'], ['XP level calculator', 'levels ⇄ points'], ['Stack & shulker calculator', 'items → stacks'],
+        ['Map art converter', 'image → map'], ['Banner pattern maker', '/give'], ['Resource pack checker', 'pack.mcmeta'],
+        ['server.properties editor', '.properties'], ['Datapack template', '.zip']
+      ]],
+      ['Dev', [
+        ['JSON formatter & validator', '{ }'], ['JSON ⇄ YAML', '.json · .yml'], ['CSV ⇄ JSON', '.csv · .json'],
+        ['Base64 encode / decode', 'b64'], ['URL encode / decode', '%20'], ['JWT decoder', 'header.payload'],
+        ['Hash generator', 'md5 · sha-256'], ['UUID generator', 'v4 · v7'], ['Regex tester', '/.*/g'],
+        ['Diff checker', 'a ↔ b'], ['Unix timestamp converter', 'epoch'], ['Cron expression helper', '* * * * *'],
+        ['Color converter', 'hex · rgb · hsl'], ['Markdown preview', '.md'], ['SQL formatter', '.sql'],
+        ['Minify JS / CSS / HTML', 'min'], ['Number base converter', 'bin · hex'], ['Chmod calculator', '755'],
+        ['Subnet / CIDR calculator', '/24'], ['HTML entity encoder', '&amp;'], ['Box shadow generator', 'css'],
+        ['Favicon generator', '.ico']
+      ]],
+      ['Image', [
+        ['Remove background', '→ .png'], ['Image converter', 'png · jpg · webp · avif'], ['HEIC to JPG', '.heic'],
+        ['Resize image', 'px · %'], ['Compress image', 'kb'], ['Crop image', 'free · 16:9'],
+        ['Rotate & flip', '90°'], ['Upscale 2×', '×2'], ['SVG to PNG', '.svg'],
+        ['Image to text (OCR)', '→ .txt'], ['EXIF viewer & remover', 'metadata'], ['Color picker from image', 'eyedropper'],
+        ['Palette extractor', '5 colors'], ['Add watermark', 'text · logo'], ['Thumbnail resizer', '1280×720']
+      ]],
+      ['Audio', [
+        ['Audio converter', 'mp3 · ogg · wav · flac'], ['OGG ⇄ MP3', '.ogg · .mp3'], ['Trim audio', 'cut'],
+        ['Merge audio', 'a + b'], ['Normalize volume', 'dB'], ['Change speed & pitch', '0.5–2×'],
+        ['Extract audio from video', '.mp4 → .mp3'], ['Voice recorder', 'mic'], ['Text to speech', 'tts']
+      ]],
+      ['Video', [
+        ['Video converter', 'mp4 · webm · mov'], ['Compress video', 'mb'], ['Trim video', 'cut'],
+        ['Video to GIF', '→ .gif'], ['GIF to MP4', '.gif → .mp4'], ['Mute video', 'no audio'],
+        ['Crop for Shorts', '16:9 → 9:16'], ['Rotate video', '90°'], ['Change speed', '0.25–4×'],
+        ['Extract frames', '→ .png'], ['Screen recorder', '.webm']
+      ]],
+      ['PDF', [
+        ['Merge PDF', 'a + b'], ['Split PDF', 'pages'], ['Compress PDF', 'mb'],
+        ['PDF to images', '→ .png'], ['Images to PDF', '.jpg → .pdf'], ['Rotate pages', '90°'],
+        ['Reorder & delete pages', 'drag'], ['Extract text', '→ .txt'], ['Sign PDF', 'signature'],
+        ['Add page numbers', '1 2 3'], ['Password protect', 'lock']
+      ]],
+      ['Text', [
+        ['Word & character counter', 'count'], ['Case converter', 'Aa'], ['Remove duplicate lines', 'uniq'],
+        ['Sort lines', 'a–z'], ['Find & replace', 'regex'], ['Slug generator', 'my-title'], ['Strip formatting', 'plain text']
+      ]],
+      ['Calc & generators', [
+        ['Unit converter', 'kg · mi · °C'], ['Time zone converter', 'utc'], ['Date difference', 'days'],
+        ['Percentage calculator', '%'], ['Aspect ratio calculator', '16:9'], ['QR code generator', '→ .svg'],
+        ['Barcode generator', 'ean · code128'], ['Password generator', '24 chars'], ['Random picker', 'name · number'],
+        ['Countdown timer', '00:00']
+      ]]
+    ];
+    this.state = { view: 'home', inst: 0, phase: null, slug: '', cells: [], theme: null, cat: 'All', q: '', pi: 0, ci: 0, del: false, picking: false, hover: false, pinned: false };
+    this.qInit();
+  }
+  componentDidMount() {
+    this.syncTimer = setInterval(() => this.qSync(), 250);
+    if (this.props.typing === false) {
+      this.setState({ ci: this.phrases[0].length });
+    } else {
+      this.typeTimer = setTimeout(() => this.type(), 600);
+    }
+  }
+  componentWillUnmount() {
+    clearInterval(this.syncTimer);
+    clearTimeout(this.typeTimer);
+    this.clearNav();
+  }
+  clearNav() {
+    clearTimeout(this.navTimer);
+    clearTimeout(this.doneTimer);
+  }
+  launch(e, name) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (this.state.phase === 'cover') return;
+    this.clearNav();
+    const slug = (name || 'tool').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { this.setState({ view: 'tool', inst: 1 - this.state.inst, phase: null, slug: slug }); return; }
+    const w = window.innerWidth || 1280;
+    const h = window.innerHeight || 800;
+    const ox = Math.min(15, Math.max(0, Math.floor(((e && e.clientX) || w / 2) / w * 16)));
+    const oy = Math.min(9, Math.max(0, Math.floor(((e && e.clientY) || h / 2) / h * 10)));
+    const cells = [];
+    let maxDelay = 0;
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 16; c++) {
+        const lit = (c * 7 + r * 13) % 11 === 0;
+        const d = Math.round(Math.hypot(c - ox, r - oy) * 22);
+        maxDelay = Math.max(maxDelay, d);
+        cells.push({ bg: lit ? '#b6f24a' : '#0b0d10', inDelay: d + 'ms', outDelay: (d + 300) + 'ms' });
+      }
+    }
+    this.setState({ phase: 'cover', cells: cells, slug: slug });
+    this.navTimer = setTimeout(() => {
+      if (window.scrollTo) window.scrollTo(0, 0);
+      this.setState({ view: 'tool', inst: 1 - this.state.inst, phase: 'uncover' });
+      this.doneTimer = setTimeout(() => this.setState({ phase: null }), maxDelay + 300 + 380);
+    }, maxDelay + 320);
+  }
+
+  type() {
+    const s = this.state;
+    const word = this.phrases[s.pi];
+    let next = 75;
+    if (!s.del && s.ci < word.length) { this.setState({ ci: s.ci + 1 }); }
+    else if (!s.del) { this.setState({ del: true }); next = 1800; }
+    else if (s.ci > 0) { this.setState({ ci: s.ci - 1 }); next = 35; }
+    else { this.setState({ del: false, pi: (s.pi + 1) % this.phrases.length }); next = 350; }
+    this.typeTimer = setTimeout(() => this.type(), next);
+  }
+
+  /* shared queue: every page reads and writes the same stored queue */
+  qLoad() { try { const r = window.localStorage.getItem('unktilz-queue-v2'); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  qSave(q) { try { window.localStorage.setItem('unktilz-queue-v2', JSON.stringify(q)); } catch (e) {} }
+  qSeed() {
+    const now = Date.now();
+    const ogg = now - 7400;
+    const mk = (id, name, cat, file, dur, start) => ({ id: id, name: name, cat: cat, file: file, dur: dur, start: start });
+    return { nextId: 6, jobs: [
+      mk(1, 'Merge PDF', 'pdf', '[3 files].pdf', 6000, now - 40000),
+      mk(2, 'JSON formatter', 'data', '[config].json', 3000, now - 30000),
+      mk(3, 'OGG to MP3', 'audio', '[file-name].ogg', 12000, ogg),
+      mk(4, 'Map art converter', 'mc', '[image].png', 9000, ogg + 12000),
+      mk(5, 'Video to GIF', 'video', '[clip].mp4', 14000, ogg + 21000)
+    ] };
+  }
+  qInit() { const s = this.qLoad(); this.q = s || this.qSeed(); if (!s) this.qSave(this.q); }
+  qSync() { const s = this.qLoad(); if (s) this.q = s; this.forceUpdate(); }
+  qMutate(fn) { const base = this.qLoad() || this.q; this.q = fn(base); this.qSave(this.q); this.forceUpdate(); }
+  qReflow(jobs, now) {
+    let prevEnd = now;
+    jobs.forEach((j) => { if (j.start <= now) prevEnd = Math.max(prevEnd, j.start + j.dur); });
+    return jobs.map((j) => {
+      if (j.start <= now) return j;
+      const s = Math.max(now, prevEnd);
+      prevEnd = s + j.dur;
+      return Object.assign({}, j, { start: s });
+    });
+  }
+  qAdd(name, cat, file) {
+    this.qMutate((q) => {
+      const now = Date.now();
+      const lastEnd = q.jobs.reduce((m, j) => Math.max(m, j.start + j.dur), now);
+      const dur = 6000 + Math.floor(Math.random() * 8000);
+      return { nextId: q.nextId + 1, jobs: q.jobs.concat([{ id: q.nextId, name: name, cat: cat, file: file, dur: dur, start: lastEnd }]) };
+    });
+  }
+  qRemove(id) { this.qMutate((q) => ({ nextId: q.nextId, jobs: this.qReflow(q.jobs.filter((j) => j.id !== id), Date.now()) })); }
+  qClearDone() { this.qMutate((q) => { const now = Date.now(); return { nextId: q.nextId, jobs: q.jobs.filter((j) => j.start + j.dur > now) }; }); }
+  qView(dark, accent, accentText, muted, line) {
+    const now = Date.now();
+    return (this.q ? this.q.jobs : []).map((j) => {
+      const end = j.start + j.dur;
+      const status = now >= end ? 'done' : (now >= j.start ? 'running' : 'queued');
+      const pct = status === 'done' ? 100 : (status === 'running' ? Math.floor((now - j.start) / j.dur * 100) : 0);
+      return {
+        name: j.name, file: j.file, status: status, pct: pct + '%',
+        isAudio: j.cat === 'audio', isVideo: j.cat === 'video', isImage: j.cat === 'image',
+        isPdf: j.cat === 'pdf', isData: j.cat === 'data', isMc: j.cat === 'mc',
+        tileBorder: status === 'running' ? accent : line,
+        iconColor: status === 'queued' ? muted : (dark ? '#e8ebef' : '#11140f'),
+        trackColor: status === 'queued' ? 'transparent' : line,
+        statusColor: status === 'queued' ? muted : accentText,
+        remove: () => this.qRemove(j.id)
+      };
+    });
+  }
+
+  renderVals() {
+    const theme = this.state.theme || this.props.theme || 'dark';
+    const dark = theme === 'dark';
+    const accent = this.props.accent ?? '#b6f24a';
+    const accentText = dark ? accent : '#3b7000';
+    const muted = dark ? '#9aa4b0' : '#586053';
+    const line = dark ? '#242a32' : '#dcdfd4';
+    const open = this.state.hover || this.state.pinned;
+    const cur = this.state.cat;
+    const q = this.state.q.trim().toLowerCase();
+    const match = (t) => !q || (t[0] + ' ' + t[1]).toLowerCase().indexOf(q) !== -1;
+    const total = this.catalog.reduce((n, g) => n + g[1].length, 0);
+    const groups = this.catalog
+      .filter((g) => cur === 'All' || g[0] === cur)
+      .map((g) => {
+        const tools = g[1].filter(match).map((t, i) => ({ name: t[0], meta: t[1], delay: Math.min(i * 18, 260) + 'ms', go: (e) => this.launch(e, t[0]) }));
+        return { label: g[0], count: tools.length, tools: tools };
+      })
+      .filter((g) => g.tools.length > 0);
+    const chip = (label, count) => {
+      const on = label === cur;
+      return {
+        label: label, count: count, on: on,
+        bg: on ? accent : 'transparent',
+        fg: on ? '#0b0d10' : (dark ? '#e8ebef' : '#11140f'),
+        border: on ? accent : (dark ? '#2a3038' : '#cfd3c8'),
+        pick: () => this.setState({ cat: label })
+      };
+    };
+    const cats = [chip('All', total)].concat(this.catalog.map((g) => chip(g[0], g[1].length)));
+    const jobs = this.qView(dark, accent, accentText, muted, line);
+    return {
+      bg: dark ? '#0b0d10' : '#f6f7f3',
+      surface: dark ? '#12161b' : '#ffffff',
+      line: line,
+      fg: dark ? '#e8ebef' : '#11140f',
+      muted: muted,
+      grid: dark ? 'rgba(255,255,255,0.035)' : 'rgba(17,20,15,0.05)',
+      accent: accent,
+      accentText: accentText,
+      themeLabel: theme,
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+      toolCount: total,
+      groupCount: this.catalog.length,
+      typed: this.phrases[this.state.pi].slice(0, this.state.ci),
+      showHint: this.state.q === '',
+      q: this.state.q,
+      onQuery: (e) => this.setState({ q: e.target.value }),
+      cats: cats,
+      groups: groups,
+      noResults: groups.length === 0,
+      cells: this.state.cells,
+      slug: this.state.slug,
+      isCover: this.state.phase === 'cover',
+      isUncover: this.state.phase === 'uncover',
+      isHome: this.state.view === 'home',
+      isToolA: this.state.view === 'tool' && this.state.inst === 0,
+      isToolB: this.state.view === 'tool' && this.state.inst === 1,
+      rootMinH: this.state.view === 'home' ? '3000px' : '960px',
+      openFromTool: (e, name) => this.launch(e, name),
+      goHome: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        this.clearNav();
+        this.setState({ view: 'home', phase: null });
+        if (window.scrollTo) window.scrollTo(0, 0);
+      },
+      open: open,
+      railW: open ? '320px' : '72px',
+      railShadow: open && !this.state.pinned ? '0 12px 40px rgba(0,0,0,0.35)' : 'none',
+      openRail: () => this.setState({ hover: true }),
+      closeRail: () => this.setState({ hover: false, picking: this.state.pinned ? this.state.picking : false }),
+      togglePin: () => this.setState({ pinned: !this.state.pinned }),
+      pinLabel: this.state.pinned ? 'Unpin queue panel' : 'Pin queue panel open',
+      pinBorder: this.state.pinned ? accent : line,
+      picking: this.state.picking,
+      showPicker: this.state.picking && open,
+      togglePick: () => this.setState({ picking: !this.state.picking, hover: true }),
+      clearDone: () => this.qClearDone(),
+      jobCount: jobs.filter((j) => j.status !== 'done').length + ' active',
+      showEmpty: open && jobs.length === 0,
+      jobs: jobs,
+      options: [
+        ['OGG to MP3', '.ogg', 'audio'], ['MP3 to OGG', '.mp3', 'audio'], ['Map art converter', '.png', 'mc'],
+        ['Skin downloader', 'name', 'mc'], ['Video to GIF', '.mp4', 'video'], ['Compress video', '.mp4 .mov', 'video'],
+        ['Remove background', '.jpg .png', 'image'], ['Image converter', '.png .webp', 'image'],
+        ['Merge PDF', '.pdf', 'pdf'], ['JSON formatter', '{ }', 'data']
+      ].map((o) => ({
+        name: o[0], badge: o[1],
+        add: () => { this.qAdd(o[0], o[2], 'waiting for file'); this.setState({ picking: false }); }
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

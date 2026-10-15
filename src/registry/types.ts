@@ -1,0 +1,59 @@
+import type { ComponentType, LazyExoticComponent } from 'react';
+
+export type Category = 'minecraft' | 'dev' | 'image' | 'audio' | 'video' | 'pdf' | 'text' | 'calc';
+
+export type OptionValue = string | number | boolean;
+export type Opts = Record<string, OptionValue>;
+
+type OptionBase = {
+  key: string;
+  label: string;
+  /** Short muted text next to the label, e.g. a unit. */
+  hint?: string;
+  /** Explanation shown in a "?" hover box next to the label. */
+  help?: string;
+  /** Hide the row unless this returns true for the current options. */
+  when?: (opts: Opts) => boolean;
+};
+
+export type OptionSchema =
+  | (OptionBase & { type: 'choice'; choices: { value: string; label: string }[]; default: string })
+  | (OptionBase & { type: 'range'; min: number; max: number; step?: number; default: number; unit?: string })
+  | (OptionBase & { type: 'number'; min?: number; max?: number; default: number; unit?: string })
+  | (OptionBase & { type: 'toggle'; default: boolean });
+
+export type Progress = { type: 'progress'; value: number };
+export type Result = { type: 'result'; name: string; blob: Blob };
+export type RunEvent = Progress | Result;
+export type RunContext = { signal: AbortSignal };
+
+export type Tool = {
+  slug: string;
+  name: string;
+  category: Category;
+  /** Badge text, e.g. '.ogg ⇄ .mp3'. */
+  meta: string;
+  /** One or two sentences under the title on the tool page. */
+  description: string;
+  /** Sort position inside its category. */
+  order: number;
+  keywords?: string[];
+  /** File extensions for file tools, with the dot. */
+  accepts?: string[];
+  /** All chosen files become one job (merge tools) instead of one job per file. */
+  batch?: boolean;
+  /** Slug of the opposite direction; powers the swap button. */
+  reverse?: string;
+  options?: OptionSchema[];
+  /** File tools: runs from the queue. Heavy work is handed to a worker. */
+  run?: (input: File[], opts: Opts, ctx: RunContext) => AsyncIterable<RunEvent>;
+  /**
+   * 'workbench': the tool renders a <Workbench> (editor + sticky preview), so the page goes
+   * full width and related tools move below it instead of taking a side column.
+   */
+  layout?: 'workbench';
+  /** Interactive tools: rendered on the tool page. */
+  component?: LazyExoticComponent<ComponentType>;
+};
+
+export const defineTool = (tool: Tool): Tool => tool;
