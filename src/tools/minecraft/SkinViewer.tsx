@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Panel, TextField } from '../../components/ui';
 import { saveBlob } from '../../queue/download';
 import { isName, lookupProfile, type Profile } from '../../lib/mc/uuid';
@@ -61,9 +62,14 @@ export default function SkinViewer() {
         <Panel
           title={profile.name}
           actions={
-            <button type="button" className="btn btn-sm" onClick={download}>
-              download .png
-            </button>
+            <span className="inline">
+              <Link className="btn btn-sm" to={`/t/skin-editor?player=${encodeURIComponent(profile.name)}`}>
+                edit in skin editor
+              </Link>
+              <button type="button" className="btn btn-sm" onClick={download}>
+                download .png
+              </button>
+            </span>
           }
         >
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-end' }}>

@@ -25,6 +25,34 @@ export const isName = (s: string) => /^[A-Za-z0-9_]{1,16}$/.test(s.trim());
 
 export type Profile = { name: string; id: string };
 
+export type SkinInfo = { name: string; url: string; slim: boolean };
+
+/** A player's current skin texture (straight from Mojang's texture server) and arm model. */
+export async function lookupSkin(query: string): Promise<SkinInfo | null> {
+  const res = await fetch(`https://playerdb.co/api/player/minecraft/${encodeURIComponent(query.trim())}`);
+  type Body = { success?: boolean; data?: { player?: { username: string; skin_texture?: string; properties?: { name: string; value: string }[] } } };
+  const body = (await res.json().catch(() => null)) as Body | null;
+  const p = body?.success ? body.data?.player : null;
+  if (!p) {
+    if (res.status >= 500) throw new Error('The lookup service is having trouble. Try again in a minute.');
+    return null;
+  }
+  let url = p.skin_texture ?? '';
+  let slim = false;
+  const tex = p.properties?.find((x) => x.name === 'textures');
+  if (tex) {
+    try {
+      const skin = JSON.parse(atob(tex.value)).textures?.SKIN;
+      if (skin?.url) url = skin.url;
+      slim = skin?.metadata?.model === 'slim';
+    } catch {
+      /* keep what playerdb gave */
+    }
+  }
+  if (!url) return null;
+  return { name: p.username, url: url.replace(/^http:/, 'https:'), slim };
+}
+
 /** Looks up a Java profile by name or UUID (playerdb.co proxies Mojang with CORS). */
 export async function lookupProfile(query: string): Promise<Profile | null> {
   const res = await fetch(`https://playerdb.co/api/player/minecraft/${encodeURIComponent(query.trim())}`);
