@@ -2482,10 +2482,6 @@ button {
   width: 84px;
   flex: none;
 }
-.give-max {
-  font-size: 11px;
-  width: 44px;
-}
 .warn-tag {
   display: inline-grid;
   place-items: center;
@@ -2598,4 +2594,10 @@ button {
 }
 .give-editor .tab {
   padding: 0 11px;
+}
+.give-lvl button {
+  min-height: 32px;
+  min-width: 40px;
+  padding: 0 8px;
+  font-size: 12px;
 }

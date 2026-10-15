@@ -10,6 +10,8 @@ import { Tooltip } from './Tooltip';
 
 type Tab = 'item' | 'text' | 'enchants' | 'attributes' | 'special' | 'adventure';
 const STORE = 'unktilz-give';
+/** Since 1.20.5 enchantment levels in item components go from 1 to 255; the game rejects more. */
+const MAX_LEVEL = 255;
 const TARGETS = [
   { value: '@p', label: '@p · nearest player' },
   { value: '@s', label: '@s · yourself' },
@@ -342,12 +344,18 @@ export default function GiveGenerator() {
       <div className="field">
         <span style={{ display: 'flex', alignItems: 'center' }}>
           <span className="field-label">Add an enchantment</span>
-          <Help label="Enchantments" text="Any enchantment at any level up to 255, even ones that normally can't go on this item (marked with !). On an enchanted book they're stored for the anvil." />
+          <Help label="Enchantments" text="Any enchantment at any level from 1 to 255 (the most the game accepts since 1.20.5), even ones that normally can’t go on this item (marked with !). On an enchanted book they’re stored for the anvil." />
         </span>
         <Combo label="Add an enchantment" options={ENCH_OPTIONS} onPick={(id) => !spec.enchants.some((e) => e.id === id) && set({ enchants: [...spec.enchants, { id, level: ENCHANTS.find((e) => e.id === id)?.max ?? 1 }] })} placeholder="search enchantments…" allowCustom clearOnPick />
         <div className="seg">
           <button type="button" className="btn btn-sm" disabled={!fits.length} onClick={() => set({ enchants: fits.filter((e) => !e.curse).map((e) => ({ id: e.id, level: e.max })) })}>
-            all that fit, max level
+            all that fit · normal max
+          </button>
+          <button type="button" className="btn btn-sm" disabled={!fits.length} onClick={() => set({ enchants: fits.filter((e) => !e.curse).map((e) => ({ id: e.id, level: MAX_LEVEL })) })}>
+            all that fit · {MAX_LEVEL}
+          </button>
+          <button type="button" className="btn btn-sm" disabled={!spec.enchants.length} onClick={() => set({ enchants: spec.enchants.map((e) => ({ ...e, level: MAX_LEVEL })) })}>
+            set all to {MAX_LEVEL}
           </button>
           <button type="button" className="btn btn-sm" disabled={!spec.enchants.length} onClick={() => set({ enchants: [] })}>
             clear
@@ -380,7 +388,19 @@ export default function GiveGenerator() {
                   value={e.level}
                   onChange={(ev) => set({ enchants: spec.enchants.map((x, j) => (j === i ? { ...x, level: Math.max(1, Math.min(255, Number(ev.target.value) || 1)) } : x)) })}
                 />
-                <span className="muted mono give-max">max {en?.max ?? '?'}</span>
+                <span className="seg compact give-lvl" role="group" aria-label={`${en?.name ?? e.id} quick level`}>
+                  {[...new Set([en?.max ?? 1, MAX_LEVEL])].map((lv) => (
+                    <button
+                      key={lv}
+                      type="button"
+                      aria-pressed={e.level === lv}
+                      title={lv === MAX_LEVEL ? 'The highest level the game accepts' : 'The highest level you can normally get'}
+                      onClick={() => set({ enchants: spec.enchants.map((x, j) => (j === i ? { ...x, level: lv } : x)) })}
+                    >
+                      {lv}
+                    </button>
+                  ))}
+                </span>
                 <button type="button" className="btn btn-sm" aria-label={`Remove ${en?.name ?? e.id}`} onClick={() => set({ enchants: spec.enchants.filter((_, j) => j !== i) })}>
                   ×
                 </button>
