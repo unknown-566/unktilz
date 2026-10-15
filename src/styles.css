@@ -95,10 +95,14 @@ button {
 
 /* ---------- shell ---------- */
 
+/* The page never scrolls as a whole; only .scroll does. If the document could scroll, a stray
+   absolutely positioned element (like an .sr-only label) would let the browser shift the whole
+   app up, leaving a black band at the bottom. */
 .shell {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: clip;
 }
 
 .header {
@@ -173,6 +177,8 @@ button {
 }
 
 .scroll {
+  /* Positioned, so absolutely positioned content stays inside this scroll area. */
+  position: relative;
   flex: 1;
   min-width: 0;
   overflow-y: auto;
