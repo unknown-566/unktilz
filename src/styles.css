@@ -8,7 +8,8 @@
   --accent-text: #b6f24a;
   --on-accent: #0b0d10;
   --chip-line: #2a3038;
-  --grid: rgba(255, 255, 255, 0.035);
+  --grid: rgba(255, 255, 255, 0.06);
+  --grid-major: rgba(255, 255, 255, 0.085);
   --rail-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   --danger: #ff8a7a;
   --rail: 72px;
@@ -26,6 +27,7 @@
   --accent-text: #3b7000;
   --chip-line: #cfd3c8;
   --grid: rgba(17, 20, 15, 0.05);
+  --grid-major: rgba(17, 20, 15, 0.06);
   --rail-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
   --danger: #b42318;
   color-scheme: light;
@@ -506,6 +508,7 @@ button {
   transform: translate3d(calc(var(--px, 0) * -24px), calc(var(--py, 0) * -24px), 0);
 }
 .hero::after {
+  background-image: linear-gradient(var(--grid-major) 1px, transparent 1px), linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
   background-size: 192px 192px;
   transform: translate3d(calc(var(--px, 0) * -64px), calc(var(--py, 0) * -64px), 0);
 }
