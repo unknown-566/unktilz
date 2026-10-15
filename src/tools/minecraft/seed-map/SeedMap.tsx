@@ -5,7 +5,12 @@ import { CopyButton, Toggle } from '../../../components/ui';
 import { STRUCTURES, STRUCTURE_ICONS, SeedMapEngine, VERSIONS, biomeLabel, inVersion, randomSeed, worldKey, type World } from '../../../lib/mc/seedmap';
 import { parseSeed } from '../../../lib/mc/slime';
 import type { MetaResult } from '../../../workers/seedmap.worker';
-import { MAX_BPP, MIN_BPP, MapCanvas, type Command, type Pick, type View } from './MapCanvas';
+import { MAX_BPP, MIN_BPP, MapCanvas, type Command, type Pick, type Pin, type View } from './MapCanvas';
+import { SavedPanel } from '../../../components/SavedPanel';
+import { useAutosave, useSaved } from '../../../lib/saved';
+
+type SavedSeed = { seed: string; version: string; large: boolean };
+type Place = SavedSeed & { x: number; y?: number; z: number };
 
 const STORE = 'unktilz-seedmap-structures';
 
@@ -56,6 +61,8 @@ function scaleBar(bpp: number) {
 export default function SeedMap() {
   const [params, setParams] = useSearchParams();
   const first = useRef({
+    /** A link with a seed wins over the last seed used. */
+    fromLink: params.get('seed') !== null,
     seed: params.get('seed') ?? randomSeed(),
     // Links from before the newer versions were added used "1.21" for 1.21.4.
     version: ((v) => (VERSIONS.some((x) => x.id === v) ? v! : VERSIONS[0].id))(params.get('v') === '1.21' ? '1.21.4' : params.get('v')),
@@ -73,6 +80,15 @@ export default function SeedMap() {
   const [enabled, setEnabled] = useState(loadEnabled);
   const [meta, setMeta] = useState<MetaResult | null>(null);
   const [view, setView] = useState<View>(first.view);
+
+  const current = useMemo<SavedSeed>(() => ({ seed: seedText, version, large }), [seedText, version, large]);
+  const openSeed = (d: SavedSeed) => {
+    setSeedText(d.seed);
+    setVersion(VERSIONS.some((v) => v.id === d.version) ? d.version : VERSIONS[0].id);
+    setLarge(!!d.large);
+  };
+  useAutosave<SavedSeed>('seed-map', current, (d) => !first.fromLink && openSeed(d));
+  const places = useSaved<Place>('seed-map:places').items;
   const [hover, setHover] = useState<Pick | null>(null);
   const [selected, setSelected] = useState<Pick | null>(null);
   const [inView, setInView] = useState<number[]>([]);
@@ -158,7 +174,13 @@ export default function SeedMap() {
       },
     );
   };
-  const isPlace = (p: Pick | null) => !!p && (p.structure !== undefined || !!p.spawn);
+  const isPlace = (p: Pick | null) => !!p && (p.structure !== undefined || !!p.spawn || !!p.pin);
+  // Saved places in the world on screen, as pins.
+  const pins = useMemo<Pin[]>(
+    () => places.filter((p) => p.data.seed === world.seed && p.data.version === version && !!p.data.large === large).map((p) => ({ x: p.data.x, z: p.data.z, name: p.name })),
+    [places, world.seed, version, large],
+  );
+  const placeName = (p: Pick) => (p.pin ? p.pin : p.spawn ? 'World spawn' : p.structure !== undefined ? STRUCTURES[p.structure].name : 'Place');
   // Work out the Y of a structure as soon as it's hovered, so the label can show it.
   useEffect(() => {
     if (hover && isPlace(hover) && !heights.current.has(hKey(hover))) standY(hover).catch(() => {});
@@ -222,6 +244,7 @@ export default function SeedMap() {
         command={command}
         selected={selected}
           spawn={showSpawn ? spawn : null}
+          pins={pins}
         onView={setView}
         onHover={setHover}
         onSelect={select}
@@ -241,9 +264,9 @@ export default function SeedMap() {
           ⌂
         </button>
       </div>
-      {hover?.sx !== undefined && (hover.structure !== undefined || hover.spawn) && (
+      {hover?.sx !== undefined && isPlace(hover) && (
         <div className="sm-tip" style={{ left: hover.sx + 16, top: hover.sy! - 12 }}>
-          {hover.spawn ? 'World spawn' : STRUCTURES[hover.structure!].name}
+          {placeName(hover)}
           <span className="sm-tip-xyz mono">{coords(hover)}</span>
         </div>
       )}
@@ -274,7 +297,7 @@ export default function SeedMap() {
   const sel = selected && (
     <section className="panel sm-sel" aria-label="Selected spot">
       <div className="opt-row">
-        <h2 className="panel-title">// {selected.spawn ? 'world spawn' : selected.structure !== undefined ? STRUCTURES[selected.structure].name.toLowerCase() : 'spot'}</h2>
+        <h2 className="panel-title">// {isPlace(selected) ? placeName(selected).toLowerCase() : 'spot'}</h2>
         <button type="button" className="btn btn-sm" onClick={() => setSelected(null)}>
           close
         </button>
@@ -393,6 +416,33 @@ export default function SeedMap() {
           <p className="note">Only spots where the structure really generates are shown. Desert and jungle temples and mansions can rarely be missing in-game when the ground there is too uneven.</p>
         </section>
 
+        <SavedPanel<SavedSeed>
+          slug="seed-map"
+          title="my seeds"
+          help="Seeds you want to come back to, with their version."
+          suggestName={() => seedText.trim()}
+          getData={() => (seed === null ? null : current)}
+          onLoad={openSeed}
+          describe={(i) => `${VERSIONS.find((v) => v.id === i.data.version)?.label ?? i.data.version}${i.data.large ? ' · large biomes' : ''}`}
+          emptyText="No saved seeds yet."
+        />
+        <SavedPanel<Place>
+          slug="seed-map:places"
+          title="my places"
+          help="Click a spot or structure on the map, then save it here. Saved places show as white pins on the map; click one in the list to fly there."
+          saveLabel="save place"
+          loadLabel="Go to"
+          undoable={false}
+          suggestName={() => (selected ? placeName(selected) : '')}
+          getData={() => (selected ? { ...current, seed: world.seed, x: selected.x, y: yOf(selected), z: selected.z } : null)}
+          onLoad={(d) => {
+            if (d.seed !== world.seed || d.version !== version || !!d.large !== large) openSeed(d);
+            setCommand({ n: Date.now(), kind: 'goto', x: d.x, z: d.z, bpp: Math.min(view.bpp, 2) });
+            setSelected({ x: d.x, z: d.z, biome: null });
+          }}
+          describe={(i) => `${i.data.x} ${i.data.y ?? '~'} ${i.data.z}${i.data.seed === world.seed ? '' : ` · seed ${i.data.seed}`}`}
+          emptyText="No saved places. Click a spot on the map first."
+        />
         {inView.length > 0 && (
           <section className="panel" aria-label="Biomes on the map">
             <h2 className="panel-title">// biomes in view</h2>
