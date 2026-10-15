@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'seed-map',
@@ -10,5 +9,5 @@ export default defineTool({
   description: 'See the biomes of any Java world seed and where villages, temples, monuments, ancient cities and other structures are. Click a spot for its coordinates.',
   keywords: ['seed', 'seed map', 'biome', 'biome finder', 'map', 'village', 'structure', 'chunkbase', 'amidst', 'mansion', 'monument', 'ancient city'],
   layout: 'workbench',
-  component: lazy(() => import('./seed-map/SeedMap')),
+  component: lazyTool(() => import('./seed-map/SeedMap')),
 });

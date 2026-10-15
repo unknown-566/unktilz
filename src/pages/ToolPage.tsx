@@ -1,8 +1,10 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { categoryLabel, getTool, related } from '../registry';
 import { useLaunch } from '../components/Transition';
-import { FileTool } from '../components/FileTool';
+import { loadFileTool, preloadTool } from '../registry/preload';
+
+const FileTool = lazy(() => loadFileTool().then((m) => ({ default: m.FileTool })));
 import { SwapIcon } from '../components/icons';
 import { prefersReducedMotion } from '../lib/theme';
 import NotFound from './NotFound';
@@ -77,7 +79,7 @@ function ToolView({ slug }: { slug: string }) {
   const wide = tool.layout === 'workbench';
 
   const relatedLinks = related(tool, 4).map((t) => (
-    <a key={t.slug} className="rel" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)}>
+    <a key={t.slug} className="rel" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)} onMouseEnter={() => preloadTool(t)} onFocus={() => preloadTool(t)}>
       <span>{t.name}</span>
       <span className="card-meta">{t.meta}</span>
     </a>
@@ -101,7 +103,9 @@ function ToolView({ slug }: { slug: string }) {
   );
 
   const body = tool.run ? (
-    <FileTool tool={tool} />
+    <Suspense fallback={<div className="panel muted mono">loading…</div>}>
+      <FileTool tool={tool} />
+    </Suspense>
   ) : tool.component ? (
     <Suspense fallback={<div className="panel muted mono">loading…</div>}>
       <tool.component />

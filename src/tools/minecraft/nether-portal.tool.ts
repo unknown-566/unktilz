@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'nether-portal',
@@ -9,5 +8,5 @@ export default defineTool({
   meta: 'xyz ÷ 8',
   description: 'Work out where to build a linked portal: Overworld coordinates divide by 8 in the Nether.',
   keywords: ['nether', 'portal', 'coordinates', 'link', 'overworld'],
-  component: lazy(() => import('./NetherPortal')),
+  component: lazyTool(() => import('./NetherPortal')),
 });

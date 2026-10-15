@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'skin-viewer',
@@ -10,5 +9,5 @@ export default defineTool({
   meta: '.png',
   description: 'See any Java player’s skin from the front, as a head, or as the raw texture, and save the PNG.',
   keywords: ['skin', 'texture', 'avatar', 'download skin', 'player'],
-  component: lazy(() => import('./SkinViewer')),
+  component: lazyTool(() => import('./SkinViewer')),
 });

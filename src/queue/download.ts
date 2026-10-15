@@ -1,4 +1,3 @@
-import { zip } from 'fflate';
 import { getOutputs } from './blobs';
 import type { Job } from './store';
 
@@ -13,7 +12,9 @@ export function saveBlob(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
-function zipOutputs(outputs: { name: string; blob: Blob }[]): Promise<Blob> {
+async function zipOutputs(outputs: { name: string; blob: Blob }[]): Promise<Blob> {
+  // Zipping is rare (jobs with several results), so the zip library loads only then.
+  const { zip } = await import('fflate');
   return Promise.all(outputs.map(async (o) => [o.name, new Uint8Array(await o.blob.arrayBuffer())] as const)).then(
     (entries) =>
       new Promise((resolve, reject) => {

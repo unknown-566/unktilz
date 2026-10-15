@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'xp-calculator',
@@ -9,5 +8,5 @@ export default defineTool({
   meta: 'levels ⇄ points',
   description: 'Convert experience levels to points and back, and see how much XP a level range costs.',
   keywords: ['xp', 'experience', 'levels', 'points', 'enchanting', 'bottle o enchanting'],
-  component: lazy(() => import('./XpCalculator')),
+  component: lazyTool(() => import('./XpCalculator')),
 });

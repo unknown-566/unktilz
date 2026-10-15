@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'server-properties',
@@ -9,5 +8,5 @@ export default defineTool({
   meta: '.properties',
   description: 'Open your server.properties or start from the defaults, change settings with real controls, and save the file.',
   keywords: ['server.properties', 'config', 'server settings', 'whitelist', 'difficulty', 'gamemode'],
-  component: lazy(() => import('./ServerProperties')),
+  component: lazyTool(() => import('./ServerProperties')),
 });
