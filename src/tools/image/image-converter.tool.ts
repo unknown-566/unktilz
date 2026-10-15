@@ -7,6 +7,7 @@ import { rasterizeSvg } from './svg';
 // Canvas AVIF encoding is missing in most browsers; only offer it where it works.
 const canAvif = typeof document !== 'undefined' && document.createElement('canvas').toDataURL('image/avif').startsWith('data:image/avif');
 const LOSSY = new Set(['keep', 'jpeg', 'webp', 'avif']);
+const isSvg = (f: File) => /\.svg$/i.test(f.name) || f.type === 'image/svg+xml';
 const ICO_SIZES: Record<string, number[]> = { favicon: [16, 32, 48], app: [16, 24, 32, 48, 64, 128, 256], big: [256] };
 
 export default defineTool({
@@ -22,6 +23,16 @@ export default defineTool({
     'compress image', 'rotate image', 'flip image', 'remove exif', 'gps', 'metadata', 'convert',
   ],
   accepts: [...IMAGE_ACCEPTS, '.svg'],
+  preview: {
+    // Turned first, then mirrored as it's seen, like the converter does it.
+    transform: (o) => `scale(${o.flip === 'h' ? -1 : 1}, ${o.flip === 'v' ? -1 : 1}) rotate(${Number(o.rotate) || 0}deg)`,
+    size: (w, h, o, file) => {
+      if (o.format === 'ico') return { w: 256, h: 256 };
+      const k = isSvg(file) ? Number(o.svgScale) || 1 : 1;
+      const [a, b] = [Math.round(w * k), Math.round(h * k)];
+      return o.rotate === '90' || o.rotate === '270' ? { w: b, h: a } : { w: a, h: b };
+    },
+  },
   options: [
     {
       key: 'format',
@@ -105,7 +116,7 @@ export default defineTool({
   ],
   run: ([file], opts, { signal }) => {
     const job = async function* () {
-      const input = /\.svg$/i.test(file.name) || file.type === 'image/svg+xml' ? await rasterizeSvg(file, Number(opts.svgScale) || 1) : file;
+      const input = isSvg(file) ? await rasterizeSvg(file, Number(opts.svgScale) || 1) : file;
       yield* compute(
         'image',
         {

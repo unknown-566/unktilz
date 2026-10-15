@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import type { ImagePayload } from './tasks/image';
+import type { ImagePayload, PreviewPayload, PreviewResult } from './tasks/image';
 import type { MapExportPayload, MapGridPayload, MapGridResult } from './tasks/mapArt';
 import type { ImagesToPdfPayload, MergePdfPayload, OrganizePdfPayload } from './tasks/pdf';
 
@@ -8,6 +8,7 @@ export type Report = (progress: number) => void;
 
 type Tasks = {
   image: [ImagePayload, TaskOutput];
+  'image-preview': [PreviewPayload, PreviewResult];
   'merge-pdf': [MergePdfPayload, TaskOutput];
   'images-to-pdf': [ImagesToPdfPayload, TaskOutput];
   'organize-pdf': [OrganizePdfPayload, TaskOutput];
@@ -25,6 +26,7 @@ type Handler = (payload: never, report: Report) => Promise<unknown>;
 // Each task module loads only when a job needs it.
 const tasks: Record<TaskName, () => Promise<Handler>> = {
   image: () => import('./tasks/image').then((m) => m.processImage as Handler),
+  'image-preview': () => import('./tasks/image').then((m) => m.previewImage as Handler),
   'merge-pdf': () => import('./tasks/pdf').then((m) => m.mergePdf as Handler),
   'images-to-pdf': () => import('./tasks/pdf').then((m) => m.imagesToPdf as Handler),
   'organize-pdf': () => import('./tasks/pdf').then((m) => m.organizePdf as Handler),

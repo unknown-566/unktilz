@@ -1063,6 +1063,30 @@ textarea,
 .input-text {
   width: 200px;
 }
+/* Picked image as it will come out; the checkerboard shows transparent parts. */
+.img-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background-color: var(--surface);
+  background-image: conic-gradient(var(--line) 25%, transparent 0 50%, var(--line) 0 75%, transparent 0);
+  background-size: 20px 20px;
+}
+.img-preview-pic {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transition: transform 0.25s ease;
+  image-rendering: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .img-preview-pic {
+    transition: none;
+  }
+}
 .field {
   display: flex;
   flex-direction: column;

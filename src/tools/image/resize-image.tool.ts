@@ -1,6 +1,6 @@
 import { defineTool } from '../../registry/types';
 import { compute } from '../../lib/compute';
-import type { ImageFormat } from '../../workers/tasks/image';
+import { targetSize, type ImageFormat } from '../../workers/tasks/image';
 import { IMAGE_ACCEPTS } from './formats';
 
 export default defineTool({
@@ -12,6 +12,10 @@ export default defineTool({
   description: 'Scale images by percent or to exact pixel sizes. Big downscales stay sharp.',
   keywords: ['scale', 'dimensions', 'shrink', 'enlarge'],
   accepts: IMAGE_ACCEPTS,
+  preview: {
+    size: (w, h, o) =>
+      targetSize(w, h, o.mode === 'percent' ? { mode: 'percent', percent: Number(o.percent) } : { mode: 'pixels', width: Number(o.width), height: Number(o.height), keepAspect: Boolean(o.keepAspect) }),
+  },
   options: [
     {
       key: 'mode',

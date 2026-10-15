@@ -143,3 +143,16 @@ export async function processImage(p: ImagePayload, report: Report): Promise<Tas
   report(1);
   return [{ name: `${base}${suffix}${same ? '-converted' : ''}.${EXT[mime]}`, blob }];
 }
+
+export type PreviewPayload = { file: File; max: number };
+export type PreviewResult = { blob: Blob; width: number; height: number };
+
+/** A small PNG of any image (for HEIC and TIFF, which the page itself can't show) and its real size. */
+export async function previewImage(p: PreviewPayload): Promise<PreviewResult> {
+  const bmp = await decode(p.file);
+  const { width, height } = bmp;
+  const k = Math.min(1, p.max / Math.max(width, height));
+  const canvas = drawScaled(bmp, Math.max(1, Math.round(width * k)), Math.max(1, Math.round(height * k)));
+  bmp.close();
+  return { blob: await canvas.convertToBlob({ type: 'image/png' }), width, height };
+}
