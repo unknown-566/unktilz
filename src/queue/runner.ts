@@ -1,4 +1,4 @@
-import { getTool } from '../registry';
+import { ALIASES, defaultOpts, getTool } from '../registry';
 import { controllers, dropInputs, getInputs, putOutputs, type Output } from './blobs';
 import { useQueue, type Job } from './store';
 
@@ -24,14 +24,17 @@ async function run(job: Job) {
   patch(job.id, { status: 'running', progress: 0, error: undefined });
 
   try {
-    const tool = getTool(job.slug);
+    // Jobs saved under an old address run in the tool that replaced it.
+    const alias = ALIASES[job.slug];
+    const tool = getTool(job.slug) ?? getTool(alias?.to);
+    const opts = alias && tool && !getTool(job.slug) ? { ...defaultOpts(tool), ...job.opts, ...alias.opts } : job.opts;
     if (!tool?.run) throw new Error('This tool is no longer available.');
     const files = await getInputs(job.id);
     if (!files?.length) throw new Error('The input file is gone. Add it again.');
 
     const outputs: Output[] = [];
     let last = 0;
-    for await (const ev of tool.run(files, job.opts, { signal: controller.signal })) {
+    for await (const ev of tool.run(files, opts, { signal: controller.signal })) {
       if (controller.signal.aborted) break;
       if (ev.type === 'progress') {
         const now = performance.now();

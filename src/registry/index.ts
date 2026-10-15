@@ -32,6 +32,16 @@ for (const t of tools) {
 
 export const getTool = (slug: string | undefined) => (slug ? bySlug.get(slug) : undefined);
 
+/**
+ * Old addresses of tools that were folded into a bigger one: they open the new tool with these
+ * options picked, so bookmarks and links keep working.
+ */
+export const ALIASES: Record<string, { to: string; opts: Opts }> = {
+  'ogg-to-mp3': { to: 'audio-converter', opts: { format: 'mp3' } },
+  'mp3-to-ogg': { to: 'audio-converter', opts: { format: 'ogg' } },
+  'video-to-gif': { to: 'video-converter', opts: { format: 'gif' } },
+};
+
 export const fileTools = tools.filter((t) => t.run);
 
 /** Categories that have at least one tool, in display order, with their tools. */

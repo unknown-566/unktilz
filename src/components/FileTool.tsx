@@ -9,6 +9,7 @@ import { Panel, Segmented, Toggle } from './ui';
 import { DownloadIcon, UploadIcon } from './icons';
 import { Help } from './Help';
 import { prefersReducedMotion } from '../lib/theme';
+import { useLocation } from 'react-router-dom';
 
 function OptionControl({ opt, value, set }: { opt: OptionSchema; value: Opts[string]; set: (v: Opts[string]) => void }) {
   const id = useId();
@@ -29,6 +30,19 @@ function OptionControl({ opt, value, set }: { opt: OptionSchema; value: Opts[str
             {opt.unit}
           </output>
         </div>
+      );
+      break;
+    case 'text':
+      control = (
+        <input
+          className={`input input-text${opt.mono ? ' mono' : ''}`}
+          aria-labelledby={id}
+          value={String(value)}
+          placeholder={opt.placeholder}
+          spellCheck={false}
+          autoComplete="off"
+          onChange={(e) => set(e.target.value)}
+        />
       );
       break;
     case 'number':
@@ -187,7 +201,9 @@ export function FileTool({ tool }: { tool: Tool }) {
   const stage = useStaging((s) => s.add);
   const setStaged = useStaging((s) => s.set);
   const clearStaged = useStaging((s) => s.clear);
-  const [opts, setOpts] = useState<Opts>(() => defaultOpts(tool));
+  const location = useLocation();
+  // An old address (e.g. /t/ogg-to-mp3) arrives here with the options it stood for.
+  const [opts, setOpts] = useState<Opts>(() => ({ ...defaultOpts(tool), ...(location.state as { opts?: Opts } | null)?.opts }));
   const [over, setOver] = useState(false);
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);

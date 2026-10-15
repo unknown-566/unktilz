@@ -20,7 +20,8 @@ export type OptionSchema =
   | (OptionBase & { type: 'choice'; choices: { value: string; label: string }[]; default: string })
   | (OptionBase & { type: 'range'; min: number; max: number; step?: number; default: number; unit?: string })
   | (OptionBase & { type: 'number'; min?: number; max?: number; default: number; unit?: string })
-  | (OptionBase & { type: 'toggle'; default: boolean });
+  | (OptionBase & { type: 'toggle'; default: boolean })
+  | (OptionBase & { type: 'text'; default: string; placeholder?: string; mono?: boolean });
 
 export type Progress = { type: 'progress'; value: number };
 export type Result = { type: 'result'; name: string; blob: Blob };
