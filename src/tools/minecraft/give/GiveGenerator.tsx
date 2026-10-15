@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { SavedPanel, UndoBar } from '../../../components/SavedPanel';
+import { useAutosave } from '../../../lib/saved';
+import { plainText } from '../../../lib/mc/minimessage';
 import { Help } from '../../../components/Help';
 import { CopyButton, Panel, Segmented, TabPanel, Tabs, Toggle, type TabDef } from '../../../components/ui';
 import { Workbench } from '../../../components/Workbench';
@@ -9,7 +12,8 @@ import { Combo, MultiPick } from './Pickers';
 import { Tooltip } from './Tooltip';
 
 type Tab = 'item' | 'text' | 'enchants' | 'attributes' | 'special' | 'adventure';
-const STORE = 'unktilz-give';
+/** Where the item in progress was kept before it moved to src/lib/saved.ts. */
+const OLD_STORE = 'unktilz-give';
 /** Since 1.20.5 enchantment levels in item components go from 1 to 255; the game rejects more. */
 const MAX_LEVEL = 255;
 const TARGETS = [
@@ -61,14 +65,19 @@ const PRESETS: { label: string; make: () => ItemSpec }[] = [
   },
 ];
 
-function load(): { spec: ItemSpec; version: GiveVersion } {
+/** Fills in anything an older saved item doesn't have yet. */
+const fix = (s: Partial<ItemSpec>): ItemSpec => ({ ...emptySpec(), ...s, hide: { ...emptySpec().hide, ...s.hide } });
+
+type Draft = { spec: ItemSpec; version: GiveVersion };
+
+function legacyDraft(): Draft | undefined {
   try {
-    const s = JSON.parse(localStorage.getItem(STORE) ?? 'null');
-    if (s?.spec) return { spec: { ...emptySpec(), ...s.spec, hide: { ...emptySpec().hide, ...s.spec.hide } }, version: s.version ?? '26.1' };
+    const s = JSON.parse(localStorage.getItem(OLD_STORE) ?? 'null');
+    if (s?.spec) return { spec: s.spec, version: s.version ?? '26.1' };
   } catch {
     /* ignore */
   }
-  return { spec: emptySpec(), version: '26.1' };
+  return undefined;
 }
 
 function Row({ id, label: text, help, children }: { id: string; label: string; help?: string; children: ReactNode }) {
@@ -96,23 +105,40 @@ const HIDE_LABELS: { key: HideKey; label: string }[] = [
 ];
 
 export default function GiveGenerator() {
-  const first = useMemo(load, []);
-  const [spec, setSpec] = useState<ItemSpec>(first.spec);
-  const [version, setVersion] = useState<GiveVersion>(first.version);
+  const [spec, setSpecRaw] = useState<ItemSpec>(emptySpec);
+  const [version, setVersion] = useState<GiveVersion>('26.1');
   const [tab, setTab] = useState<Tab>('item');
-  const [targetMode, setTargetMode] = useState(TARGETS.some((t) => t.value === first.spec.target) ? first.spec.target : 'name');
-  const set = (p: Partial<ItemSpec>) => setSpec((s) => ({ ...s, ...p }));
-
+  const [targetMode, setTargetMode] = useState('@p');
+  const [undo, setUndo] = useState<{ text: string; prev: ItemSpec } | null>(null);
+  const set = (p: Partial<ItemSpec>) => setSpecRaw((s) => ({ ...s, ...p }));
+  /** Replaces the whole item (preset, saved item, start over) and keeps the target picker in step. */
+  const setSpec = (next: ItemSpec) => {
+    setSpecRaw(next);
+    setTargetMode(TARGETS.some((t) => t.value === next.target) ? next.target : 'name');
+  };
+  const draft = useMemo<Draft>(() => ({ spec, version }), [spec, version]);
+  useAutosave<Draft>(
+    'give-generator',
+    draft,
+    (d) => {
+      setSpec(fix(d.spec));
+      setVersion(d.version);
+    },
+    legacyDraft,
+  );
+  const isBlank = (s: ItemSpec) => JSON.stringify({ ...s, target: '' }) === JSON.stringify({ ...emptySpec(), target: '' });
+  /** Loads another item over the current one; anything you'd built can be brought back with undo. */
+  const replaceWith = (next: ItemSpec, text: string) => {
+    if (!isBlank(spec)) setUndo({ text, prev: spec });
+    setSpec(next);
+  };
   useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORE, JSON.stringify({ spec, version }));
-      } catch {
-        /* ignore */
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [spec, version]);
+    try {
+      localStorage.removeItem(OLD_STORE);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const kinds = itemKinds(spec.item);
   const info = ITEM_BY_ID.get(spec.item);
@@ -564,7 +590,7 @@ export default function GiveGenerator() {
         </select>
         <span className="note">The command format changed in 1.20.5 and again in 1.21.5. Older than 1.20.5 isn’t supported.</span>
       </div>
-      <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => window.confirm('Start over with an empty item?') && setSpec(emptySpec())}>
+      <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => replaceWith({ ...emptySpec(), target: spec.target }, 'Started over')}>
         start over
       </button>
     </Panel>
@@ -578,11 +604,12 @@ export default function GiveGenerator() {
         </div>
         <div className="seg">
           {PRESETS.map((p) => (
-            <button key={p.label} type="button" className="btn btn-sm" onClick={() => setSpec({ ...p.make(), target: spec.target })}>
+            <button key={p.label} type="button" className="btn btn-sm" onClick={() => replaceWith({ ...p.make(), target: spec.target }, `Loaded the “${p.label}” preset`)}>
               {p.label}
             </button>
           ))}
         </div>
+        {undo && <UndoBar text={undo.text} onUndo={() => setSpec(undo.prev)} onClose={() => setUndo(null)} />}
       </section>
       <section className="panel give-editor" aria-label="Item editor">
         <Tabs tabs={tabs} value={tab} onChange={setTab} label="Item settings" idPrefix="give" />
@@ -595,6 +622,16 @@ export default function GiveGenerator() {
           {tab === 'adventure' && adventureTab}
         </TabPanel>
       </section>
+      <SavedPanel<ItemSpec>
+        slug="give-generator"
+        title="my items"
+        help="Keep items you made and load them again later. Saved in this browser; Backup (bottom of the page) copies them to another computer."
+        suggestName={() => plainText(spec.name).trim() || info?.name || spec.item}
+        getData={() => spec}
+        onLoad={(d) => setSpec(fix(d))}
+        describe={(i) => `${ITEM_BY_ID.get(i.data.item)?.name ?? i.data.item}${i.data.enchants?.length ? ` · ${i.data.enchants.length} enchant${i.data.enchants.length > 1 ? 's' : ''}` : ''}`}
+        emptyText="No saved items yet. Build one and press save."
+      />
     </Workbench>
   );
 }
