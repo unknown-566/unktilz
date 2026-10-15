@@ -41,6 +41,37 @@ function useTypedHint(running: boolean) {
   return PHRASES[state.pi].slice(0, state.ci);
 }
 
+/**
+ * Background grid parallax: the mouse position (−0.5…0.5 from the middle of the window) eases into
+ * --px / --py on the element, and the CSS grid layers move by different amounts.
+ */
+function useParallax(el: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const node = el.current;
+    if (!node || prefersReducedMotion()) return;
+    const target = { x: 0, y: 0 };
+    const cur = { x: 0, y: 0 };
+    let raf = 0;
+    const tick = () => {
+      cur.x += (target.x - cur.x) * 0.08;
+      cur.y += (target.y - cur.y) * 0.08;
+      node.style.setProperty('--px', cur.x.toFixed(4));
+      node.style.setProperty('--py', cur.y.toFixed(4));
+      raf = Math.abs(target.x - cur.x) + Math.abs(target.y - cur.y) > 0.0005 ? requestAnimationFrame(tick) : 0;
+    };
+    const move = (e: MouseEvent) => {
+      target.x = e.clientX / window.innerWidth - 0.5;
+      target.y = e.clientY / window.innerHeight - 0.5;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener('mousemove', move, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', move);
+      cancelAnimationFrame(raf);
+    };
+  }, [el]);
+}
+
 export default function Home() {
   const launch = useLaunch();
   const location = useLocation();
@@ -49,6 +80,8 @@ export default function Home() {
   const [typedOnce, setTypedOnce] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const typed = useTypedHint(!typedOnce);
+  const hero = useRef<HTMLElement>(null);
+  useParallax(hero);
 
   const catParam = params.get('cat') as Category | null;
   const cat = catParam && groups.some((g) => g.id === catParam) ? catParam : 'all';
@@ -78,7 +111,7 @@ export default function Home() {
 
   return (
     <>
-      <section className="hero">
+      <section className="hero" ref={hero}>
         <div className="hero-inner">
           <div className="kicker">
             // {tools.length} tools · {groups.length} categories
