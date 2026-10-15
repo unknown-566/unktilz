@@ -184,7 +184,8 @@ function parse(input: string): Node[] {
 }
 
 export type MStyle = Style & { shadow?: string | null; font?: string; title?: string };
-type Ch = { ch: string; style: MStyle; img?: string };
+/** One visible character (or a whole keybind label). `keybind` / `head` remember what made it. */
+type Ch = { ch: string; style: MStyle; img?: string; keybind?: string; head?: string };
 
 const hex2 = (n: number) => Math.round(Math.min(255, Math.max(0, n))).toString(16).padStart(2, '0');
 const mix = (a: string, b: string, t: number) => {
@@ -267,7 +268,7 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
         out.push({ ch: '\n', style });
         break;
       case 'key':
-        put(KEY_NAMES[a[0]] ?? prettyKey(a[0] ?? 'key'));
+        out.push({ ch: KEY_NAMES[a[0]] ?? prettyKey(a[0] ?? 'key'), style, keybind: a[0] ?? 'key.jump' });
         break;
       case 'lang':
       case 'lang_or':
@@ -288,7 +289,7 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
         break;
       case 'head': {
         const who = a[0] ?? 'Steve';
-        out.push({ ch: '■', style, img: /^[0-9a-f-]{32,36}$|^[A-Za-z0-9_]{1,16}$/i.test(who) ? `https://mc-heads.net/avatar/${encodeURIComponent(who)}/16` : undefined });
+        out.push({ ch: '■', style, head: who, img: /^[0-9a-f-]{32,36}$|^[A-Za-z0-9_]{1,16}$/i.test(who) ? `https://mc-heads.net/avatar/${encodeURIComponent(who)}/16` : undefined });
         break;
       }
       case 'color':
@@ -418,6 +419,25 @@ export function MiniText({ text, defaultColor = '#AAAAAA' }: { text: string; def
   return <>{parts}</>;
 }
 
+export type MiniSeg = { text: string; style: MStyle; keybind?: string; head?: string };
+
+/**
+ * A MiniMessage string as runs of equally styled text (gradients become one run per color), for
+ * turning it into a Minecraft text component. Keybinds and heads come out as runs of their own.
+ */
+export function miniSegments(text: string): MiniSeg[] {
+  const chars: Ch[] = [];
+  walk(parse(text), {}, chars);
+  const segs: MiniSeg[] = [];
+  for (const c of chars) {
+    const last = segs[segs.length - 1];
+    if (c.keybind || c.head) segs.push({ text: c.ch, style: c.style, keybind: c.keybind, head: c.head });
+    else if (last && !last.keybind && !last.head && same(last.style, c.style)) last.text += c.ch;
+    else segs.push({ text: c.ch, style: c.style });
+  }
+  return segs;
+}
+
 /** The visible text of a MiniMessage string, without tags. */
 export function plainText(text: string) {
   const chars: Ch[] = [];
@@ -487,5 +507,6 @@ export function stripFormatting(input: string): string {
 export function textWidthPx(input: string, charWidth: (ch: string, bold: boolean) => number): number {
   const chars: Ch[] = [];
   walk(parse(input), {}, chars);
-  return chars.reduce((w, c) => w + (c.img ? 9 : c.ch === '\n' ? 0 : charWidth(c.ch, !!c.style.bold)), 0);
+  // A keybind label is one entry with several characters; measure each of them.
+  return chars.reduce((w, c) => w + (c.img ? 9 : c.ch === '\n' ? 0 : [...c.ch].reduce((s, ch) => s + charWidth(ch, !!c.style.bold), 0)), 0);
 }
