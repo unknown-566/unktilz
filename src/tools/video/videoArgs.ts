@@ -1,6 +1,7 @@
 import type { Opts } from '../../registry/types';
 import { streamCodecs, type Attempt } from '../../lib/ffmpeg';
 import { trimArgs } from '../../lib/timecode';
+import { OPUS } from '../audio/audioArgs';
 
 export type VideoFormat = 'mp4' | 'webm' | 'mov' | 'mkv' | 'gif';
 export type VideoQuality = 'keep' | 'high' | 'balanced' | 'small';
@@ -78,7 +79,7 @@ export function videoAttempts(o: Opts): Attempt[] {
   const video = webm
     ? ['-c:v', 'libvpx', '-deadline', 'good', '-cpu-used', '4', '-crf', String(VP8[quality][0]), '-b:v', VP8[quality][1], '-pix_fmt', 'yuv420p']
     : ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(X264_CRF[quality]), '-pix_fmt', 'yuv420p'];
-  const audio = !keepAudio ? [] : webm ? ['-c:a', 'libopus', '-b:a', '128k'] : ['-c:a', 'aac', '-b:a', '160k'];
+  const audio = !keepAudio ? [] : webm ? [...OPUS, '-b:a', '128k'] : ['-c:a', 'aac', '-b:a', '160k'];
   attempts.push({
     args: (i, out) => [...trim.before, '-i', i, ...trim.after, '-map', '0:v:0', ...audioMap, '-vf', filters.join(','), ...video, ...audio, ...faststart, out],
   });

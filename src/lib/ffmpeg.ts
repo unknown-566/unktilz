@@ -70,9 +70,6 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
   void (async () => {
     // Loading the core counts as the first 5 %.
     ch.push({ type: 'progress', value: 0.01 });
-    const ff = await get();
-    if (signal.aborted) throw abortError();
-
     const input = `in.${ext(file.name)}`;
     const output = `out.${ext(outName)}`;
     let log: string[] = [];
@@ -83,36 +80,57 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
     const onProgress = ({ progress }: { progress: number }) => {
       if (progress > 0 && progress <= 1) ch.push({ type: 'progress', value: 0.05 + progress * 0.93 });
     };
+    let ff: FFmpeg | null = null;
     const onAbort = () => {
-      reset(ff);
+      if (ff) reset(ff);
       ch.fail(abortError());
+    };
+    /** A ready instance with the input written and our listeners on. */
+    const open = async () => {
+      const next = await get();
+      if (signal.aborted) throw abortError();
+      next.on('log', onLog);
+      next.on('progress', onProgress);
+      // Read again each time: writing hands the buffer over to ffmpeg's worker.
+      await next.writeFile(input, new Uint8Array(await file.arrayBuffer()));
+      return next;
+    };
+    /**
+     * After ffmpeg fails, the wasm instance isn't reliable any more (the next run can crash with
+     * "memory access out of bounds"), so it's thrown away and a fresh one is used from then on.
+     */
+    const discard = (f: FFmpeg) => {
+      f.off('log', onLog);
+      f.off('progress', onProgress);
+      reset(f);
+      ff = null;
     };
 
     signal.addEventListener('abort', onAbort, { once: true });
-    ff.on('log', onLog);
-    ff.on('progress', onProgress);
     try {
+      ff = await open();
       ch.push({ type: 'progress', value: 0.05 });
-      await ff.writeFile(input, new Uint8Array(await file.arrayBuffer()));
       for (let a = 0; ; a++) {
+        ff ??= await open();
         log = [];
         let code: number;
         try {
           code = await ff.exec(['-hide_banner', ...attempts[a].args(input, output)]);
         } catch (e) {
-          // The wasm crashed (e.g. "memory access out of bounds"): this instance is unusable now,
-          // so the next job loads a fresh one.
-          reset(ff);
+          // The wasm crashed: this instance is unusable now.
+          discard(ff);
           throw new Error(`ffmpeg crashed (${String(e).replace(/^RuntimeError: /, '')}). The file may be too big or use something this browser version of ffmpeg can't handle.`);
         }
         if (signal.aborted) return;
         if (code === 0 && (attempts[a].accept?.(log) ?? true)) break;
-        await ff.deleteFile(output).catch(() => {});
+        const failedLog = log;
+        if (code !== 0) discard(ff);
+        else await ff.deleteFile(output).catch(() => {});
         if (a < attempts.length - 1) {
           ch.push({ type: 'progress', value: 0.05 });
           continue;
         }
-        const reason = log.filter((l) => /error|invalid|unsupported|not found|no such|does not contain|matches no streams/i.test(l)).pop();
+        const reason = failedLog.filter((l) => /error|invalid|unsupported|not found|no such|does not contain|matches no streams/i.test(l)).pop();
         throw new Error(reason ? `ffmpeg: ${reason.trim()}` : `ffmpeg exited with code ${code}.`);
       }
       const data = (await ff.readFile(output)) as Uint8Array;
@@ -120,11 +138,12 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
       ch.close();
     } finally {
       signal.removeEventListener('abort', onAbort);
-      if (!signal.aborted) {
-        ff.off('log', onLog);
-        ff.off('progress', onProgress);
-        await ff.deleteFile(input).catch(() => {});
-        await ff.deleteFile(output).catch(() => {});
+      const f = ff as FFmpeg | null;
+      if (!signal.aborted && f) {
+        f.off('log', onLog);
+        f.off('progress', onProgress);
+        await f.deleteFile(input).catch(() => {});
+        await f.deleteFile(output).catch(() => {});
       }
     }
   })().catch((e) => ch.fail(e));
