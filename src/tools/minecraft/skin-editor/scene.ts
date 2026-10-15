@@ -95,6 +95,7 @@ export class SkinScene {
   private model: Model | null = null;
   private cursor: LineLoop;
   private outlines = new Group();
+  private mirrorLine: LineSegments | null = null;
   private ray = new Raycaster();
   private raf = 0;
   private target = new Vector3(0, 16, 0);
@@ -172,6 +173,36 @@ export class SkinScene {
     const fade = this.paintLayer === 'base' && this.showOverlay;
     this.overMat.opacity = fade ? 0.35 : 1;
     this.overMat.depthWrite = !fade;
+  }
+
+  /**
+   * Mirror painting: a thin line around the model's middle (x = 0) shows where left and right meet.
+   * It runs over the head, the body and down between the legs, just outside the outer layer.
+   */
+  setMirror(on: boolean) {
+    if (on && !this.mirrorLine) {
+      const pts: number[] = [];
+      const loop = (y0: number, y1: number, z0: number, z1: number) => {
+        const c = [
+          [y0, z0],
+          [y1, z0],
+          [y1, z1],
+          [y0, z1],
+        ];
+        for (let i = 0; i < 4; i++) pts.push(0, c[i][0], c[i][1], 0, c[(i + 1) % 4][0], c[(i + 1) % 4][1]);
+      };
+      const k = 0.08;
+      loop(24 - 0.5 - k, 32 + 0.5 + k, -4 - 0.5 - k, 4 + 0.5 + k); // head
+      loop(12 - 0.25, 24 + 0.25 + k, -2 - 0.25 - k, 2 + 0.25 + k); // body
+      loop(-0.25 - k, 12 - 0.25, -2 - 0.25 - k, 2 + 0.25 + k); // between the legs
+      const g = new BufferGeometry();
+      g.setAttribute('position', new BufferAttribute(new Float32Array(pts), 3));
+      this.mirrorLine = new LineSegments(g, new LineBasicMaterial({ color: 0xb6f24a, transparent: true, opacity: 0.85 }));
+      this.mirrorLine.renderOrder = 8;
+      this.scene.add(this.mirrorLine);
+    }
+    if (this.mirrorLine) this.mirrorLine.visible = on;
+    this.render();
   }
 
   /** Outlines these parts (e.g. the ones about to be copied). */
@@ -312,6 +343,7 @@ export class SkinScene {
     for (const m of this.meshes) m.mesh.geometry.dispose();
     for (const o of this.outlines.children) (o as LineSegments).geometry.dispose();
     this.cursor.geometry.dispose();
+    this.mirrorLine?.geometry.dispose();
     this.baseMat.dispose();
     this.overMat.dispose();
     this.tex.dispose();

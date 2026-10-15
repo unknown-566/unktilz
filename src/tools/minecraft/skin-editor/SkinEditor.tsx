@@ -153,6 +153,8 @@ export default function SkinEditor() {
     setSelection(null);
     setOpening(false);
     setActive(i);
+    // The other skin's button sits far down the page; start the switched-to skin at the top.
+    window.scrollTo({ top: 0 });
   };
 
   const copy = () => {
@@ -180,7 +182,7 @@ export default function SkinEditor() {
     for (const i of items) copyPart(src.steps[src.index].pixels, src.steps[src.index].model, dst.pixels, dst.model, i.part, i.layer);
     const names = items.map((i) => PART_LABEL[i.part][i.layer === 'base' ? 0 : 1].toLowerCase());
     dst.commit(`Copied ${names.length > 3 ? `${names.length} parts` : names.join(', ')} from ${SLOT[from]}`);
-    setActive(to);
+    if (to !== active) switchTo(to);
     say(`Copied to ${SLOT[to]}. Ctrl+Z undoes it.`);
   };
 
@@ -340,6 +342,7 @@ export default function SkinEditor() {
             showOverlay={showOverlay}
             hidden={hidden}
             highlight={highlightParts}
+            mirror={settings.mirror}
             hoverPx={hoverPx}
             onHover={setHoverPx}
             onPick={(c) => set({ color: c })}
@@ -449,6 +452,7 @@ export default function SkinEditor() {
               onFloatMove={(x, y) => float && placeFloat({ ...float, x, y })}
               onFloatDrop={dropFloat}
               highlight={highlight}
+              mirror={settings.mirror}
               onPick={(c) => set({ color: c })}
               onMessage={say}
             />

@@ -121,9 +121,59 @@ const TOOLS: { id: ToolId; label: string; key: string; help: string }[] = [
   { id: 'eraser', label: 'Eraser', key: 'E', help: 'Makes outer-layer pixels see-through. The base layer can’t be erased (the game would show black), paint over it instead.' },
   { id: 'fill', label: 'Fill', key: 'G', help: 'Fills a patch of one color. It stays on the side of the box you click, so it never runs onto the next face.' },
   { id: 'shade', label: 'Shade', key: 'S', help: 'Makes pixels a bit lighter or darker each time you go over them. Great for shadows and folds. Hold Shift for the opposite.' },
-  { id: 'picker', label: 'Pick color', key: 'I', help: 'Click a pixel to use its color. You can also Alt + click with any tool.' },
+  { id: 'picker', label: 'Picker', key: 'I', help: 'Click a pixel to use its color. You can also Alt + click with any tool.' },
   { id: 'select', label: 'Select', key: 'M', help: 'Drag a box on the flat texture, then Ctrl+C. Switch to the other skin and Ctrl+V, drag it into place and press Enter.' },
 ];
+
+const ICON_PATHS: Record<ToolId, ReactNode> = {
+  pencil: (
+    <>
+      <path d="M4 20l1-4L16 5l3 3L8 19l-4 1z" />
+      <path d="M14 7l3 3" />
+    </>
+  ),
+  eraser: (
+    <>
+      <path d="M8 20h12" />
+      <path d="M4.5 15.5l9-9a2 2 0 012.8 0l2.2 2.2a2 2 0 010 2.8L11 19H8l-3.5-3.5z" />
+      <path d="M9 11l5 5" />
+    </>
+  ),
+  fill: (
+    <>
+      <path d="M5 11l6-6 7 7-6 6a2 2 0 01-2.8 0L5 13.8a2 2 0 010-2.8z" />
+      <path d="M8 3l3 2" />
+      <path d="M5 12h13" />
+      <path d="M20 15s1.5 2 1.5 3a1.5 1.5 0 01-3 0c0-1 1.5-3 1.5-3z" />
+    </>
+  ),
+  shade: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 4a8 8 0 010 16z" fill="currentColor" />
+    </>
+  ),
+  picker: (
+    <>
+      <path d="M14.5 4.5a2.1 2.1 0 013 3L16 9l-1 1-3-3 1-1 1.5-1.5z" />
+      <path d="M12 7l5 5" />
+      <path d="M13.5 8.5L6 16l-1 3 3-1 7.5-7.5" />
+    </>
+  ),
+  select: (
+    <>
+      <path d="M4 7V4h3M10 4h4M17 4h3v3M20 10v4M20 17v3h-3M14 20h-4M7 20H4v-3M4 14v-4" />
+    </>
+  ),
+};
+
+function ToolIcon({ tool }: { tool: ToolId }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {ICON_PATHS[tool]}
+    </svg>
+  );
+}
 
 export function Toolbox({
   settings,
@@ -164,13 +214,20 @@ export function Toolbox({
       <h2 className="panel-title">// tools</h2>
       <div className="sk-toolgrid" role="group" aria-label="Tool">
         {TOOLS.map((t) => (
-          <button key={t.id} type="button" className="sk-tool" aria-pressed={settings.tool === t.id} title={`${t.help} (${t.key})`} onClick={() => set({ tool: t.id })}>
+          <button key={t.id} type="button" className="sk-tool" aria-pressed={settings.tool === t.id} title={`${t.label} (${t.key})`} onClick={() => set({ tool: t.id })}>
+            <ToolIcon tool={t.id} />
             <span>{t.label}</span>
-            <kbd>{t.key}</kbd>
           </button>
         ))}
       </div>
-      <p className="note sk-toolhelp">{TOOLS.find((t) => t.id === settings.tool)!.help}</p>
+      {(() => {
+        const t = TOOLS.find((x) => x.id === settings.tool)!;
+        return (
+          <p className="note sk-toolhelp">
+            <b>{t.label}</b> <kbd className="sk-kbd">{t.key}</kbd> {t.help}
+          </p>
+        );
+      })()}
 
       {(settings.tool === 'pencil' || settings.tool === 'eraser' || settings.tool === 'shade') && (
         <Row id="sk-size" label="Brush size" help="How many pixels wide the brush is. Keys [ and ].">
@@ -312,8 +369,15 @@ export function PartTransfer({
 export function HistoryPanel({ doc }: { doc: SkinDoc }) {
   useDoc(doc);
   const list = useRef<HTMLOListElement>(null);
+  // Keep the current step in view by scrolling the list itself only. scrollIntoView would also
+  // scroll the page, which made everything jump while painting.
   useEffect(() => {
-    list.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: 'nearest' });
+    const ol = list.current;
+    const cur = ol?.querySelector<HTMLElement>('[aria-current="step"]');
+    if (!ol || !cur) return;
+    const top = cur.offsetTop; // the list is position: relative, so this is inside it
+    if (top < ol.scrollTop) ol.scrollTop = top;
+    else if (top + cur.offsetHeight > ol.scrollTop + ol.clientHeight) ol.scrollTop = top + cur.offsetHeight - ol.clientHeight;
   }, [doc.index, doc.steps.length]);
   return (
     <section className="panel" aria-label="History">
