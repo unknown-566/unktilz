@@ -2,6 +2,17 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.4.0] - 2026-10-15
+
+### Added
+- **Image converter** reads iPhone photos (HEIC), TIFF, ICO and SVG, and can save ICO (favicons and app icons with all sizes in one file) and BMP too.
+- Turn images 90° / 180° and mirror them.
+- "Same format" re-saves an image at the chosen quality, which makes photos smaller.
+- Resize image and Images to PDF also take HEIC and TIFF now.
+
+### Changed
+- Converting removes the photo's hidden info (camera, GPS location). The description now says so.
+
 ## [1.3.0] - 2026-10-15
 
 ### Added

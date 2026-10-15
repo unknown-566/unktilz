@@ -1,6 +1,7 @@
 import type { Report, TaskOutput } from '../compute.worker';
+import { decodeHeic, decodeTiff, encodeBmp, encodeIco, isHeic, isTiff } from './imageCodecs';
 
-export type ImageFormat = 'keep' | 'png' | 'jpeg' | 'webp' | 'avif';
+export type ImageFormat = 'keep' | 'png' | 'jpeg' | 'webp' | 'avif' | 'bmp' | 'ico';
 
 export type ImagePayload = {
   file: File;
@@ -8,6 +9,11 @@ export type ImagePayload = {
   /** 1..100 */
   quality: number;
   resize?: { mode: 'percent'; percent: number } | { mode: 'pixels'; width: number; height: number; keepAspect: boolean };
+  /** Clockwise. */
+  rotate?: 0 | 90 | 180 | 270;
+  flip?: 'none' | 'h' | 'v';
+  /** Icon sizes for .ico, in pixels. */
+  icoSizes?: number[];
 };
 
 const MIME: Record<Exclude<ImageFormat, 'keep'>, string> = {
@@ -15,15 +21,30 @@ const MIME: Record<Exclude<ImageFormat, 'keep'>, string> = {
   jpeg: 'image/jpeg',
   webp: 'image/webp',
   avif: 'image/avif',
+  bmp: 'image/bmp',
+  ico: 'image/x-icon',
 };
-const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif' };
+const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif', 'image/bmp': 'bmp', 'image/x-icon': 'ico' };
 
+/** Reads any image this site supports. Canvas decoding already turns phone photos upright (EXIF). */
 export async function decode(file: Blob): Promise<ImageBitmap> {
+  const name = (file as File).name ?? 'this image';
+  if (file instanceof File && isHeic(file)) return decodeHeic(file);
+  if (file instanceof File && isTiff(file)) return decodeTiff(file);
   try {
     return await createImageBitmap(file);
   } catch {
-    throw new Error(`This browser can't read ${(file as File).name ?? 'this image'}.`);
+    throw new Error(`This browser can't read ${name}.`);
   }
+}
+
+/** "Same format": what to save a file as when the format isn't changed. */
+function sameFormat(file: File): string {
+  const t = file.type.replace('jpg', 'jpeg');
+  if (['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/bmp'].includes(t)) return t;
+  if (/\.bmp$/i.test(file.name)) return 'image/bmp';
+  // Photos (HEIC, TIFF) become JPG; GIF, ICO and SVG become PNG so transparency stays.
+  return isHeic(file) || isTiff(file) ? 'image/jpeg' : 'image/png';
 }
 
 export function targetSize(w: number, h: number, resize: ImagePayload['resize']) {
@@ -45,7 +66,7 @@ export function targetSize(w: number, h: number, resize: ImagePayload['resize'])
 }
 
 /** Draws with repeated halving so big downscales stay sharp instead of aliased. */
-export function drawScaled(src: ImageBitmap, w: number, h: number, background?: string) {
+export function drawScaled(src: ImageBitmap | OffscreenCanvas, w: number, h: number, background?: string) {
   let source: CanvasImageSource = src;
   let sw = src.width;
   let sh = src.height;
@@ -69,20 +90,56 @@ export function drawScaled(src: ImageBitmap, w: number, h: number, background?: 
   return canvas;
 }
 
+/** Turns (clockwise), then mirrors the turned picture, as it's seen. */
+function transform(src: OffscreenCanvas, rotate: number, flip: ImagePayload['flip']) {
+  if (!rotate && (!flip || flip === 'none')) return src;
+  const side = rotate === 90 || rotate === 270;
+  const out = new OffscreenCanvas(side ? src.height : src.width, side ? src.width : src.height);
+  const ctx = out.getContext('2d')!;
+  // Canvas transforms apply last-called first, so the mirror is set up before the turn.
+  ctx.translate(out.width / 2, out.height / 2);
+  ctx.scale(flip === 'h' ? -1 : 1, flip === 'v' ? -1 : 1);
+  ctx.rotate((rotate * Math.PI) / 180);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return out;
+}
+
+/** Each size as a square PNG with the picture fitted in the middle. */
+async function icoBlob(src: OffscreenCanvas, sizes: number[]) {
+  const pngs = [];
+  for (const size of [...new Set(sizes)].sort((a, b) => a - b)) {
+    const k = Math.min(size / src.width, size / src.height);
+    const w = Math.max(1, Math.round(src.width * k));
+    const h = Math.max(1, Math.round(src.height * k));
+    const fitted = drawScaled(src, w, h);
+    const square = new OffscreenCanvas(size, size);
+    square.getContext('2d')!.drawImage(fitted, Math.floor((size - w) / 2), Math.floor((size - h) / 2));
+    const png = await square.convertToBlob({ type: 'image/png' });
+    pngs.push({ size, data: new Uint8Array(await png.arrayBuffer()) });
+  }
+  return encodeIco(pngs);
+}
+
 export async function processImage(p: ImagePayload, report: Report): Promise<TaskOutput> {
   report(0.1);
   const bmp = await decode(p.file);
   report(0.4);
-  const original = MIME[p.file.type.replace('image/', '').replace('jpg', 'jpeg') as keyof typeof MIME];
-  const mime = p.format === 'keep' ? original ?? 'image/png' : MIME[p.format];
+  const mime = p.format === 'keep' ? sameFormat(p.file) : MIME[p.format];
   const { w, h } = targetSize(bmp.width, bmp.height, p.resize);
-  const canvas = drawScaled(bmp, w, h, mime === 'image/jpeg' ? '#ffffff' : undefined);
+  const opaque = mime === 'image/jpeg' || mime === 'image/bmp';
+  const canvas = transform(drawScaled(bmp, w, h, opaque ? '#ffffff' : undefined), p.rotate ?? 0, p.flip);
   bmp.close();
   report(0.7);
-  const blob = await canvas.convertToBlob({ type: mime, quality: Math.min(1, Math.max(0.01, p.quality / 100)) });
-  if (blob.type !== mime) throw new Error(`This browser can't save ${EXT[mime]?.toUpperCase() ?? mime} images. Pick another format.`);
+  let blob: Blob;
+  if (mime === 'image/x-icon') blob = await icoBlob(canvas, p.icoSizes?.length ? p.icoSizes : [16, 32, 48]);
+  else if (mime === 'image/bmp') blob = encodeBmp(canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+  else {
+    blob = await canvas.convertToBlob({ type: mime, quality: Math.min(1, Math.max(0.01, p.quality / 100)) });
+    if (blob.type !== mime) throw new Error(`This browser can't save ${EXT[mime]?.toUpperCase() ?? mime} images. Pick another format.`);
+  }
   const base = p.file.name.replace(/\.[^.]+$/, '') || 'image';
   const suffix = p.resize ? `-${w}x${h}` : '';
+  const same = p.file.name.toLowerCase().endsWith(`.${EXT[mime]}`) && !suffix;
   report(1);
-  return [{ name: `${base}${suffix}.${EXT[mime]}`, blob }];
+  return [{ name: `${base}${suffix}${same ? '-converted' : ''}.${EXT[mime]}`, blob }];
 }
