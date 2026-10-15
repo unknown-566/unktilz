@@ -2362,3 +2362,240 @@ button {
   color: #1d6fb8;
   border-color: rgba(29, 111, 184, 0.4);
 }
+
+/* ---- Give command generator ---- */
+.combo {
+  position: relative;
+  min-width: 0;
+}
+.combo .input {
+  width: 100%;
+  padding-right: 150px;
+}
+.combo-id {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combo-list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--rail-shadow);
+}
+.combo-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.combo-list li .mono {
+  font-size: 12px;
+}
+.combo-list li[aria-selected='true'] {
+  background: var(--line);
+}
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--chip-line);
+  font-size: 13px;
+}
+.pick-chip button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 2px 6px;
+  font-size: 15px;
+}
+.pick-chip button:hover {
+  color: var(--fg);
+}
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 4px 12px;
+}
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.check input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+}
+.give-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.give-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.give-list-name {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.give-num {
+  width: 84px;
+  flex: none;
+}
+.give-max {
+  font-size: 11px;
+  width: 44px;
+}
+.warn-tag {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffb020;
+  color: #0b0d10;
+  font: 700 12px var(--mono);
+  cursor: help;
+}
+.give-attr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.give-attr .select {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+.give-inline-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.give-color {
+  width: 48px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.give-dyes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.give-dye {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.give-dye[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.give-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.give-cmd {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.give-warn {
+  color: #ffb020;
+}
+/* Item tooltip as the game draws it: near-black box with a purple frame. */
+.mct {
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: 100%;
+  padding: 8px 10px 9px;
+  background: rgba(16, 0, 16, 0.94);
+  border: 2px solid #25015b;
+  outline: 2px solid rgba(16, 0, 16, 0.94);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.45;
+  color: #aaaaaa;
+  overflow-wrap: anywhere;
+}
+.mct-name {
+  margin-bottom: 2px;
+}
+.mct-line {
+  min-height: 1.45em;
+  white-space: pre-wrap;
+}
+.mct-empty {
+  font-family: var(--sans);
+  font-size: 13px;
+}
+/* Up to six tabs here; let them wrap instead of scrolling sideways. */
+.give-editor .tabs {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.give-editor .tab {
+  padding: 0 11px;
+}
