@@ -2222,3 +2222,28 @@ button {
   font-size: 15px;
   overflow-wrap: anywhere;
 }
+.sm-marker svg {
+  color: #0b0d10;
+}
+.sm-spawn-icon {
+  width: 22px;
+  flex: none;
+  text-align: center;
+  font: 800 24px/1 var(--mono);
+  color: #ff3b30;
+  text-shadow: 0 0 2px #0b0d10;
+}
+/* Name of the structure under the mouse, next to the cursor. */
+.sm-tip {
+  position: absolute;
+  z-index: 2;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: rgba(11, 13, 16, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e8ebef;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}

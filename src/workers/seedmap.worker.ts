@@ -12,6 +12,7 @@ type Exports = {
   sm_biomes: (scale: number, x: number, z: number, w: number, h: number, y: number) => number;
   sm_structures: (type: number, x0: number, z0: number, x1: number, z1: number) => number;
   sm_out: () => number;
+  sm_spawn: () => number;
   sm_biome_name: (id: number) => number;
   sm_biome_color: (id: number) => number;
   sm_const: (i: number) => number;
@@ -22,7 +23,8 @@ export type World = { version: string; seed: string; large: boolean };
 export type SeedMapRequest =
   | { id: number; kind: 'tile'; world: World; scale: number; x: number; z: number; size: number }
   | { id: number; kind: 'structures'; world: World; types: number[]; x0: number; z0: number; x1: number; z1: number }
-  | { id: number; kind: 'meta'; world: World };
+  | { id: number; kind: 'meta'; world: World }
+  | { id: number; kind: 'spawn'; world: World };
 
 export type TileResult = { bitmap: ImageBitmap; ids: Uint8Array };
 export type StructuresResult = { type: number; x: number; z: number }[][];
@@ -108,6 +110,11 @@ async function handle(req: SeedMapRequest): Promise<{ result: unknown; transfer:
       out.push(list);
     }
     return { result: out, transfer: [] };
+  }
+  if (req.kind === 'spawn') {
+    const p = w.sm_spawn();
+    const xz = new Int32Array(w.memory.buffer, p, 2);
+    return { result: { x: xz[0], z: xz[1] }, transfer: [] };
   }
   const names: string[] = [];
   const cols: number[] = [];
