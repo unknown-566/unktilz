@@ -1,6 +1,6 @@
 import { defineTool, type Opts } from '../../registry/types';
-import { compute } from '../../lib/compute';
-import type { ImageFormat } from '../../workers/tasks/image';
+import { compute, computeValue } from '../../lib/compute';
+import type { ImageFormat, ImagePayload } from '../../workers/tasks/image';
 import { IMAGE_ACCEPTS } from './formats';
 import { rasterizeSvg } from './svg';
 
@@ -9,6 +9,20 @@ const canAvif = typeof document !== 'undefined' && document.createElement('canva
 const LOSSY = new Set(['keep', 'jpeg', 'webp', 'avif']);
 const isSvg = (f: File) => /\.svg$/i.test(f.name) || f.type === 'image/svg+xml';
 const ICO_SIZES: Record<string, number[]> = { favicon: [16, 32, 48], app: [16, 24, 32, 48, 64, 128, 256], big: [256] };
+
+/** The job for one file; the preview runs exactly the same one. */
+async function payload(file: File, opts: Opts): Promise<ImagePayload> {
+  return {
+    // Workers can't read SVG, so it's drawn here first.
+    file: isSvg(file) ? await rasterizeSvg(file, Number(opts.svgScale) || 1) : file,
+    format: opts.format as ImageFormat,
+    // "Same" on a PNG stays lossless; quality only matters for lossy formats.
+    quality: Number(opts.quality),
+    rotate: Number(opts.rotate) as 0 | 90 | 180 | 270,
+    flip: opts.flip as 'none' | 'h' | 'v',
+    icoSizes: ICO_SIZES[String(opts.icoSizes)],
+  };
+}
 
 export default defineTool({
   slug: 'image-converter',
@@ -23,15 +37,9 @@ export default defineTool({
     'compress image', 'rotate image', 'flip image', 'remove exif', 'gps', 'metadata', 'convert',
   ],
   accepts: [...IMAGE_ACCEPTS, '.svg'],
-  preview: {
-    // Turned first, then mirrored as it's seen, like the converter does it.
-    transform: (o) => `scale(${o.flip === 'h' ? -1 : 1}, ${o.flip === 'v' ? -1 : 1}) rotate(${Number(o.rotate) || 0}deg)`,
-    size: (w, h, o, file) => {
-      if (o.format === 'ico') return { w: 256, h: 256 };
-      const k = isSvg(file) ? Number(o.svgScale) || 1 : 1;
-      const [a, b] = [Math.round(w * k), Math.round(h * k)];
-      return o.rotate === '90' || o.rotate === '270' ? { w: b, h: a } : { w: a, h: b };
-    },
+  preview: async (file, opts) => {
+    const [out] = await computeValue('image', await payload(file, opts));
+    return { blob: out.blob, bytes: true, note: opts.format === 'ico' ? 'biggest size shown' : undefined };
   },
   options: [
     {
@@ -114,23 +122,8 @@ export default defineTool({
       ],
     },
   ],
-  run: ([file], opts, { signal }) => {
-    const job = async function* () {
-      const input = isSvg(file) ? await rasterizeSvg(file, Number(opts.svgScale) || 1) : file;
-      yield* compute(
-        'image',
-        {
-          file: input,
-          format: opts.format as ImageFormat,
-          // "Same" on a PNG stays lossless; quality only matters for lossy formats.
-          quality: Number(opts.quality),
-          rotate: Number(opts.rotate) as 0 | 90 | 180 | 270,
-          flip: opts.flip as 'none' | 'h' | 'v',
-          icoSizes: ICO_SIZES[String(opts.icoSizes)],
-        },
-        signal,
-      );
-    };
-    return job();
-  },
+  run: ([file], opts, { signal }) =>
+    (async function* () {
+      yield* compute('image', await payload(file, opts), signal);
+    })(),
 });

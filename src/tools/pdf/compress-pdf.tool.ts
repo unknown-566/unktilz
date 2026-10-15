@@ -1,4 +1,5 @@
-import { defineTool, type RunEvent } from '../../registry/types';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { defineTool, type Opts, type RunEvent } from '../../registry/types';
 import { formatBytes } from '../../queue/download';
 import { baseName, canvasBlob, openPdf, renderPage } from '../../lib/pdfjs';
 
@@ -8,6 +9,21 @@ const LEVELS: Record<string, { dpi: number; quality: number }> = {
   balanced: { dpi: 144, quality: 0.72 },
   light: { dpi: 200, quality: 0.85 },
 };
+
+/** One page redrawn as the compressed picture that goes into the new PDF; the preview uses the same. */
+async function compressPage(doc: PDFDocumentProxy, index: number, opts: Opts) {
+  const level = LEVELS[String(opts.level)] ?? LEVELS.balanced;
+  const { canvas, width, height } = await renderPage(doc, index, level.dpi);
+  if (opts.gray) {
+    const ctx = canvas.getContext('2d')!;
+    ctx.globalCompositeOperation = 'saturation';
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  const jpg = await canvasBlob(canvas, 'image/jpeg', level.quality);
+  canvas.width = canvas.height = 0;
+  return { jpg, width, height };
+}
 
 export default defineTool({
   slug: 'compress-pdf',
@@ -19,6 +35,14 @@ export default defineTool({
     'Make PDFs smaller by redrawing every page as a compressed picture. Works best on scans and photos. The text can’t be selected or searched afterwards, so keep the original if you need that.',
   keywords: ['compress pdf', 'shrink pdf', 'reduce pdf size', 'smaller pdf', 'email', 'upload limit', 'scan'],
   accepts: ['.pdf'],
+  preview: async (file, opts) => {
+    const doc = await openPdf(file);
+    try {
+      return { blob: (await compressPage(doc, 0, opts)).jpg, note: `page 1 of ${doc.numPages}` };
+    } finally {
+      void doc.destroy();
+    }
+  },
   options: [
     {
       key: 'level',
@@ -37,23 +61,14 @@ export default defineTool({
   run: ([file], opts, { signal }) =>
     (async function* (): AsyncGenerator<RunEvent> {
       const { PDFDocument } = await import('pdf-lib');
-      const level = LEVELS[String(opts.level)] ?? LEVELS.balanced;
       const doc = await openPdf(file);
       try {
         const out = await PDFDocument.create();
         for (let i = 0; i < doc.numPages; i++) {
           if (signal.aborted) return;
-          const { canvas, width, height } = await renderPage(doc, i, level.dpi);
-          if (opts.gray) {
-            const ctx = canvas.getContext('2d')!;
-            ctx.globalCompositeOperation = 'saturation';
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-          const jpg = await canvasBlob(canvas, 'image/jpeg', level.quality);
+          const { jpg, width, height } = await compressPage(doc, i, opts);
           const img = await out.embedJpg(new Uint8Array(await jpg.arrayBuffer()));
           out.addPage([width, height]).drawImage(img, { x: 0, y: 0, width, height });
-          canvas.width = canvas.height = 0;
           yield { type: 'progress', value: ((i + 1) / doc.numPages) * 0.95 };
         }
         const bytes = await out.save();

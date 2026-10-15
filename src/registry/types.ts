@@ -52,10 +52,11 @@ export type Tool = {
   reverse?: string;
   options?: OptionSchema[];
   /**
-   * Image tools: show the picked picture above the options, as it will come out. `transform` is a
-   * CSS transform for the options (e.g. rotation); `size` gives the output size in pixels.
+   * Tools whose result is a picture (or a page): makes the real result for one picked file with the
+   * current options, shown above them. `note` says what is shown (e.g. "page 1 of 4"); `bytes`
+   * shows the result's file size (when the picture is the whole result).
    */
-  preview?: { transform?: (opts: Opts) => string; size?: (w: number, h: number, opts: Opts, file: File) => { w: number; h: number } };
+  preview?: (file: File, opts: Opts) => Promise<{ blob: Blob; note?: string; bytes?: boolean }>;
   /** File tools: runs from the queue. Heavy work is handed to a worker. */
   run?: (input: File[], opts: Opts, ctx: RunContext) => AsyncIterable<RunEvent>;
   /**

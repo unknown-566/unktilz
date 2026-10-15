@@ -1,7 +1,18 @@
-import { defineTool } from '../../registry/types';
-import { compute } from '../../lib/compute';
-import { targetSize, type ImageFormat } from '../../workers/tasks/image';
+import { defineTool, type Opts } from '../../registry/types';
+import { compute, computeValue } from '../../lib/compute';
+import type { ImageFormat, ImagePayload } from '../../workers/tasks/image';
 import { IMAGE_ACCEPTS } from './formats';
+
+/** The job for one file; the preview runs exactly the same one. */
+const payload = (file: File, o: Opts): ImagePayload => ({
+  file,
+  format: o.format as ImageFormat,
+  quality: 92,
+  resize:
+    o.mode === 'percent'
+      ? { mode: 'percent', percent: Number(o.percent) }
+      : { mode: 'pixels', width: Number(o.width), height: Number(o.height), keepAspect: Boolean(o.keepAspect) },
+});
 
 export default defineTool({
   slug: 'resize-image',
@@ -12,9 +23,9 @@ export default defineTool({
   description: 'Scale images by percent or to exact pixel sizes. Big downscales stay sharp.',
   keywords: ['scale', 'dimensions', 'shrink', 'enlarge'],
   accepts: IMAGE_ACCEPTS,
-  preview: {
-    size: (w, h, o) =>
-      targetSize(w, h, o.mode === 'percent' ? { mode: 'percent', percent: Number(o.percent) } : { mode: 'pixels', width: Number(o.width), height: Number(o.height), keepAspect: Boolean(o.keepAspect) }),
+  preview: async (file, o) => {
+    const [out] = await computeValue('image', payload(file, o));
+    return { blob: out.blob, bytes: true };
   },
   options: [
     {
@@ -46,18 +57,5 @@ export default defineTool({
       ],
     },
   ],
-  run: ([file], o, { signal }) =>
-    compute(
-      'image',
-      {
-        file,
-        format: o.format as ImageFormat,
-        quality: 92,
-        resize:
-          o.mode === 'percent'
-            ? { mode: 'percent', percent: Number(o.percent) }
-            : { mode: 'pixels', width: Number(o.width), height: Number(o.height), keepAspect: Boolean(o.keepAspect) },
-      },
-      signal,
-    ),
+  run: ([file], o, { signal }) => compute('image', payload(file, o), signal),
 });

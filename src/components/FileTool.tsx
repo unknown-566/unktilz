@@ -8,7 +8,7 @@ import { downloadJob, formatBytes } from '../queue/download';
 import { Panel, Segmented, Toggle } from './ui';
 import { DownloadIcon, UploadIcon } from './icons';
 import { Help } from './Help';
-import { ImagePreview } from './ImagePreview';
+import { ResultPreview } from './ResultPreview';
 import { prefersReducedMotion } from '../lib/theme';
 import { useLocation } from 'react-router-dom';
 
@@ -314,7 +314,7 @@ export function FileTool({ tool }: { tool: Tool }) {
 
       {staged.length > 0 && <StagedList tool={tool} files={staged} set={(f) => setStaged(tool.slug, f)} />}
 
-      {tool.preview && staged.length > 0 && <ImagePreview tool={tool} files={staged} opts={opts} />}
+      {tool.preview && staged.length > 0 && <ResultPreview tool={tool} files={staged} opts={opts} />}
 
       <OptionsPanel tool={tool} opts={opts} setOpts={setOpts} />
 

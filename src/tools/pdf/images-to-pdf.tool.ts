@@ -1,5 +1,6 @@
 import { defineTool } from '../../registry/types';
-import { compute } from '../../lib/compute';
+import { compute, computeValue } from '../../lib/compute';
+import { isHeic, isTiff } from '../../workers/tasks/imageCodecs';
 import type { ScanLook } from '../../workers/tasks/scan';
 import { IMAGE_ACCEPTS } from '../image/formats';
 
@@ -15,6 +16,12 @@ export default defineTool({
   keywords: ['jpg to pdf', 'png to pdf', 'scan', 'photos', 'document', 'scanner', 'paper', 'homework'],
   accepts: IMAGE_ACCEPTS,
   batch: true,
+  preview: async (file, o) => {
+    if (o.mode === 'scan') return { blob: await computeValue('scan-preview', { file, look: o.look as ScanLook, crop: Boolean(o.crop) }), note: 'this page in the PDF' };
+    // Photos go in as they are; HEIC and TIFF need drawing first to be shown.
+    const blob = isHeic(file) || isTiff(file) ? (await computeValue('image-preview', { file, max: 2400 })).blob : file;
+    return { blob, note: 'this page in the PDF' };
+  },
   options: [
     {
       key: 'mode',
