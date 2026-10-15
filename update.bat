@@ -22,12 +22,8 @@ if not exist "package.json" goto notproject
 findstr /c:"\"name\": \"unktilz\"" package.json >nul
 if errorlevel 1 goto notproject
 
-where node >nul 2>nul
-if errorlevel 1 (
-  echo  Node.js neni nainstalovany. Otviram nodejs.org - nainstaluj verzi LTS a spust update.bat znovu.
-  start "" https://nodejs.org
-  goto fail_pause
-)
+call :ensure_node
+if errorlevel 1 goto fail_pause
 
 echo  Pokud ti web uz bezi v jinem okne, zavri ho (krizek nahore), at ho jde aktualizovat.
 echo.
@@ -79,6 +75,31 @@ echo.
 echo  Hotovo, mas nejnovejsi verzi. Spoustim web...
 call "%CD%\start.bat"
 exit
+
+rem ---- Node.js: install it with winget if it's missing (asks first) ----
+:ensure_node
+where node >nul 2>nul
+if not errorlevel 1 exit /b 0
+if exist "%ProgramFiles%\nodejs\node.exe" (
+  set "PATH=%ProgramFiles%\nodejs;%PATH%"
+  exit /b 0
+)
+echo  Node.js neni nainstalovany a web ho potrebuje.
+where winget >nul 2>nul
+if errorlevel 1 goto node_manual
+choice /c AN /m " Mam ho ted nainstalovat? A = ano, N = ne"
+if errorlevel 2 goto node_manual
+echo.
+echo  Instaluji Node.js LTS (Windows se muze zeptat na povoleni)...
+call winget install --id OpenJS.NodeJS.LTS -e --source winget --accept-package-agreements --accept-source-agreements
+rem This window still has the old PATH; add Node's folder so we can carry on right away.
+if exist "%ProgramFiles%\nodejs\node.exe" set "PATH=%ProgramFiles%\nodejs;%PATH%"
+where node >nul 2>nul
+if not errorlevel 1 exit /b 0
+:node_manual
+echo  Otviram nodejs.org - nainstaluj verzi LTS a spust tenhle soubor znovu.
+start "" https://nodejs.org
+exit /b 1
 
 :notproject
 echo  Tenhle soubor musi lezet ve slozce s webem unktilz (vedle package.json).
