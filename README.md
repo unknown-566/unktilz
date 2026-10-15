@@ -61,10 +61,6 @@ Option types are `choice` (segmented buttons), `range`, `number` and `toggle`. A
 - `src/queue/runner.ts` runs one job at a time in the order they were added, on whatever page is open. A job that was running when the tab closed starts over on the next load.
 - Removing a running job aborts it: the ffmpeg instance or compute worker is terminated and a fresh one is made for the next job.
 
-## Placeholders for the owner
-
-- `[CONTACT EMAIL]` and `[REPO URL]` on the Request a tool page (`src/pages/Request.tsx`)
-
 ## Third-party services
 
 Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, skin and head images come from `mc-heads.net`, and the skin editor loads skins from `textures.minecraft.net`. Everything else works offline once loaded.
