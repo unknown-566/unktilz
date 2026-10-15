@@ -484,10 +484,30 @@ button {
 
 /* ---------- home ---------- */
 
+/* Two grid layers that follow the mouse at different speeds (parallax, set from Home.tsx). */
 .hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   border-bottom: 1px solid var(--line);
+}
+.hero::before,
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: -80px;
+  z-index: -1;
+  pointer-events: none;
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  will-change: transform;
+}
+.hero::before {
   background-size: 48px 48px;
+  transform: translate3d(calc(var(--px, 0) * -24px), calc(var(--py, 0) * -24px), 0);
+}
+.hero::after {
+  background-size: 192px 192px;
+  transform: translate3d(calc(var(--px, 0) * -64px), calc(var(--py, 0) * -64px), 0);
 }
 .hero-inner {
   max-width: 1120px;
