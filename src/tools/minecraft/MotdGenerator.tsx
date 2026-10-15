@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import { SavedPanel } from '../../components/SavedPanel';
+import { useAutosave } from '../../lib/saved';
 import { Output, Panel } from '../../components/ui';
 import { Workbench } from '../../components/Workbench';
 import { McText } from '../../lib/mc/text';
@@ -17,6 +19,7 @@ const toProperties = (s: string) =>
 export default function MotdGenerator() {
   const [text, setText] = useState(START);
   const area = useRef<HTMLTextAreaElement>(null);
+  useAutosave('motd-generator', text, setText);
 
   const lines = text.split('\n');
   const tooMany = lines.length > 2;
@@ -66,6 +69,16 @@ export default function MotdGenerator() {
         <CodePalette onInsert={(code) => applyCode(area.current, text, code, setText)} />
         <p className="note">Select text, then click a color or style to apply it to just that text.</p>
       </section>
+      <SavedPanel<string>
+        slug="motd-generator"
+        title="my MOTDs"
+        help="Keep MOTDs for later (events, maintenance…). Saved in this browser."
+        suggestName={() => text.replace(/[&§]#[0-9a-f]{6}|[&§][0-9a-fk-orx]/gi, '').split('\n')[0].trim().slice(0, 40)}
+        getData={() => text}
+        onLoad={setText}
+        describe={(i) => i.data.replace(/[&§]#[0-9a-f]{6}|[&§][0-9a-fk-orx]/gi, '').replace(/\n/g, ' · ')}
+        emptyText="No saved MOTDs yet."
+      />
     </Workbench>
   );
 }
