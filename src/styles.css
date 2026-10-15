@@ -70,6 +70,15 @@ button {
   cursor: pointer;
 }
 
+/* The site's green block caret in every text field, like the home search and its typing
+   animation. caret-shape is Chrome 144+; elsewhere it's a thin green caret. */
+input,
+textarea,
+[contenteditable='true'] {
+  caret-color: var(--accent-text);
+  caret-shape: block;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
