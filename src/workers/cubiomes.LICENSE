@@ -1,4 +1,5 @@
-cubiomes (https://github.com/Cubitect/cubiomes), commit e61f905, compiled into cubiomes.wasm by scripts/build-cubiomes.mjs.
+cubiomes, xpple's fork (https://github.com/xpple/cubiomes) of Cubitect/cubiomes, commit 4f04235,
+compiled into cubiomes.wasm by scripts/build-cubiomes.mjs.
 
 MIT License
 

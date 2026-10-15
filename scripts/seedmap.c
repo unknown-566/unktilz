@@ -133,6 +133,7 @@ EXPORT int sm_const(int which)
     case 12: return Treasure;
     case 13: return Trail_Ruins;
     case 14: return Trial_Chambers;
+    case 15: return Abandoned_Camp;
     default: return -1;
     }
 }

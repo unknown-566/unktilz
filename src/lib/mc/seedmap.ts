@@ -4,7 +4,14 @@ export type { World };
 
 /** Versions the map offers, newest first. `id` is what cubiomes' str2mc understands. */
 export const VERSIONS = [
-  { id: '1.21', label: '1.21.4 – newest' },
+  { id: '26.3', label: '26.3' },
+  { id: '26.2', label: '26.2' },
+  { id: '26.1', label: '26.1' },
+  { id: '1.21.11', label: '1.21.11' },
+  { id: '1.21.9', label: '1.21.9 – 1.21.10' },
+  { id: '1.21.6', label: '1.21.6 – 1.21.8' },
+  { id: '1.21.5', label: '1.21.5' },
+  { id: '1.21.4', label: '1.21.4' },
   { id: '1.21.3', label: '1.21.2 – 1.21.3' },
   { id: '1.21.1', label: '1.21 – 1.21.1' },
   { id: '1.20', label: '1.20' },
@@ -35,6 +42,7 @@ export const STRUCTURES = [
   { key: 'treasure', name: 'Buried treasure', color: '#f5e050', on: false, maxBpp: 3 },
   { key: 'trail_ruins', name: 'Trail ruins', color: '#c98a5a', on: false, maxBpp: 24, since: '1.20' },
   { key: 'trial_chambers', name: 'Trial chambers', color: '#d9883b', on: true, maxBpp: 24, since: '1.21.1' },
+  { key: 'abandoned_camp', name: 'Abandoned camp', color: '#8fbf6a', on: true, maxBpp: 24, since: '26.3' },
 ] as const;
 export type StructureKey = (typeof STRUCTURES)[number]['key'];
 
@@ -187,4 +195,5 @@ export const STRUCTURE_ICONS: Record<StructureKey, string> = {
   treasure: 'M4 10h16v10H4zM4 10l2-5h12l2 5M10.5 12.5h3v3h-3z',
   trail_ruins: 'M9 4h6M10 4v3c-4 2-5 6-3 12h10c2-6 1-10-3-12V4',
   trial_chambers: 'M8 3.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM11.2 11.2 20 20M16 16l2-2M18.5 18.5l2-2',
+  abandoned_camp: 'M2 20h20M4 20 12 5l8 15M12 5v15M9.5 20l2.5-5 2.5 5M10 4l2 1 2-1',
 };

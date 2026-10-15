@@ -124,7 +124,7 @@ async function handle(req: SeedMapRequest): Promise<{ result: unknown; transfer:
     cols.push(w.sm_biome_color(i));
   }
   const ids: number[] = [];
-  for (let i = 0; i < 15; i++) ids.push(w.sm_const(i));
+  for (let i = 0; w.sm_const(i) >= 0; i++) ids.push(w.sm_const(i));
   return { result: { mc: mcOf(w, req.world.version), names, colors: cols, structureIds: ids }, transfer: [] };
 }
 
