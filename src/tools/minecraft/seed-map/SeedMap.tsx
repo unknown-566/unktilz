@@ -44,7 +44,8 @@ export default function SeedMap() {
   const [params, setParams] = useSearchParams();
   const first = useRef({
     seed: params.get('seed') ?? randomSeed(),
-    version: VERSIONS.some((v) => v.id === params.get('v')) ? params.get('v')! : VERSIONS[0].id,
+    // Links from before the newer versions were added used "1.21" for 1.21.4.
+    version: ((v) => (VERSIONS.some((x) => x.id === v) ? v! : VERSIONS[0].id))(params.get('v') === '1.21' ? '1.21.4' : params.get('v')),
     large: params.get('large') === '1',
     view: {
       x: Number(params.get('x')) || 0,
@@ -252,7 +253,7 @@ export default function SeedMap() {
               </label>
               <Help
                 label="Minecraft version"
-                text="Java Edition. World generation changes between versions, so the same seed gives a different world in 1.17 and 1.18. The newest generation known here is from 1.21.4; later versions didn't change biomes as far as is known."
+                text="Java Edition. World generation changes between versions, so the same seed can give a different world: 1.18 rebuilt it completely, and newer drops add biomes and structures (pale garden, sulfur caves, dappled forest, abandoned camps). Pick the version the world was created in."
               />
             </span>
             <select id={verId} className="select mono" value={version} onChange={(e) => setVersion(e.target.value)}>
