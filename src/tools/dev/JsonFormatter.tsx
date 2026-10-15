@@ -217,7 +217,7 @@ export default function JsonFormatter() {
         {status}
       </section>
 
-      <Workbench preview={output} mobile="below">
+      <Workbench preview={output}>
         <section className="panel" aria-label="Input">
           <div className="field">
             <label htmlFor="json-in">JSON</label>

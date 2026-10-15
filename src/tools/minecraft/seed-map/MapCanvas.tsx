@@ -344,9 +344,8 @@ export function MapCanvas(p: Props) {
     const ro = new ResizeObserver(() => changed());
     ro.observe(host);
 
-    const pts = new Map<number, { x: number; y: number }>();
+    let drag: { x: number; y: number } | null = null;
     let moved = 0;
-    let pinch: { d: number; mx: number; my: number } | null = null;
     const local = (e: { clientX: number; clientY: number }) => {
       const r = c.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -366,49 +365,29 @@ export function MapCanvas(p: Props) {
       } catch {
         /* already gone */
       }
-      pts.set(e.pointerId, local(e));
+      if (e.button !== 0) return;
+      drag = local(e);
       moved = 0;
-      if (pts.size === 2) {
-        const [a, b] = [...pts.values()];
-        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
-      }
     };
     const move = (e: PointerEvent) => {
       const at = local(e);
-      const prev = pts.get(e.pointerId);
-      if (!prev) {
-        if (e.pointerType === 'mouse') props.current.onHover(pickAt(at.x, at.y));
-        return;
-      }
-      pts.set(e.pointerId, at);
-      if (pts.size === 2 && pinch) {
-        const [a, b] = [...pts.values()];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        const mx = (a.x + b.x) / 2;
-        const my = (a.y + b.y) / 2;
-        const v = view.current;
-        view.current = { ...v, x: v.x - (mx - pinch.mx) * v.bpp, z: v.z - (my - pinch.my) * v.bpp };
-        if (d > 0 && pinch.d > 0) zoomAt(mx, my, pinch.d / d);
-        pinch = { d, mx, my };
-        moved += 10;
-        return;
-      }
-      if (pts.size !== 1) return;
+      const prev = drag;
+      props.current.onHover(pickAt(at.x, at.y));
+      if (!prev) return;
+      drag = at;
       const dx = at.x - prev.x;
       const dy = at.y - prev.y;
       moved += Math.abs(dx) + Math.abs(dy);
       const v = view.current;
       view.current = { ...v, x: v.x - dx * v.bpp, z: v.z - dy * v.bpp };
       changed();
-      if (e.pointerType === 'mouse') props.current.onHover(pickAt(at.x, at.y));
     };
     const up = (e: PointerEvent) => {
       const at = local(e);
-      const wasTap = pts.size === 1 && moved < 6;
-      pts.delete(e.pointerId);
-      if (pts.size < 2) pinch = null;
-      if (!wasTap) return;
-      // A tap picks the nearest structure marker, or else the spot itself.
+      const wasClick = !!drag && moved < 6;
+      drag = null;
+      if (!wasClick) return;
+      // A click picks the nearest structure marker, or else the spot itself.
       let best: Marker | null = null;
       let bd = 16;
       for (const m of markers.current) {
@@ -452,7 +431,7 @@ export function MapCanvas(p: Props) {
 
   return (
     <div ref={box} className="sm-map">
-      <canvas ref={cv} role="img" aria-label="Biome map. Drag to move, scroll or pinch to zoom, click for coordinates." />
+      <canvas ref={cv} role="img" aria-label="Biome map. Drag to move, scroll to zoom, click for coordinates." />
     </div>
   );
 }

@@ -284,7 +284,7 @@ export default function MapArt() {
   };
 
   return (
-    <Workbench preview={preview} output={output} mobile="below">
+    <Workbench preview={preview} output={output}>
       <div
         className={`drop${over ? ' over' : ''}`}
         style={{ padding: file ? '20px 24px' : undefined }}

@@ -82,17 +82,10 @@ export function Viewport3D(p: Props) {
 
   useEffect(() => {
     const el = host.current!;
-    const pointers = new Map<number, { x: number; y: number }>();
-    let mode: 'none' | 'orbit' | 'paint' | 'gesture' = 'none';
+    let mode: 'none' | 'orbit' | 'paint' = 'none';
     let stroke: Stroke | null = null;
     let moved = 0;
     let last = { x: 0, y: 0 };
-    let gesture = { dist: 0, mx: 0, my: 0 };
-
-    const two = () => {
-      const [a, b] = [...pointers.values()];
-      return { dist: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
-    };
     const pick = (e: PointerEvent, how: 'paint' | 'look') => scene.current?.pick(e.clientX, e.clientY, how, props.current.doc.pixels) ?? null;
     const showCursor = (hit: Hit | null) => {
       const { doc, settings, onHover, interactive } = props.current;
@@ -102,18 +95,10 @@ export function Viewport3D(p: Props) {
     };
 
     const down = (e: PointerEvent) => {
+      if (mode !== 'none') return;
       capture(el, e);
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       moved = 0;
       last = { x: e.clientX, y: e.clientY };
-      if (pointers.size === 2) {
-        // A second finger turns the touch into turn + zoom, and undoes the dab the first one made.
-        stroke?.cancel();
-        stroke = null;
-        mode = 'gesture';
-        gesture = two();
-        return;
-      }
       const { interactive, settings, onPick, doc } = props.current;
       const s = settings?.current;
       if (interactive && s && e.button === 0) {
@@ -138,16 +123,8 @@ export function Viewport3D(p: Props) {
     };
 
     const move = (e: PointerEvent) => {
-      if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const s = scene.current;
       if (!s) return;
-      if (mode === 'gesture' && pointers.size === 2) {
-        const g = two();
-        s.orbit(-(g.mx - gesture.mx) * 0.01, -(g.my - gesture.my) * 0.01);
-        if (g.dist > 0 && gesture.dist > 0) s.zoom(gesture.dist / g.dist);
-        gesture = g;
-        return;
-      }
       if (mode === 'orbit') {
         moved += Math.abs(e.clientX - last.x) + Math.abs(e.clientY - last.y);
         s.orbit(-(e.clientX - last.x) * 0.01, -(e.clientY - last.y) * 0.01);
@@ -156,19 +133,17 @@ export function Viewport3D(p: Props) {
       }
       const hit = pick(e, 'paint');
       if (mode === 'paint' && hit) stroke?.at(hit.x, hit.y, 'same-face');
-      if (e.pointerType !== 'touch' || mode === 'paint') showCursor(hit);
+      showCursor(hit);
     };
 
-    const up = (e: PointerEvent) => {
-      pointers.delete(e.pointerId);
+    const up = () => {
       if (mode === 'paint' && stroke) {
         const msg = stroke.end();
         if (msg) props.current.onMessage?.(msg);
         stroke = null;
       }
       if (mode === 'orbit' && moved < 4 && !props.current.interactive) props.current.onActivate?.();
-      if (e.pointerType === 'touch') showCursor(null);
-      if (pointers.size === 0 || mode !== 'gesture') mode = 'none';
+      mode = 'none';
     };
 
     const leave = () => {

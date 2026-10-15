@@ -103,7 +103,7 @@ export default function SlimeChunks() {
   );
 
   return (
-    <Workbench preview={map} mobile="below">
+    <Workbench preview={map}>
       <section className="panel" aria-label="Seed and position">
         <TextField
           label="World seed"
