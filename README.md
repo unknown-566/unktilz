@@ -72,3 +72,9 @@ Some Minecraft tools call public APIs straight from the browser: server status u
 ## Seed map (cubiomes)
 
 The seed map runs [xpple's fork](https://github.com/xpple/cubiomes) of [cubiomes](https://github.com/Cubitect/cubiomes) (MIT) compiled to WebAssembly. The built `src/workers/cubiomes.wasm` is committed, so `npm install` / `npm run build` don't need anything extra. To rebuild it (e.g. to move to a newer cubiomes commit for a new Minecraft version), install [Zig](https://ziglang.org) (`winget install zig.zig`), update `COMMIT` in `scripts/build-cubiomes.mjs` and run `npm run build:cubiomes`.
+
+## Versions and updates
+
+The version lives in `package.json` and every change is listed in `CHANGELOG.md` (newest first, `## [x.y.z] - YYYY-MM-DD`). The middle number goes up for new features, the last one for fixes. The site shows its version in the footer; the Changelog page (`/changelog`) has a "Check for updates" button that compares it with `package.json` on GitHub, and the header shows "update available" when there's a newer one (checked at most once a day). Updating is a double-click on `update.bat`; saved items stay because they live in the browser.
+
+Saved items and work in progress are kept in IndexedDB per address (always `localhost:5173` with `start.bat`). `/backup` downloads them as one JSON file and loads them on another computer.

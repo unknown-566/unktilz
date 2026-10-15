@@ -1,10 +1,12 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useTheme } from '../lib/theme';
 import { useLaunch } from './Transition';
+import { APP_VERSION, useUpdateStatus } from '../lib/updates';
 
 export function Header() {
   const [theme, toggle] = useTheme();
   const launch = useLaunch();
+  const update = useUpdateStatus();
   return (
     <header className="header">
       <div className="header-inner">
@@ -15,6 +17,11 @@ export function Header() {
           <span>unktilz</span>
         </Link>
         <nav className="nav" aria-label="Main">
+          {update?.newer && (
+            <Link to="/changelog" className="update-pill" title={`Version ${update.latest} is out (you have ${APP_VERSION})`}>
+              update available
+            </Link>
+          )}
           <NavLink to="/" end>
             All tools
           </NavLink>
@@ -32,7 +39,12 @@ export function Footer() {
   return (
     <footer className="footer">
       <div className="footer-inner">
-        <span>unktilz</span>
+        <span className="footer-links">
+          <span>unktilz</span>
+          <Link to="/changelog" className="mono" title="What changed, and check for updates">
+            v{APP_VERSION}
+          </Link>
+        </span>
         <span className="footer-links">
           <Link to="/backup">backup</Link>
           <span>made by unknown_56</span>
