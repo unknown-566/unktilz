@@ -1079,13 +1079,42 @@ textarea,
   position: absolute;
   inset: 0;
   margin: auto;
-  transition: transform 0.25s ease;
-  image-rendering: auto;
+  max-width: none;
+  user-select: none;
 }
-@media (prefers-reduced-motion: reduce) {
-  .img-preview-pic {
-    transition: none;
-  }
+/* Blown up a lot (a tiny result): show the real pixels instead of a blur. */
+.img-preview-pic.pixelated {
+  image-rendering: pixelated;
+}
+/* 100 %: real size, scroll around a bigger picture. */
+.img-preview.scroll {
+  display: block;
+  overflow: auto;
+}
+.img-preview-pic.actual {
+  position: static;
+  margin: 0;
+  image-rendering: pixelated;
+}
+.img-preview-busy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+}
+.img-preview-error {
+  max-width: 80%;
+  text-align: center;
+  color: var(--muted);
+}
+.img-preview.scroll .img-preview-busy {
+  position: sticky;
+  float: right;
 }
 .field {
   display: flex;

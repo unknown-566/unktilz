@@ -164,3 +164,13 @@ export async function organizePdf(p: OrganizePdfPayload, report: Report): Promis
   }
   return out;
 }
+
+export type ScanPreviewPayload = { file: File; look: ScanLook; crop: boolean };
+
+/** One photo cleaned up like a scanned page, exactly as Images to PDF puts it in. */
+export async function scanPreview(p: ScanPreviewPayload): Promise<Blob> {
+  const bmp = await decode(p.file);
+  const page = await scanPage(bmp, p.look, p.crop, () => {});
+  bmp.close();
+  return page.blob;
+}

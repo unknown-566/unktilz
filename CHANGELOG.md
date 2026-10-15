@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.7.0] - 2026-10-15
+
+### Changed
+- **The preview shows the real result**, made with exactly your settings: size, quality, format (e.g. JPG turns transparent parts white), turning and mirroring, plus how big the file will be. It updates a moment after you change something.
+- "100 %" shows the real pixels (to check sharpness and compression), and holding "original" shows the picture you started with.
+
+### Added
+- Previews in PDF to images, Compress PDF (how the first page will look) and Images to PDF (the photo cleaned up as a scanned page).
+
 ## [1.6.0] - 2026-10-15
 
 ### Added

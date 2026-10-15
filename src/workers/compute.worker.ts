@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import type { ImagePayload, PreviewPayload, PreviewResult } from './tasks/image';
 import type { MapExportPayload, MapGridPayload, MapGridResult } from './tasks/mapArt';
-import type { ImagesToPdfPayload, MergePdfPayload, OrganizePdfPayload } from './tasks/pdf';
+import type { ImagesToPdfPayload, MergePdfPayload, OrganizePdfPayload, ScanPreviewPayload } from './tasks/pdf';
 
 export type TaskOutput = { name: string; blob: Blob }[];
 export type Report = (progress: number) => void;
@@ -12,6 +12,7 @@ type Tasks = {
   'merge-pdf': [MergePdfPayload, TaskOutput];
   'images-to-pdf': [ImagesToPdfPayload, TaskOutput];
   'organize-pdf': [OrganizePdfPayload, TaskOutput];
+  'scan-preview': [ScanPreviewPayload, Blob];
   'map-grid': [MapGridPayload, MapGridResult];
   'map-export': [MapExportPayload, TaskOutput];
 };
@@ -30,6 +31,7 @@ const tasks: Record<TaskName, () => Promise<Handler>> = {
   'merge-pdf': () => import('./tasks/pdf').then((m) => m.mergePdf as Handler),
   'images-to-pdf': () => import('./tasks/pdf').then((m) => m.imagesToPdf as Handler),
   'organize-pdf': () => import('./tasks/pdf').then((m) => m.organizePdf as Handler),
+  'scan-preview': () => import('./tasks/pdf').then((m) => m.scanPreview as Handler),
   'map-grid': () => import('./tasks/mapArt').then((m) => m.mapGrid as Handler),
   'map-export': () => import('./tasks/mapArt').then((m) => m.mapExport as Handler),
 };
