@@ -42,7 +42,7 @@ PowerShell blocks `npm` by default, because there `npm` is a script (`npm.ps1`).
 
 ## Deploying
 
-`dist/` is a static site, but routes like `/t/ogg-to-mp3` need an SPA fallback: every unknown path should serve `index.html`.
+`dist/` is a static site, but routes like `/t/audio-converter` need an SPA fallback: every unknown path should serve `index.html`.
 
 - Netlify: add `/* /index.html 200` to `public/_redirects`
 - Vercel: a rewrite of `/(.*)` to `/index.html`
@@ -50,14 +50,23 @@ PowerShell blocks `npm` by default, because there `npm` is a script (`npm.ps1`).
 
 The ffmpeg core (`ffmpeg-core-*.wasm`, about 32 MB, about 10 MB gzipped) only downloads the first time someone runs an audio or video job. It uses the single-threaded core, so no COOP/COEP headers are needed.
 
+Things that don't work in this ffmpeg.wasm build (0.12.10), and what's used instead:
+
+- `libvpx-vp9` crashes ("memory access out of bounds"): WebM video uses VP8 (`libvpx`).
+- `libopus` crashes on stereo: Opus uses ffmpeg's own encoder (`-c:a opus -strict -2 -ar 48000`).
+- `loudnorm` needs `aformat=sample_fmts=fltp` right after it, a fixed sample format at the end of the chain and `-ar` (not an `aresample` filter), or the encoders fail.
+- After any failed run the instance is unreliable, so `ffmpegJob` throws it away and the next attempt or job loads a fresh one.
+
+Other file libraries, all loaded only when a job needs them: pdf.js (`pdfjs-dist`, Apache-2.0) draws PDF pages, pdf-lib (MIT) writes PDFs, libheif-js (LGPL-3.0) reads HEIC photos and utif2 (MIT) reads TIFF.
+
 ## Adding a tool
 
 Make one `*.tool.ts` file anywhere under `src/tools/` that default-exports `defineTool({...})`. The registry picks it up through `import.meta.glob`. The home page, search, category chips, related links and the queue's “Add process” picker are all generated from it.
 
-- **File tools** set `accepts`, `options` and `run`. `run(files, opts, { signal })` returns an async iterable of `{ type: 'progress', value }` and `{ type: 'result', name, blob }`. Heavy work goes to a worker: `ffmpegJob()` in `src/lib/ffmpeg.ts` (ffmpeg.wasm has its own worker), or `compute()` in `src/lib/compute.ts`, which sends a task to `src/workers/compute.worker.ts` (tasks live in `src/workers/tasks/`). Set `batch: true` when all the chosen files should become one job (merges). Set `reverse` to the opposite tool's slug to get the swap button.
+- **File tools** set `accepts`, `options` and `run`. `run(files, opts, { signal })` returns an async iterable of `{ type: 'progress', value }` and `{ type: 'result', name, blob }`. Heavy work goes to a worker: `ffmpegJob()` in `src/lib/ffmpeg.ts` (ffmpeg.wasm has its own worker), or `compute()` in `src/lib/compute.ts`, which sends a task to `src/workers/compute.worker.ts` (tasks live in `src/workers/tasks/`). Set `batch: true` when all the chosen files should become one job (merges). Set `reverse` to the opposite tool's slug to get the swap button. When a tool is folded into another, add its old slug to `ALIASES` in `src/registry/index.ts` so old links still open the right tool.
 - **Interactive tools** set `component: lazy(() => import('./MyTool'))`. Use the pieces in `src/components/ui.tsx` (Panel, Segmented, Toggle, Output, Stat…) so the tool matches the rest.
 
-Option types are `choice` (segmented buttons), `range`, `number` and `toggle`. Any option can take `when: (opts) => boolean` to hide itself.
+Option types are `choice` (segmented buttons), `range`, `number`, `text` and `toggle`. Any option can take `when: (opts) => boolean` to hide itself.
 
 ## How the queue works
 

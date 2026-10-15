@@ -1,4 +1,5 @@
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
+import { parseGroups, parsePages } from '../../lib/pageRange';
 import type { Report, TaskOutput } from '../compute.worker';
 import { decode, drawScaled } from './image';
 import { scanPage, type ScanLook } from './scan';
@@ -112,4 +113,54 @@ export async function imagesToPdf(p: ImagesToPdfPayload, report: Report): Promis
   const bytes = await doc.save();
   const first = p.files[0]?.name.replace(/\.[^.]+$/, '') || 'images';
   return [{ name: `${first}${n > 1 ? '-and-more' : ''}.pdf`, blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) }];
+}
+
+export type OrganizePdfPayload = {
+  file: File;
+  /** keep: these pages, in this order. remove: all but these. each: every page alone. groups: "1-3; 4-6". */
+  mode: 'keep' | 'remove' | 'each' | 'groups';
+  pages: string;
+  /** Clockwise, added to the chosen pages (all pages for "remove"). */
+  rotate: 0 | 90 | 180 | 270;
+};
+
+export async function organizePdf(p: OrganizePdfPayload, report: Report): Promise<TaskOutput> {
+  let src: PDFDocument;
+  try {
+    src = await PDFDocument.load(await p.file.arrayBuffer(), { ignoreEncryption: true });
+  } catch {
+    throw new Error(`${p.file.name} isn't a readable PDF.`);
+  }
+  const count = src.getPageCount();
+  const base = p.file.name.replace(/\.pdf$/i, '') || 'document';
+  const pad = (n: number) => String(n + 1).padStart(String(count).length, '0');
+
+  let groups: { name: string; pages: number[] }[];
+  if (p.mode === 'each') {
+    groups = parsePages(p.pages, count).map((i) => ({ name: `${base}-page-${pad(i)}.pdf`, pages: [i] }));
+  } else if (p.mode === 'groups') {
+    groups = parseGroups(p.pages, count).map((g, i) => ({ name: `${base}-part-${i + 1}.pdf`, pages: g }));
+  } else if (p.mode === 'remove') {
+    if (!p.pages.trim()) throw new Error('Type which pages to remove, e.g. 2, 5-6.');
+    const drop = new Set(parsePages(p.pages, count));
+    const left = [...Array(count).keys()].filter((i) => !drop.has(i));
+    if (!left.length) throw new Error('That would remove every page.');
+    groups = [{ name: `${base}-edited.pdf`, pages: left }];
+  } else {
+    groups = [{ name: `${base}-edited.pdf`, pages: parsePages(p.pages, count) }];
+  }
+
+  const out: TaskOutput = [];
+  for (let g = 0; g < groups.length; g++) {
+    const doc = await PDFDocument.create();
+    const pages = await doc.copyPages(src, groups[g].pages);
+    for (const page of pages) {
+      if (p.rotate) page.setRotation(degrees((page.getRotation().angle + p.rotate) % 360));
+      doc.addPage(page);
+    }
+    const bytes = await doc.save();
+    out.push({ name: groups[g].name, blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) });
+    report((g + 1) / groups.length);
+  }
+  return out;
 }
