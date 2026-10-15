@@ -1,9 +1,17 @@
 import { useEffect, useRef } from 'react';
-import { SREGION, STRUCTURES, TILE, scaleFor, worldKey, type SeedMapEngine, type World } from '../../../lib/mc/seedmap';
+import { SREGION, STRUCTURES, STRUCTURE_ICONS, TILE, scaleFor, worldKey, type SeedMapEngine, type World } from '../../../lib/mc/seedmap';
 import type { TileResult } from '../../../workers/seedmap.worker';
 
 export type View = { x: number; z: number; bpp: number };
-export type Pick = { x: number; z: number; biome: number | null; structure?: number };
+/** A spot on the map; `sx`/`sy` is where it is on screen (for the hover label). */
+export type Pick = { x: number; z: number; biome: number | null; structure?: number; spawn?: boolean; sx?: number; sy?: number };
+
+const ICON_PATHS = new Map<number, Path2D>();
+const iconPath = (i: number) => {
+  let p = ICON_PATHS.get(i);
+  if (!p) ICON_PATHS.set(i, (p = new Path2D(STRUCTURE_ICONS[STRUCTURES[i].key])));
+  return p;
+};
 export type Command = { n: number } & ({ kind: 'goto'; x: number; z: number; bpp?: number } | { kind: 'zoom'; factor: number });
 
 type Props = {
@@ -15,6 +23,8 @@ type Props = {
   initial: View;
   command?: Command;
   selected: Pick | null;
+  /** World spawn, drawn as a red + that keeps its size at every zoom. */
+  spawn: { x: number; z: number } | null;
   onView: (v: View) => void;
   onHover: (p: Pick | null) => void;
   onSelect: (p: Pick | null) => void;
@@ -140,24 +150,47 @@ export function MapCanvas(p: Props) {
           if (missing.length) requestStructures(rx, rz, missing);
         }
     }
-    const r = 10;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
+    // Markers: a colored disc with the structure's icon, the same size at every zoom.
+    const r = 11;
+    const k = 15 / 24;
     for (const m of list) {
       if (m.sx < -r || m.sy < -r || m.sx > W + r || m.sy > H + r) continue;
-      const st = STRUCTURES[m.i];
       g.beginPath();
       g.arc(m.sx, m.sy, r, 0, Math.PI * 2);
-      g.fillStyle = st.color;
+      g.fillStyle = STRUCTURES[m.i].color;
       g.fill();
       g.lineWidth = 2;
       g.strokeStyle = '#0b0d10';
       g.stroke();
-      g.fillStyle = '#0b0d10';
-      g.font = `700 ${st.short.length > 1 ? 8 : 10}px ui-monospace, monospace`;
-      g.fillText(st.short, m.sx, m.sy + 0.5);
+      g.save();
+      g.translate(m.sx - 12 * k, m.sy - 12 * k);
+      g.scale(k, k);
+      g.lineWidth = 2.4;
+      g.lineCap = 'round';
+      g.lineJoin = 'round';
+      g.stroke(iconPath(m.i));
+      g.restore();
     }
     markers.current = list;
+
+    const sp = props.current.spawn;
+    if (sp) {
+      const X = Math.round(sx(sp.x + 0.5)) + 0.5;
+      const Y = Math.round(sy(sp.z + 0.5)) + 0.5;
+      const arm = 9;
+      g.lineCap = 'square';
+      for (const [w, c] of [[6, '#0b0d10'], [3, '#ff3b30']] as const) {
+        g.lineWidth = w;
+        g.strokeStyle = c;
+        g.beginPath();
+        g.moveTo(X - arm, Y);
+        g.lineTo(X + arm, Y);
+        g.moveTo(X, Y - arm);
+        g.lineTo(X, Y + arm);
+        g.stroke();
+      }
+      g.lineCap = 'butt';
+    }
 
     if (selected) {
       const X = sx(selected.x);
@@ -165,7 +198,7 @@ export function MapCanvas(p: Props) {
       g.lineWidth = 2.5;
       g.strokeStyle = '#ffffff';
       g.beginPath();
-      if (selected.structure !== undefined) g.arc(X, Y, r + 4, 0, Math.PI * 2);
+      if (selected.structure !== undefined || selected.spawn) g.arc(X, Y, r + 4, 0, Math.PI * 2);
       else {
         g.moveTo(X - 8, Y);
         g.lineTo(X + 8, Y);
@@ -292,6 +325,29 @@ export function MapCanvas(p: Props) {
   };
 
   /** Block position and biome under a point on the canvas. */
+  /** The structure marker or spawn under a screen point, if any. */
+  const hitAt = (px: number, py: number): Pick | null => {
+    let best: Marker | null = null;
+    let bd = 13;
+    for (const m of markers.current) {
+      const d = Math.hypot(m.sx - px, m.sy - py);
+      if (d < bd) {
+        bd = d;
+        best = m;
+      }
+    }
+    if (best) return { ...pickAt(best.sx, best.sy), x: best.x, z: best.z, structure: best.i, sx: best.sx, sy: best.sy };
+    const sp = props.current.spawn;
+    const host = box.current;
+    if (sp && host) {
+      const { x, z, bpp } = view.current;
+      const X = (sp.x - x) / bpp + host.clientWidth / 2;
+      const Y = (sp.z - z) / bpp + host.clientHeight / 2;
+      if (Math.hypot(X - px, Y - py) < 11) return { ...pickAt(X, Y), x: sp.x, z: sp.z, spawn: true, sx: X, sy: Y };
+    }
+    return null;
+  };
+
   const pickAt = (px: number, py: number): Pick => {
     const host = box.current!;
     const { x, z, bpp } = view.current;
@@ -327,7 +383,7 @@ export function MapCanvas(p: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  useEffect(redraw, [p.enabled, p.structureIds, p.selected]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(redraw, [p.enabled, p.structureIds, p.selected, p.spawn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const c = p.command;
@@ -372,7 +428,7 @@ export function MapCanvas(p: Props) {
     const move = (e: PointerEvent) => {
       const at = local(e);
       const prev = drag;
-      props.current.onHover(pickAt(at.x, at.y));
+      props.current.onHover(prev ? pickAt(at.x, at.y) : (hitAt(at.x, at.y) ?? { ...pickAt(at.x, at.y), sx: at.x, sy: at.y }));
       if (!prev) return;
       drag = at;
       const dx = at.x - prev.x;
@@ -387,18 +443,8 @@ export function MapCanvas(p: Props) {
       const wasClick = !!drag && moved < 6;
       drag = null;
       if (!wasClick) return;
-      // A click picks the nearest structure marker, or else the spot itself.
-      let best: Marker | null = null;
-      let bd = 16;
-      for (const m of markers.current) {
-        const d = Math.hypot(m.sx - at.x, m.sy - at.y);
-        if (d < bd) {
-          bd = d;
-          best = m;
-        }
-      }
-      const pick = pickAt(at.x, at.y);
-      props.current.onSelect(best ? { x: best.x, z: best.z, biome: pickAt(best.sx, best.sy).biome, structure: best.i } : pick);
+      // A click picks the structure marker (or spawn) under it, or else the spot itself.
+      props.current.onSelect(hitAt(at.x, at.y) ?? pickAt(at.x, at.y));
     };
     const wheel = (e: WheelEvent) => {
       e.preventDefault();

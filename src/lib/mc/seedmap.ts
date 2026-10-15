@@ -20,21 +20,21 @@ export const VERSIONS = [
  * zoomed out further than this many blocks per screen pixel (common ones would just be clutter).
  */
 export const STRUCTURES = [
-  { key: 'village', name: 'Village', short: 'V', color: '#f2b13c', on: true, maxBpp: 24 },
-  { key: 'desert_pyramid', name: 'Desert temple', short: 'D', color: '#e8d27c', on: true, maxBpp: 24 },
-  { key: 'jungle_temple', name: 'Jungle temple', short: 'J', color: '#5fbf4a', on: true, maxBpp: 24 },
-  { key: 'swamp_hut', name: 'Witch hut', short: 'W', color: '#7d58c9', on: true, maxBpp: 24 },
-  { key: 'igloo', name: 'Igloo', short: 'I', color: '#bfe6ff', on: false, maxBpp: 24 },
-  { key: 'ocean_ruin', name: 'Ocean ruins', short: 'R', color: '#3fa7a0', on: false, maxBpp: 6 },
-  { key: 'shipwreck', name: 'Shipwreck', short: 'S', color: '#9c6b3f', on: false, maxBpp: 6 },
-  { key: 'monument', name: 'Ocean monument', short: 'M', color: '#33c3e8', on: true, maxBpp: 48 },
-  { key: 'mansion', name: 'Woodland mansion', short: 'WM', color: '#a0522d', on: true, maxBpp: 96 },
-  { key: 'outpost', name: 'Pillager outpost', short: 'O', color: '#d8573e', on: true, maxBpp: 24 },
-  { key: 'ruined_portal', name: 'Ruined portal', short: 'P', color: '#b44cd6', on: false, maxBpp: 8 },
-  { key: 'ancient_city', name: 'Ancient city', short: 'A', color: '#1f6f8b', on: true, maxBpp: 48, since: '1.19.2' },
-  { key: 'treasure', name: 'Buried treasure', short: 'T', color: '#f5e050', on: false, maxBpp: 3 },
-  { key: 'trail_ruins', name: 'Trail ruins', short: 'TR', color: '#c98a5a', on: false, maxBpp: 24, since: '1.20' },
-  { key: 'trial_chambers', name: 'Trial chambers', short: 'TC', color: '#d9883b', on: true, maxBpp: 24, since: '1.21.1' },
+  { key: 'village', name: 'Village', color: '#f2b13c', on: true, maxBpp: 24 },
+  { key: 'desert_pyramid', name: 'Desert temple', color: '#e8d27c', on: true, maxBpp: 24 },
+  { key: 'jungle_temple', name: 'Jungle temple', color: '#5fbf4a', on: true, maxBpp: 24 },
+  { key: 'swamp_hut', name: 'Witch hut', color: '#7d58c9', on: true, maxBpp: 24 },
+  { key: 'igloo', name: 'Igloo', color: '#bfe6ff', on: false, maxBpp: 24 },
+  { key: 'ocean_ruin', name: 'Ocean ruins', color: '#3fa7a0', on: false, maxBpp: 6 },
+  { key: 'shipwreck', name: 'Shipwreck', color: '#9c6b3f', on: false, maxBpp: 6 },
+  { key: 'monument', name: 'Ocean monument', color: '#33c3e8', on: true, maxBpp: 48 },
+  { key: 'mansion', name: 'Woodland mansion', color: '#a0522d', on: true, maxBpp: 96 },
+  { key: 'outpost', name: 'Pillager outpost', color: '#d8573e', on: true, maxBpp: 24 },
+  { key: 'ruined_portal', name: 'Ruined portal', color: '#b44cd6', on: false, maxBpp: 8 },
+  { key: 'ancient_city', name: 'Ancient city', color: '#1f6f8b', on: true, maxBpp: 48, since: '1.19.2' },
+  { key: 'treasure', name: 'Buried treasure', color: '#f5e050', on: false, maxBpp: 3 },
+  { key: 'trail_ruins', name: 'Trail ruins', color: '#c98a5a', on: false, maxBpp: 24, since: '1.20' },
+  { key: 'trial_chambers', name: 'Trial chambers', color: '#d9883b', on: true, maxBpp: 24, since: '1.21.1' },
 ] as const;
 export type StructureKey = (typeof STRUCTURES)[number]['key'];
 
@@ -125,6 +125,11 @@ export class SeedMapEngine {
     return this.run<StructuresResult>({ kind: 'structures', world, types, x0, z0, x1: x0 + SREGION, z1: z0 + SREGION }, priority);
   }
 
+  /** Where the player first appears in the world. */
+  spawn(world: World) {
+    return this.run<{ x: number; z: number }>({ kind: 'spawn', world }, () => -1);
+  }
+
   meta(world: World) {
     return this.run<MetaResult>({ kind: 'meta', world }, () => -1);
   }
@@ -164,3 +169,22 @@ export function inVersion(i: number, version: string) {
 
 /** "dark_forest" → "Dark forest" */
 export const biomeLabel = (name: string) => (name ? name[0].toUpperCase() + name.slice(1).replace(/_/g, ' ') : 'Unknown');
+
+/** Line-art icons (24×24, stroked) used on the map and in the list. */
+export const STRUCTURE_ICONS: Record<StructureKey, string> = {
+  village: 'M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5',
+  desert_pyramid: 'M2 20h20M4 20l8-14 8 14M9 14h6',
+  jungle_temple: 'M3 20h18M5 20v-4h14v4M7 16v-4h10v4M9 12V8h6v4M11 8V5h2v3',
+  swamp_hut: 'M3 19h18M7 19c2-3 2.5-8 5-15 2.5 7 3 12 5 15M8.5 15h7',
+  igloo: 'M3 19h18M4 19a8 8 0 0 1 16 0M10 19v-3a2 2 0 0 1 4 0v3',
+  ocean_ruin: 'M5 20h14M8 20V9M12 20v-8M16 20v-5M6 9l3-3 3 2 3-2 3 3',
+  shipwreck: 'M3 15h18l-3 5H6zM12 15V4M12 5l6 7h-6',
+  monument: 'M12 21V8M6 4v4a6 6 0 0 0 12 0V4M12 3v5',
+  mansion: 'M3 20h18M4 20V10l4-4 4 4 4-4 4 4v10M10 20v-4h4v4M7 13h1M16 13h1',
+  outpost: 'M8 21V10h8v11M7 10h10M8 7h2v3M14 7h2v3M12 10V3l5 2-5 2',
+  ruined_portal: 'M6 21V3h12v18M9.5 6.5v11h5v-11z',
+  ancient_city: 'M4 21V11a8 8 0 0 1 16 0v10M8.5 21v-9a3.5 3.5 0 0 1 7 0v9',
+  treasure: 'M4 10h16v10H4zM4 10l2-5h12l2 5M10.5 12.5h3v3h-3z',
+  trail_ruins: 'M9 4h6M10 4v3c-4 2-5 6-3 12h10c2-6 1-10-3-12V4',
+  trial_chambers: 'M8 3.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM11.2 11.2 20 20M16 16l2-2M18.5 18.5l2-2',
+};

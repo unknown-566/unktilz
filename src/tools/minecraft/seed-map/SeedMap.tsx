@@ -2,12 +2,22 @@ import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'rea
 import { useSearchParams } from 'react-router-dom';
 import { Help } from '../../../components/Help';
 import { CopyButton, Toggle } from '../../../components/ui';
-import { STRUCTURES, SeedMapEngine, VERSIONS, biomeLabel, inVersion, randomSeed, type World } from '../../../lib/mc/seedmap';
+import { STRUCTURES, STRUCTURE_ICONS, SeedMapEngine, VERSIONS, biomeLabel, inVersion, randomSeed, type World } from '../../../lib/mc/seedmap';
 import { parseSeed } from '../../../lib/mc/slime';
 import type { MetaResult } from '../../../workers/seedmap.worker';
 import { MAX_BPP, MIN_BPP, MapCanvas, type Command, type Pick, type View } from './MapCanvas';
 
 const STORE = 'unktilz-seedmap-structures';
+
+function StructIcon({ i }: { i: number }) {
+  return (
+    <span className="sm-marker" style={{ background: STRUCTURES[i].color }} aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d={STRUCTURE_ICONS[STRUCTURES[i].key]} />
+      </svg>
+    </span>
+  );
+}
 const fmt = (n: number) => n.toLocaleString('en-US');
 
 function loadEnabled(): boolean[] {
@@ -52,6 +62,8 @@ export default function SeedMap() {
   const [hover, setHover] = useState<Pick | null>(null);
   const [selected, setSelected] = useState<Pick | null>(null);
   const [inView, setInView] = useState<number[]>([]);
+  const [spawn, setSpawn] = useState<{ x: number; z: number } | null>(null);
+  const [showSpawn, setShowSpawn] = useState(true);
   const [command, setCommand] = useState<Command>();
   const [gx, setGx] = useState('');
   const [gz, setGz] = useState('');
@@ -103,6 +115,16 @@ export default function SeedMap() {
 
   useEffect(() => setSelected(null), [world.seed, version, large]);
 
+  useEffect(() => {
+    if (!engine) return;
+    let alive = true;
+    setSpawn(null);
+    engine.spawn(world).then((s) => alive && setSpawn(s), () => {});
+    return () => {
+      alive = false;
+    };
+  }, [engine, world]);
+
   const name = (id: number | null) => (id === null ? '…' : biomeLabel(meta?.names[id] ?? ''));
   const color = (id: number) => `#${(meta?.colors[id] ?? 0).toString(16).padStart(6, '0')}`;
   const visibleEnabled = enabled.map((on, i) => on && inVersion(i, version));
@@ -129,6 +151,7 @@ export default function SeedMap() {
         initial={first.view}
         command={command}
         selected={selected}
+          spawn={showSpawn ? spawn : null}
         onView={setView}
         onHover={setHover}
         onSelect={setSelected}
@@ -148,6 +171,11 @@ export default function SeedMap() {
           ⌂
         </button>
       </div>
+      {hover?.sx !== undefined && (hover.structure !== undefined || hover.spawn) && (
+        <div className="sm-tip" style={{ left: hover.sx + 16, top: hover.sy! - 12 }}>
+          {hover.spawn ? 'World spawn' : STRUCTURES[hover.structure!].name}
+        </div>
+      )}
       <div className="sm-hover mono" aria-live="off">
         {hover ? (
           <>
@@ -170,7 +198,7 @@ export default function SeedMap() {
   const sel = selected && (
     <section className="panel sm-sel" aria-label="Selected spot">
       <div className="opt-row">
-        <h2 className="panel-title">// {selected.structure !== undefined ? STRUCTURES[selected.structure].name.toLowerCase() : 'spot'}</h2>
+        <h2 className="panel-title">// {selected.spawn ? 'world spawn' : selected.structure !== undefined ? STRUCTURES[selected.structure].name.toLowerCase() : 'spot'}</h2>
         <button type="button" className="btn btn-sm" onClick={() => setSelected(null)}>
           close
         </button>
@@ -269,14 +297,19 @@ export default function SeedMap() {
             </span>
           </div>
           <div className="sm-structs">
+            <label className="sm-struct">
+              <input type="checkbox" checked={showSpawn} onChange={(e) => setShowSpawn(e.target.checked)} />
+              <span className="sm-spawn-icon" aria-hidden="true">
+                +
+              </span>
+              <span>World spawn</span>
+            </label>
             {STRUCTURES.map((s, i) => {
               const ok = inVersion(i, version);
               return (
                 <label key={s.key} className={`sm-struct${ok ? '' : ' off'}`} title={ok ? undefined : 'Not in this version'}>
                   <input type="checkbox" checked={enabled[i] && ok} disabled={!ok} onChange={(e) => setEnabled(enabled.map((v, j) => (j === i ? e.target.checked : v)))} />
-                  <span className="sm-marker" style={{ background: s.color }} aria-hidden="true">
-                    {s.short}
-                  </span>
+                  <StructIcon i={i} />
                   <span>{s.name}</span>
                 </label>
               );

@@ -90,6 +90,15 @@ EXPORT int sm_structures(int type, int x0, int z0, int x1, int z1)
 
 EXPORT int *sm_out(void) { return out_buf; }
 
+/** World spawn (the full search the game does; tens of milliseconds). x,z go to sm_out(). */
+EXPORT int *sm_spawn(void)
+{
+    Pos p = getSpawn(&g);
+    out_buf[0] = p.x;
+    out_buf[1] = p.z;
+    return out_buf;
+}
+
 EXPORT const char *sm_biome_name(int id) { return biome2str(g_mc, id); }
 
 /** RGB for a biome id, packed 0xRRGGBB. */
