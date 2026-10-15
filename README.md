@@ -17,7 +17,7 @@ npm run preview   # serve dist/ locally
 
 ### Windows without the terminal
 
-- **`start.bat`**: double-click to run the site; the browser opens by itself. The first run installs the dependencies. Closing the black window stops the site.
+- **`start.bat`**: double-click to run the site; the browser opens by itself. If Node.js is missing it offers to install it (winget, Node.js LTS), and the first run installs the dependencies. Closing the black window stops the site.
 - **`update.bat`**: double-click to update to the newest version from GitHub and start it. Works for a ZIP download (no Git needed) as well as a `git clone`. It replaces the site's own files (`src/`, `public/`, …) and leaves `node_modules` and any of your own extra files alone.
 
 ### Windows: folder paths with `&`
