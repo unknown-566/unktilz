@@ -16,16 +16,15 @@ export default function Request() {
         <div className="title-row">
           <h1>Request a tool</h1>
         </div>
-        <p className="tool-desc">Missing something you keep searching for? Tell us what it should take in and what it should give back.</p>
+        <p className="tool-desc">Missing something you keep searching for? Soon you'll be able to suggest it here.</p>
       </div>
-      <section className="panel" aria-labelledby="how">
-        <h2 id="how" className="panel-title">
-          // how
+      <section className="panel" aria-labelledby="soon">
+        <h2 id="soon" className="panel-title">
+          // coming soon
         </h2>
         <p className="note" style={{ color: 'var(--fg)' }}>
-          Email <span className="mono accent">[CONTACT EMAIL]</span> or open an issue at <span className="mono accent">[REPO URL]</span>.
+          Tool requests aren't open yet. Check back later.
         </p>
-        <p className="note">Include the tool name, an example input, and the output you expect.</p>
       </section>
     </div>
   );
