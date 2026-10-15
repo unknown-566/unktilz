@@ -162,7 +162,7 @@ export default function CircleGenerator() {
   );
 
   return (
-    <Workbench preview={guide} mobile="below">
+    <Workbench preview={guide}>
       <section className="panel" aria-label="Shape">
         <div className="opt-row">
           <span className="opt-label" id="shape">

@@ -1226,69 +1226,6 @@ button {
   border-radius: 12px;
   overscroll-behavior: contain;
 }
-.wb-toggle {
-  display: none;
-  align-self: flex-end;
-}
-.wb-hidden {
-  display: none;
-}
-@media (min-width: 1024px) {
-  .wb-hidden {
-    display: contents;
-  }
-}
-@media (max-width: 1023px) {
-  .workbench {
-    display: flex;
-    flex-direction: column;
-    /* The desktop grid uses align-items:start; in a column that would size items to their content. */
-    align-items: stretch;
-    gap: 20px;
-  }
-  /* Let the preview and the output take their own places in the stack. */
-  .wb-side {
-    display: contents;
-  }
-  .wb-preview {
-    order: 0;
-    position: sticky;
-    top: 0;
-    z-index: 6;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0;
-    background: var(--bg);
-  }
-  .wb-toggle {
-    display: inline-flex;
-    align-items: center;
-  }
-  /* The pinned preview stays small so the editor still has most of a phone screen. */
-  .workbench:not(.wb-mobile-below) .wb-preview .panel {
-    padding: 12px;
-    gap: 10px;
-  }
-  .workbench:not(.wb-mobile-below) .wb-preview .note {
-    display: none;
-  }
-  .wb-main {
-    order: 1;
-  }
-  .wb-output {
-    order: 2;
-  }
-  .wb-mobile-below .wb-preview {
-    order: 2;
-    position: static;
-    padding: 0;
-  }
-  .wb-mobile-below .wb-output {
-    order: 3;
-  }
-}
-
 .related-row {
   display: flex;
   flex-direction: column;
@@ -1319,15 +1256,13 @@ button {
   align-items: center;
   justify-content: center;
 }
-/* With a mouse the 16 swatches fit on one row; touch keeps 44px targets. */
-@media (pointer: fine) {
-  .mini-toolbar .seg.compact {
-    gap: 4px;
-  }
-  .mini-toolbar .swatch-btn {
-    width: 30px;
-    min-height: 30px !important;
-  }
+/* The 16 swatches fit on one row. */
+.mini-toolbar .seg.compact {
+  gap: 4px;
+}
+.mini-toolbar .swatch-btn {
+  width: 30px;
+  min-height: 30px !important;
 }
 .grad {
   display: inline-flex;
@@ -1358,12 +1293,10 @@ button {
 .effect-opts .select {
   font-size: 13px;
 }
-@media (pointer: fine) {
-  .effect-box .seg button {
-    min-height: 34px;
-    padding: 0 10px;
-    font-size: 12px;
-  }
+.effect-box .seg button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
 /* radio cards: choices that each need a sentence */
@@ -1782,42 +1715,6 @@ button {
   animation: blink 0.5s steps(1) infinite;
 }
 
-/* ---------- small screens ---------- */
-
-@media (max-width: 560px) {
-  :root {
-    --rail: 60px;
-  }
-  .rail-head,
-  .rail-jobs,
-  .rail-foot,
-  .picker {
-    padding-left: 7px;
-    padding-right: 7px;
-  }
-  .header-inner {
-    padding: 10px 16px;
-    gap: 8px;
-  }
-  .nav {
-    gap: 14px;
-  }
-  .hero-inner {
-    padding: 48px 16px 40px;
-  }
-  .wrap,
-  .footer-inner {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  .kbd {
-    display: none;
-  }
-  .panel {
-    padding: 16px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -2001,7 +1898,6 @@ button {
   min-height: 320px;
   border-radius: 8px;
   background: radial-gradient(ellipse at 50% 85%, rgba(182, 242, 74, 0.07), transparent 60%), var(--bg);
-  touch-action: none;
   cursor: crosshair;
   overflow: hidden;
   user-select: none;
@@ -2042,7 +1938,6 @@ button {
   max-width: 100%;
   image-rendering: pixelated;
   border-radius: 4px;
-  touch-action: none;
   cursor: crosshair;
 }
 .sk-dir {
@@ -2163,32 +2058,6 @@ button {
     align-items: start;
   }
 }
-@media (max-width: 760px) {
-  .sk-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .sk-tools,
-  .sk-stage {
-    position: static;
-  }
-  .sk-stage {
-    order: -1;
-  }
-  .sk-3d {
-    height: 70vw;
-    min-height: 260px;
-  }
-  .sk-side {
-    display: flex;
-  }
-  .sk-toolgrid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  .sk-open-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* ---- Seed map ---- */
 .sm {
   display: grid;
@@ -2226,7 +2095,6 @@ button {
   width: 100%;
   height: 100%;
   display: block;
-  touch-action: none;
   cursor: grab;
 }
 .sm-map canvas:active {
@@ -2353,17 +2221,4 @@ button {
   margin: 0;
   font-size: 15px;
   overflow-wrap: anywhere;
-}
-@media (max-width: 900px) {
-  .sm {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .sm-main {
-    position: static;
-    order: -1;
-  }
-  .sm-map {
-    height: 62vh;
-    min-height: 300px;
-  }
 }
