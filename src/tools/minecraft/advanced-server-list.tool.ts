@@ -5,6 +5,7 @@ export default defineTool({
   slug: 'advanced-server-list',
   name: 'AdvancedServerList profile generator',
   category: 'minecraft',
+  online: 'partly',
   order: 7,
   meta: 'ASL · profile.yml',
   description:
