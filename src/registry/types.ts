@@ -51,6 +51,11 @@ export type Tool = {
   /** Slug of the opposite direction; powers the swap button. */
   reverse?: string;
   options?: OptionSchema[];
+  /**
+   * Image tools: show the picked picture above the options, as it will come out. `transform` is a
+   * CSS transform for the options (e.g. rotation); `size` gives the output size in pixels.
+   */
+  preview?: { transform?: (opts: Opts) => string; size?: (w: number, h: number, opts: Opts, file: File) => { w: number; h: number } };
   /** File tools: runs from the queue. Heavy work is handed to a worker. */
   run?: (input: File[], opts: Opts, ctx: RunContext) => AsyncIterable<RunEvent>;
   /**

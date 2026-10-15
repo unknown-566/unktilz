@@ -2,6 +2,11 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.6.0] - 2026-10-15
+
+### Added
+- **Image preview** in the image converter and Resize image: the picked picture shows above the options and turns or mirrors right away as you change them, with the size it will come out at (e.g. 1920 × 1080 → 1280 × 720 px). With several pictures you can flip through them. Works for HEIC and TIFF too.
+
 ## [1.5.0] - 2026-10-15
 
 ### Added
