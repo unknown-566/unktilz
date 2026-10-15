@@ -2,6 +2,17 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.3.0] - 2026-10-15
+
+### Added
+- **Audio converter:** MP3, WAV, OGG, Opus, FLAC and M4A from almost any sound file, or take the sound out of a video (MP4 to MP3 and so on). It can also cut the sound shorter, fade it in and out, make it louder or quieter, even out the volume (normalize), and switch between mono and stereo.
+
+### Changed
+- "OGG to MP3" and "MP3 to OGG" are now part of the audio converter. Old links still work.
+
+### Fixed
+- After one failed conversion, the next video or audio conversion could fail too. Each one now starts fresh.
+
 ## [1.2.0] - 2026-10-15
 
 ### Added
