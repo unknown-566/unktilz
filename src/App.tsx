@@ -9,6 +9,7 @@ import Request from './pages/Request';
 import NotFound from './pages/NotFound';
 
 const Backup = lazy(() => import('./pages/Backup'));
+const Changelog = lazy(() => import('./pages/Changelog'));
 
 function Shortcuts() {
   const navigate = useNavigate();
@@ -48,6 +49,14 @@ export default function App() {
                   <Route path="/" element={<Home />} />
                   <Route path="/t/:slug" element={<ToolPage />} />
                   <Route path="/request" element={<Request />} />
+                  <Route
+                    path="/changelog"
+                    element={
+                      <Suspense fallback={<div className="wrap muted mono">loading…</div>}>
+                        <Changelog />
+                      </Suspense>
+                    }
+                  />
                   <Route
                     path="/backup"
                     element={
