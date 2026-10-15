@@ -2,6 +2,13 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.5.0] - 2026-10-15
+
+### Added
+- **PDF to images:** turn PDF pages into PNG or JPG, all of them or just the ones you pick, at 72, 150 or 300 dpi.
+- **Split & organize PDF:** pick pages and put them in another order, remove pages, split a PDF into one file per page or into groups, and turn pages that are sideways.
+- **Compress PDF:** makes scanned PDFs much smaller (e.g. 10 MB → 0.6 MB), optionally in black & white. It tells you when a PDF is already as small as it gets.
+
 ## [1.4.0] - 2026-10-15
 
 ### Added

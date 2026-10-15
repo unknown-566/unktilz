@@ -1,0 +1,69 @@
+import { defineTool, type RunEvent } from '../../registry/types';
+import { formatBytes } from '../../queue/download';
+import { baseName, canvasBlob, openPdf, renderPage } from '../../lib/pdfjs';
+
+/** Resolution and JPG quality per level. */
+const LEVELS: Record<string, { dpi: number; quality: number }> = {
+  strong: { dpi: 96, quality: 0.6 },
+  balanced: { dpi: 144, quality: 0.72 },
+  light: { dpi: 200, quality: 0.85 },
+};
+
+export default defineTool({
+  slug: 'compress-pdf',
+  name: 'Compress PDF',
+  category: 'pdf',
+  order: 4,
+  meta: 'smaller .pdf',
+  description:
+    'Make PDFs smaller by redrawing every page as a compressed picture. Works best on scans and photos. The text can’t be selected or searched afterwards, so keep the original if you need that.',
+  keywords: ['compress pdf', 'shrink pdf', 'reduce pdf size', 'smaller pdf', 'email', 'upload limit', 'scan'],
+  accepts: ['.pdf'],
+  options: [
+    {
+      key: 'level',
+      label: 'Compression',
+      help: 'Strong gives the smallest file; small print can get blurry. Light keeps pages sharp but saves less.',
+      type: 'choice',
+      default: 'balanced',
+      choices: [
+        { value: 'strong', label: 'strong' },
+        { value: 'balanced', label: 'balanced' },
+        { value: 'light', label: 'light' },
+      ],
+    },
+    { key: 'gray', label: 'Black & white', help: 'Removes the color, which makes scans of text even smaller.', type: 'toggle', default: false },
+  ],
+  run: ([file], opts, { signal }) =>
+    (async function* (): AsyncGenerator<RunEvent> {
+      const { PDFDocument } = await import('pdf-lib');
+      const level = LEVELS[String(opts.level)] ?? LEVELS.balanced;
+      const doc = await openPdf(file);
+      try {
+        const out = await PDFDocument.create();
+        for (let i = 0; i < doc.numPages; i++) {
+          if (signal.aborted) return;
+          const { canvas, width, height } = await renderPage(doc, i, level.dpi);
+          if (opts.gray) {
+            const ctx = canvas.getContext('2d')!;
+            ctx.globalCompositeOperation = 'saturation';
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          const jpg = await canvasBlob(canvas, 'image/jpeg', level.quality);
+          const img = await out.embedJpg(new Uint8Array(await jpg.arrayBuffer()));
+          out.addPage([width, height]).drawImage(img, { x: 0, y: 0, width, height });
+          canvas.width = canvas.height = 0;
+          yield { type: 'progress', value: ((i + 1) / doc.numPages) * 0.95 };
+        }
+        const bytes = await out.save();
+        if (bytes.length >= file.size)
+          throw new Error(
+            `This PDF is already small (${formatBytes(file.size)}; it's probably mostly text): compressing would make it bigger (${formatBytes(bytes.length)}).${opts.level === 'strong' ? '' : ' “Strong” might still help.'}`,
+          );
+        yield { type: 'result', name: `${baseName(file.name)}-compressed.pdf`, blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) };
+      } finally {
+        void doc.destroy();
+      }
+    })(),
+});
