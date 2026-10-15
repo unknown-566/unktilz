@@ -19,11 +19,13 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
+    "three": "^0.169.0",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.6",
+    "@types/three": "^0.169.0",
     "@vitejs/plugin-react": "^4.5.1",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
