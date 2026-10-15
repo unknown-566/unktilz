@@ -105,14 +105,16 @@ export default function Home() {
   // The search field draws the same green block caret as the typing animation instead of the
   // browser's thin one: measure the text up to the caret and put the block there.
   const measure = useRef<HTMLSpanElement>(null);
-  const [caret, setCaret] = useState<{ x: number; n: number } | null>(null);
+  const [caret, setCaret] = useState<{ x: number; n: number; end: boolean } | null>(null);
   const placeCaret = () => {
     const el = input.current;
     const m = measure.current;
     if (!el || !m || document.activeElement !== el || el.selectionStart !== el.selectionEnd) return setCaret(null);
     m.textContent = el.value.slice(0, el.selectionStart ?? 0);
     // n changes on every move, which restarts the blink so the caret stays solid while typing.
-    setCaret((c) => ({ x: m.offsetWidth - el.scrollLeft, n: (c?.n ?? 0) + 1 }));
+    // At the end of the text it's the block, like the animation; inside the text a thin bar, so it
+    // doesn't cover the letter after it.
+    setCaret((c) => ({ x: m.offsetWidth - el.scrollLeft, n: (c?.n ?? 0) + 1, end: (el.selectionStart ?? 0) >= el.value.length }));
   };
 
   const catParam = params.get('cat') as Category | null;
@@ -155,7 +157,7 @@ export default function Home() {
           </p>
           <div className="search">
             <SearchIcon />
-            <div className="search-field">
+            <div className={`search-field${caret && q === '' ? ' caret-at-start' : ''}`}>
               <label htmlFor="q" className="sr-only">
                 Search tools
               </label>
@@ -169,11 +171,14 @@ export default function Home() {
                 onChange={(e) => {
                   setQ(e.target.value);
                   setTypedOnce(true);
+                  // The new text and caret position are already in the field: move the block now,
+                  // not when the key comes back up.
+                  placeCaret();
                 }}
                 onFocus={placeCaret}
                 onBlur={() => setCaret(null)}
                 onSelect={placeCaret}
-                onKeyUp={placeCaret}
+                onKeyDownCapture={() => setTimeout(placeCaret, 0)}
                 onScroll={placeCaret}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && shown[0]?.tools[0]) launch(null, shown[0].tools[0].slug);
@@ -194,7 +199,7 @@ export default function Home() {
                 </span>
               )}
               <span ref={measure} className="search-measure" aria-hidden="true" />
-              {caret && <span key={caret.n} className="caret search-caret" style={{ left: caret.x }} aria-hidden="true" />}
+              {caret && <span key={caret.n} className={`caret search-caret${caret.end ? '' : ' bar'}`} style={{ left: caret.x }} aria-hidden="true" />}
             </div>
             <span className="kbd" aria-hidden="true">
               {isMac ? '⌘ K' : 'Ctrl K'}

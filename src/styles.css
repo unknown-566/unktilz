@@ -2624,3 +2624,11 @@ button {
   padding: 0 8px;
   font-size: 12px;
 }
+/* Field focused but empty: the block caret sits at the start, so the hint moves over to make room. */
+.caret-at-start .search-hint {
+  left: calc(0.55em + 6px);
+}
+.search-caret.bar {
+  width: 2px;
+  margin-left: -1px;
+}
