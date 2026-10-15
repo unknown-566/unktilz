@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'motd-generator',
@@ -10,5 +9,5 @@ export default defineTool({
   description: 'Write a colored two-line server MOTD, preview it like the server list, and copy it for server.properties.',
   keywords: ['motd', 'server list', 'description', 'color', 'server.properties'],
   layout: 'workbench',
-  component: lazy(() => import('./MotdGenerator')),
+  component: lazyTool(() => import('./MotdGenerator')),
 });

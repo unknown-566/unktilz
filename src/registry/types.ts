@@ -1,4 +1,4 @@
-import type { ComponentType, LazyExoticComponent } from 'react';
+import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 
 export type Category = 'minecraft' | 'dev' | 'image' | 'audio' | 'video' | 'pdf' | 'text' | 'calc';
 
@@ -58,7 +58,16 @@ export type Tool = {
    */
   layout?: 'workbench';
   /** Interactive tools: rendered on the tool page. */
-  component?: LazyExoticComponent<ComponentType>;
+  component?: LazyTool;
 };
 
 export const defineTool = (tool: Tool): Tool => tool;
+
+/** A lazily loaded tool page that can also be fetched ahead of time (e.g. when its card is hovered). */
+export type LazyTool = LazyExoticComponent<ComponentType> & { preload: () => Promise<unknown> };
+
+export function lazyTool(load: () => Promise<{ default: ComponentType }>): LazyTool {
+  let started: Promise<unknown> | null = null;
+  const once = () => (started ??= load());
+  return Object.assign(lazy(load), { preload: once });
+}

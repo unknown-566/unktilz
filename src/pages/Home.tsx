@@ -3,6 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { CATEGORIES, groups, matches, tools, type Category } from '../registry';
 import { useLaunch } from '../components/Transition';
 import { SearchIcon } from '../components/icons';
+import { preloadTool } from '../registry/preload';
 import { prefersReducedMotion } from '../lib/theme';
 
 const PHRASES = ['server status', 'ogg to mp3', 'json formatter', 'map art', 'nether portal'];
@@ -140,6 +141,14 @@ export default function Home() {
     .map((g) => ({ ...g, tools: g.tools.filter((t) => matches(t, q)) }))
     .filter((g) => g.tools.length > 0);
 
+  // Enter opens the first match, so fetch its code while the user is still typing.
+  const topMatch = q.trim() ? shown[0]?.tools[0] : undefined;
+  useEffect(() => {
+    if (!topMatch) return;
+    const t = setTimeout(() => preloadTool(topMatch), 250);
+    return () => clearTimeout(t);
+  }, [topMatch]);
+
   const chips = [{ id: 'all' as const, label: 'All', count: tools.length }, ...groups.map((g) => ({ id: g.id, label: g.label, count: g.tools.length }))];
   const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform);
 
@@ -226,7 +235,7 @@ export default function Home() {
             </div>
             <div className="tiles">
               {g.tools.map((t) => (
-                <a key={t.slug} className="card" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)}>
+                <a key={t.slug} className="card" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)} onMouseEnter={() => preloadTool(t)} onFocus={() => preloadTool(t)}>
                   <span className="card-name">{t.name}</span>
                   <span className="card-foot">
                     <span className="card-meta">{t.meta}</span>

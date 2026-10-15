@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'uuid-lookup',
@@ -10,5 +9,5 @@ export default defineTool({
   meta: 'name → uuid',
   description: 'Find a Java player’s UUID from their name, or the name from a UUID. Also gives the offline-mode UUID.',
   keywords: ['uuid', 'player', 'username', 'offline', 'mojang', 'profile'],
-  component: lazy(() => import('./UuidLookup')),
+  component: lazyTool(() => import('./UuidLookup')),
 });

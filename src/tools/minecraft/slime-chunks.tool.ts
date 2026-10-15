@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'slime-chunks',
@@ -10,5 +9,5 @@ export default defineTool({
   description: 'Map the slime chunks around you from your world seed (Java Edition).',
   keywords: ['slime', 'seed', 'farm', 'chunk', 'spawn'],
   layout: 'workbench',
-  component: lazy(() => import('./SlimeChunks')),
+  component: lazyTool(() => import('./SlimeChunks')),
 });

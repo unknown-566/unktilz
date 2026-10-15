@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'stack-calculator',
@@ -9,5 +8,5 @@ export default defineTool({
   meta: 'items → stacks',
   description: 'Turn an item count into stacks, shulker boxes and double chests, and back.',
   keywords: ['stacks', 'shulker', 'chest', 'items', 'inventory', 'storage'],
-  component: lazy(() => import('./StackCalculator')),
+  component: lazyTool(() => import('./StackCalculator')),
 });

@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'chunk-finder',
@@ -9,5 +8,5 @@ export default defineTool({
   meta: 'xyz → r.x.z',
   description: 'Find the chunk, section and region file (.mca) a block is in.',
   keywords: ['chunk', 'region', 'mca', 'coordinates', 'section', 'world file'],
-  component: lazy(() => import('./ChunkFinder')),
+  component: lazyTool(() => import('./ChunkFinder')),
 });

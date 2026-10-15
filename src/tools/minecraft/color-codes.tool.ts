@@ -1,5 +1,4 @@
-import { lazy } from 'react';
-import { defineTool } from '../../registry/types';
+import { defineTool, lazyTool } from '../../registry/types';
 
 export default defineTool({
   slug: 'color-codes',
@@ -10,5 +9,5 @@ export default defineTool({
   description: 'Every color and format code with its MiniMessage tag, plus a converter between the two.',
   keywords: ['color codes', 'formatting', 'minimessage', 'adventure', 'paper', 'chat colors', 'hex'],
   layout: 'workbench',
-  component: lazy(() => import('./ColorCodes')),
+  component: lazyTool(() => import('./ColorCodes')),
 });
