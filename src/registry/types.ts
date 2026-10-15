@@ -38,6 +38,11 @@ export type Tool = {
   /** Sort position inside its category. */
   order: number;
   keywords?: string[];
+  /**
+   * Everything runs locally unless this says otherwise: 'required' when the tool can't work
+   * offline (it asks an online service), 'partly' when only some features need the internet.
+   */
+  online?: 'required' | 'partly';
   /** File extensions for file tools, with the dot. */
   accepts?: string[];
   /** All chosen files become one job (merge tools) instead of one job per file. */

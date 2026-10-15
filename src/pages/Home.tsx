@@ -72,6 +72,25 @@ function useParallax(el: React.RefObject<HTMLElement | null>) {
   }, [el]);
 }
 
+const NET = {
+  required: { label: 'online', title: 'Needs an internet connection: it asks an online service.' },
+  partly: { label: 'partly online', title: 'Works offline, but some features (like looking up a player) need an internet connection.' },
+} as const;
+
+/** Marks the few tools that use the internet; everything else is local. */
+function NetTag({ level }: { level: 'required' | 'partly' }) {
+  return (
+    <span className={`net-tag net-${level}`} title={NET[level].title}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+      </svg>
+      {NET[level].label}
+      <span className="sr-only"> — {NET[level].title}</span>
+    </span>
+  );
+}
+
 export default function Home() {
   const launch = useLaunch();
   const location = useLocation();
@@ -117,7 +136,10 @@ export default function Home() {
             // {tools.length} tools · {groups.length} categories
           </div>
           <h1>Every tool you keep searching for.</h1>
-          <p className="lede">Minecraft utilities, dev tools, file converters and everyday helpers, in one place.</p>
+          <p className="lede">
+            Minecraft utilities, dev tools, file converters and everyday helpers, in one place. Everything runs right here in your browser, so your files never
+            leave your computer.
+          </p>
           <div className="search">
             <SearchIcon />
             <div className="search-field">
@@ -180,7 +202,10 @@ export default function Home() {
               {g.tools.map((t) => (
                 <a key={t.slug} className="card" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)}>
                   <span className="card-name">{t.name}</span>
-                  <span className="card-meta">{t.meta}</span>
+                  <span className="card-foot">
+                    <span className="card-meta">{t.meta}</span>
+                    {t.online && <NetTag level={t.online} />}
+                  </span>
                 </a>
               ))}
             </div>
