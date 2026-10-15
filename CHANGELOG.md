@@ -2,6 +2,14 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.2.0] - 2026-10-15
+
+### Added
+- **Video converter:** MP4, WebM, MOV, MKV and GIF from almost any video (MOV, MKV, AVI, WebM, iPhone videos…). It can also make videos smaller (quality and resolution), cut them shorter, lower the frame rate and remove the sound. When only the format changes, the video is copied as it is: instant, with no quality lost.
+
+### Changed
+- "Video to GIF" is now part of the video converter. Old links still work and open it with GIF picked.
+
 ## [1.1.0] - 2026-10-15
 
 ### Added

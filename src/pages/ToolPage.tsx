@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { categoryLabel, getTool, related } from '../registry';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ALIASES, categoryLabel, getTool, related } from '../registry';
 import { useLaunch } from '../components/Transition';
 import { loadFileTool, preloadTool } from '../registry/preload';
 
@@ -51,6 +51,8 @@ function useScramble(text: string, delay: number) {
 export default function ToolPage() {
   const { slug } = useParams();
   const tool = getTool(slug);
+  const alias = slug ? ALIASES[slug] : undefined;
+  if (!tool && alias) return <Navigate to={`/t/${alias.to}`} replace state={{ opts: alias.opts }} />;
   if (!tool) return <NotFound />;
   return <ToolView key={tool.reverse ? [tool.slug, tool.reverse].sort().join('|') : tool.slug} slug={tool.slug} />;
 }

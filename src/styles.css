@@ -1060,6 +1060,9 @@ textarea,
   width: 120px;
   font-family: var(--mono);
 }
+.input-text {
+  width: 200px;
+}
 .field {
   display: flex;
   flex-direction: column;
