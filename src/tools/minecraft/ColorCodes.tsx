@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { SavedPanel } from '../../components/SavedPanel';
+import { useAutosave } from '../../lib/saved';
+import { plainText } from '../../lib/mc/minimessage';
 import { Output, Panel, Segmented, useCopy } from '../../components/ui';
 import { MC_COLORS, MC_FORMATS, McText, legacyToMiniMessage, miniMessageToLegacy } from '../../lib/mc/text';
 import { CodePalette, applyCode } from './CodePalette';
@@ -19,6 +22,14 @@ export default function ColorCodes() {
   const [dir, setDir] = useState<Dir>('legacy');
   const [input, setInput] = useState('&6&lGold bold &r&7then gray &#ff66aahex pink');
   const area = useRef<HTMLTextAreaElement>(null);
+  type Draft = { dir: Dir; input: string };
+  const draft = useMemo<Draft>(() => ({ dir, input }), [dir, input]);
+  const restore = (d: Draft) => {
+    setDir(d.dir);
+    setInput(d.input);
+  };
+  useAutosave('color-codes', draft, restore);
+  const visible = (d: Draft) => (d.dir === 'legacy' ? d.input.replace(/[&§]#[0-9a-f]{6}|[&§][0-9a-fk-orx]/gi, '') : plainText(d.input));
 
   const legacy = dir === 'legacy' ? input : miniMessageToLegacy(input);
   const output = dir === 'legacy' ? legacyToMiniMessage(input) : legacy;
@@ -67,6 +78,16 @@ export default function ColorCodes() {
         </div>
         {dir === 'legacy' && <CodePalette onInsert={(c) => applyCode(area.current, input, c, setInput)} />}
       </section>
+      <SavedPanel<Draft>
+        slug="color-codes"
+        title="my texts"
+        help="Keep formatted texts (chat messages, signs, scoreboard titles…) for later. Saved in this browser."
+        suggestName={() => visible(draft).split('\n')[0].trim().slice(0, 40)}
+        getData={() => draft}
+        onLoad={restore}
+        describe={(i) => `${i.data.dir === 'legacy' ? '& codes' : 'MiniMessage'} · ${visible(i.data).replace(/\n/g, ' ')}`}
+        emptyText="No saved texts yet."
+      />
       </Workbench>
 
       <Panel title="colors">

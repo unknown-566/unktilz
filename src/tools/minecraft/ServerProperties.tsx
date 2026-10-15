@@ -1,4 +1,6 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
+import { SavedPanel } from '../../components/SavedPanel';
+import { useAutosave } from '../../lib/saved';
 import { Segmented, TabPanel, Tabs, Toggle } from '../../components/ui';
 import { Help } from '../../components/Help';
 import { parseProperties, writeProperties } from '../../lib/properties';
@@ -115,6 +117,15 @@ export default function ServerProperties() {
   const file = useRef<HTMLInputElement>(null);
 
   const set = (key: string, v: string) => setValues((m) => new Map(m).set(key, v));
+
+  // Saved as a plain object (a Map doesn't survive the backup file).
+  type Draft = { values: Record<string, string>; source: string };
+  const draft = useMemo<Draft>(() => ({ values: Object.fromEntries(values), source }), [values, source]);
+  const restore = (d: Draft) => {
+    setValues(new Map([...defaults(), ...Object.entries(d.values)]));
+    setSource(d.source);
+  };
+  useAutosave('server-properties', draft, restore);
   const extra = [...values.keys()].filter((k) => !PROPS.some((p) => p.key === k)).sort();
   const changed = PROPS.filter((p) => (values.get(p.key) ?? p.def) !== p.def).length;
 
@@ -226,6 +237,20 @@ export default function ServerProperties() {
           </>
         )}
       </section>
+
+      <SavedPanel<Draft>
+        slug="server-properties"
+        title="my configs"
+        help="Keep setups for different servers (survival, creative, minigame…) and switch between them."
+        suggestName={() => (values.get('motd') ?? '').replace(/[§&][0-9a-fk-or]/gi, '').trim().slice(0, 40) || (source === 'defaults' ? 'My server' : source)}
+        getData={() => draft}
+        onLoad={restore}
+        describe={(i) => {
+          const n = PROPS.filter((p) => (i.data.values[p.key] ?? p.def) !== p.def).length;
+          return `${n} changed from default`;
+        }}
+        emptyText="No saved configs yet."
+      />
     </>
   );
 }

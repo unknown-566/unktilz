@@ -1,4 +1,6 @@
-import { useId, useRef, useState, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { SavedPanel } from '../../components/SavedPanel';
+import { useAutosave } from '../../lib/saved';
 import { CopyButton, Panel, Segmented, TabPanel, Tabs } from '../../components/ui';
 import { Workbench } from '../../components/Workbench';
 import { Help } from '../../components/Help';
@@ -163,6 +165,37 @@ export default function AdvancedServerList() {
   const [active, setActive] = useState<FieldKey>('l1');
   const [tab, setTab] = useState<Tab>('text');
   const [showHover, setShowHover] = useState(false);
+
+  // Everything that makes up the profile, for autosave and the saved list.
+  const draft = useMemo(
+    () => ({ motds, countMode, onlineFixed, onlineAmount, maxMode, maxAmount, countText, hoverMode, hover, favMode, favValue, audience, version, playerName, date, customCond, priority, fileName, fileTouched, previewName }),
+    [motds, countMode, onlineFixed, onlineAmount, maxMode, maxAmount, countText, hoverMode, hover, favMode, favValue, audience, version, playerName, date, customCond, priority, fileName, fileTouched, previewName],
+  );
+  type Draft = typeof draft;
+  const restore = (d: Partial<Draft>) => {
+    if (d.motds?.length) setMotds(d.motds);
+    setCur(0);
+    if (d.countMode) setCountMode(d.countMode);
+    if (d.onlineFixed !== undefined) setOnlineFixed(d.onlineFixed);
+    if (d.onlineAmount !== undefined) setOnlineAmount(d.onlineAmount);
+    if (d.maxMode) setMaxMode(d.maxMode);
+    if (d.maxAmount !== undefined) setMaxAmount(d.maxAmount);
+    if (d.countText !== undefined) setCountText(d.countText);
+    if (d.hoverMode) setHoverMode(d.hoverMode);
+    if (d.hover !== undefined) setHover(d.hover);
+    if (d.favMode) setFavMode(d.favMode);
+    if (d.favValue !== undefined) setFavValue(d.favValue);
+    if (d.audience) setAudience(d.audience);
+    if (d.version) setVersion(d.version);
+    if (d.playerName !== undefined) setPlayerName(d.playerName);
+    if (d.date) setDate(d.date);
+    if (d.customCond !== undefined) setCustomCond(d.customCond);
+    if (d.priority !== undefined) setPriority(d.priority);
+    if (d.fileName !== undefined) setFileName(d.fileName);
+    if (d.fileTouched !== undefined) setFileTouched(d.fileTouched);
+    if (d.previewName !== undefined) setPreviewName(d.previewName);
+  };
+  useAutosave<Partial<Draft>>('advanced-server-list', draft, restore);
 
   const refs = {
     l1: useRef<HTMLInputElement>(null),
@@ -770,6 +803,16 @@ export default function AdvancedServerList() {
           </TabPanel>
         )}
       </section>
+      <SavedPanel<Partial<Draft>>
+        slug="advanced-server-list"
+        title="my profiles"
+        help="Keep profiles (a normal one, maintenance, an event…) and come back to edit them. Saved in this browser."
+        suggestName={() => fileName}
+        getData={() => draft}
+        onLoad={restore}
+        describe={(i) => `${i.data.fileName ?? 'profile'}.yml · ${i.data.motds?.length ?? 1} MOTD${(i.data.motds?.length ?? 1) > 1 ? 's' : ''} · ${i.data.audience ?? 'everyone'}`}
+        emptyText="No saved profiles yet."
+      />
     </Workbench>
   );
 }

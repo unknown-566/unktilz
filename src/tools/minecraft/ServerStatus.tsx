@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { SavedPanel } from '../../components/SavedPanel';
 import { Panel, Segmented, Stat, TextField } from '../../components/ui';
 import { McText } from '../../lib/mc/text';
 
@@ -25,14 +26,18 @@ export default function ServerStatus() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ address: string; status: Status } | null>(null);
 
-  const check = async (e: FormEvent) => {
+  const check = (e: FormEvent) => {
     e.preventDefault();
-    const host = address.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    run(address, edition);
+  };
+
+  const run = async (addr: string, ed: Edition) => {
+    const host = addr.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (!host) return;
     setLoading(true);
     setError('');
     try {
-      const url = `https://api.mcsrvstat.us/${edition === 'bedrock' ? 'bedrock/' : ''}3/${encodeURIComponent(host)}`;
+      const url = `https://api.mcsrvstat.us/${ed === 'bedrock' ? 'bedrock/' : ''}3/${encodeURIComponent(host)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Status service answered ${res.status}. Try again in a minute.`);
       setResult({ address: host, status: (await res.json()) as Status });
@@ -61,6 +66,24 @@ export default function ServerStatus() {
           </p>
         )}
       </form>
+
+      <SavedPanel<{ address: string; edition: Edition }>
+        slug="server-status"
+        title="favourite servers"
+        help="Servers you check often. Click one to check it right away."
+        saveLabel="add"
+        loadLabel="Check"
+        undoable={false}
+        suggestName={() => address.trim()}
+        getData={() => (address.trim() ? { address: address.trim(), edition } : null)}
+        onLoad={(d) => {
+          setAddress(d.address);
+          setEdition(d.edition);
+          run(d.address, d.edition);
+        }}
+        describe={(i) => `${i.data.address} · ${i.data.edition}`}
+        emptyText="No favourites yet. Type an address above and press add."
+      />
 
       {s && result && (
         <Panel title={result.address}>
