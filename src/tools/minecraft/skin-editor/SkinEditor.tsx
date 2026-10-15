@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Help } from '../../../components/Help';
 import { Segmented, Toggle } from '../../../components/ui';
 import { saveBlob } from '../../../queue/download';
-import { PARTS, PART_LABEL, SKIN, convertArms, copyPart, texelAt, type Layer, type Model, type PartId, type Rect } from '../../../lib/mc/skinLayout';
+import { PART_LABEL, SKIN, convertArms, copyPart, texelAt, type Layer, type Model, type PartId, type Rect } from '../../../lib/mc/skinLayout';
 import { copyRect, pasteClip, usedColors, type Clip } from '../../../lib/mc/skinOps';
 import { SkinDoc, useDoc } from './doc';
 import { fileBase, loadPlayer, loadSaved, save, type Loaded } from './load';
@@ -20,6 +20,63 @@ const TOOL_KEYS: Record<string, ToolId> = { b: 'pencil', e: 'eraser', g: 'fill',
 const FACE_LABEL = { top: 'top', bottom: 'bottom', front: 'front', back: 'back', right: 'right side', left: 'left side' } as const;
 
 type Item = { part: PartId; layer: Layer };
+
+// Laid out like the player seen from the front, so their right arm is on the left.
+const PICKER: { part: PartId; area: string }[] = [
+  { part: 'head', area: 'head' },
+  { part: 'rightArm', area: 'ra' },
+  { part: 'body', area: 'body' },
+  { part: 'leftArm', area: 'la' },
+  { part: 'rightLeg', area: 'rl' },
+  { part: 'leftLeg', area: 'll' },
+];
+
+/** A little figure in the corner of the 3D view: click a part to hide or show it. */
+function PartPicker({
+  hidden,
+  onToggle,
+  showOverlay,
+  overlayLocked,
+  onOverlay,
+}: {
+  hidden: Set<PartId>;
+  onToggle: (p: PartId) => void;
+  showOverlay: boolean;
+  overlayLocked: boolean;
+  onOverlay: (v: boolean) => void;
+}) {
+  return (
+    <div className="sk-picker" role="group" aria-label="Show parts">
+      <div className="sk-figure">
+        {PICKER.map(({ part, area }) => {
+          const name = PART_LABEL[part][0].toLowerCase();
+          const on = !hidden.has(part);
+          return (
+            <button
+              key={part}
+              type="button"
+              style={{ gridArea: area }}
+              aria-pressed={on}
+              aria-label={`${on ? 'Hide' : 'Show'} ${name}`}
+              title={`${on ? 'Hide' : 'Show'} ${name}`}
+              onClick={() => onToggle(part)}
+            />
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        className="sk-picker-outer"
+        aria-pressed={showOverlay}
+        disabled={overlayLocked}
+        title={overlayLocked ? 'Shown while you paint the outer layer' : showOverlay ? 'Hide the outer layer (hat, jacket…)' : 'Show the outer layer (hat, jacket…)'}
+        onClick={() => onOverlay(!showOverlay)}
+      >
+        outer
+      </button>
+    </div>
+  );
+}
 type Clipboard = Clip & { x: number; y: number; from: string };
 
 export default function SkinEditor() {
@@ -334,6 +391,7 @@ export default function SkinEditor() {
         <Toolbox settings={settings} set={(s) => (s.tool ? setTool(s.tool) : set(s))} recent={recent} used={used} />
 
         <section className="panel sk-stage" aria-label="3D view">
+          <div className="sk-3dwrap">
           <Viewport3D
             doc={doc}
             interactive
@@ -350,6 +408,19 @@ export default function SkinEditor() {
             view={view}
             label={`${doc.name} in 3D. Drag on the model to paint, drag beside it to turn it.`}
           />
+          <PartPicker
+            hidden={hidden}
+            onToggle={(p) => {
+              const n = new Set(hidden);
+              if (n.has(p)) n.delete(p);
+              else n.add(p);
+              setHidden(n);
+            }}
+            showOverlay={showOverlay || settings.layer === 'overlay'}
+            overlayLocked={settings.layer === 'overlay'}
+            onOverlay={setShowOverlay}
+          />
+          </div>
           <div className="sk-status mono" aria-live="polite">
             {message ? <span className="sk-msg">{message}</span> : <span className="muted">{hoverInfo || 'Drag on the figure to paint · drag beside it (or right-drag) to turn · scroll to zoom'}</span>}
           </div>
@@ -384,9 +455,6 @@ export default function SkinEditor() {
               ]}
             />
           </Row>
-          <Row id="sk-ov" label="Show outer layer">
-            <Toggle labelledBy="sk-ov" checked={showOverlay || settings.layer === 'overlay'} onChange={setShowOverlay} />
-          </Row>
           <Row id="sk-mirror" label="Mirror left ↔ right" help="Whatever you paint on one side also appears on the other: right arm ↔ left arm, and across the head and body.">
             <Toggle labelledBy="sk-mirror" checked={settings.mirror} onChange={(v) => set({ mirror: v })} />
           </Row>
@@ -410,29 +478,6 @@ export default function SkinEditor() {
               </button>
             </span>
           </Row>
-          <div className="field">
-            <span className="field-label" style={{ display: 'flex', alignItems: 'center' }}>
-              Show parts
-              <Help label="Show parts" text="Hide parts to reach the ones behind them, e.g. hide the arms to paint the sides of the body." />
-            </span>
-            <div className="seg sk-chips">
-              {PARTS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  aria-pressed={!hidden.has(p)}
-                  onClick={() => {
-                    const n = new Set(hidden);
-                    if (n.has(p)) n.delete(p);
-                    else n.add(p);
-                    setHidden(n);
-                  }}
-                >
-                  {PART_LABEL[p][0].toLowerCase()}
-                </button>
-              ))}
-            </div>
-          </div>
         </section>
 
         <div className="sk-side">

@@ -1942,8 +1942,7 @@ button {
 .sk-msg {
   color: var(--accent-text);
 }
-.sk-views button,
-.sk-chips button {
+.sk-views button {
   min-height: 36px;
   min-width: 0;
   font-size: 12px;
@@ -2266,4 +2265,65 @@ button {
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
+}
+/* Part picker: a small clickable figure in the corner of the 3D view. */
+.sk-3dwrap {
+  position: relative;
+}
+.sk-picker {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(11, 13, 16, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sk-figure {
+  display: grid;
+  grid-template-columns: 10px 12px 12px 10px;
+  grid-template-rows: 22px 34px 32px;
+  grid-template-areas:
+    '. head head .'
+    'ra body body la'
+    '. rl ll .';
+  gap: 2px;
+}
+.sk-figure button,
+.sk-picker-outer {
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.sk-figure button[aria-pressed='true'] {
+  background: var(--accent);
+}
+.sk-figure button[aria-pressed='false'] {
+  border-style: dashed;
+  opacity: 0.55;
+}
+.sk-figure button:hover {
+  opacity: 1;
+  filter: brightness(1.15);
+}
+.sk-picker-outer {
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font: 600 11px var(--mono);
+  color: #e8ebef;
+}
+.sk-picker-outer[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.sk-picker-outer:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
