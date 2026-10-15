@@ -12,6 +12,7 @@
  */
 import { MC_COLORS } from './text';
 import { miniSegments, type MiniSeg } from './minimessage';
+import { entityNbt, type MobSpec } from './entity';
 
 export type GiveVersion = '26.1' | '1.21.5' | '1.21.4' | '1.21.2' | '1.21' | '1.20.5';
 
@@ -74,6 +75,8 @@ export type ItemSpec = {
   explosions: Explosion[];
   canPlaceOn: string[];
   canBreak: string[];
+  /** Spawn eggs: what comes out. Missing on items saved before spawn eggs were editable. */
+  mob?: MobSpec;
 };
 
 export const emptySpec = (): ItemSpec => ({
@@ -127,8 +130,12 @@ export const itemKinds = (id: string) => {
     firework: i === 'firework_rocket',
     star: i === 'firework_star',
     storedEnchants: i === 'enchanted_book',
+    spawnEgg: i.endsWith('_spawn_egg'),
   };
 };
+
+/** The mob a spawn egg normally makes: zombie_spawn_egg → zombie. */
+export const eggEntity = (id: string) => id.replace(/^minecraft:/, '').replace(/_spawn_egg$/, '');
 
 // ---------- SNBT and text ----------
 
@@ -202,6 +209,12 @@ function snbt(v: unknown): string {
 /** JSON text inside a single-quoted SNBT string (1.20.5 – 1.21.4). */
 const jsonText = (c: Comp) => sq(JSON.stringify(c));
 
+/** MiniMessage as a text value the version understands: SNBT from 1.21.5, a JSON string before. */
+export function textValue(mini: string, v: GiveVersion, base: Comp = {}) {
+  const c = textComponent(mini, v, base);
+  return atLeast(v, '1.21.5') ? snbtText(c) : jsonText(c);
+}
+
 // ---------- attributes ----------
 
 const PLAYER_ATTRS = new Set(['block_interaction_range', 'entity_interaction_range', 'block_break_speed', 'mining_efficiency', 'sneaking_speed', 'submerged_mining_speed', 'sweeping_damage_ratio']);
@@ -236,7 +249,11 @@ const num = (s: string) => {
 
 export type GiveResult = { command: string; components: string[]; notes: string[] };
 
-export function buildGive(spec: ItemSpec, v: GiveVersion): GiveResult {
+/**
+ * The item's components as `key=value` (the /give form; an item stack in NBT uses the same values
+ * as `key:value`). Shared by /give and by items a mob wears.
+ */
+export function itemComponents(spec: ItemSpec, v: GiveVersion): { parts: string[]; notes: string[] } {
   const modern = atLeast(v, '1.21.5');
   const kinds = itemKinds(spec.item);
   const parts: string[] = [];
@@ -372,11 +389,22 @@ export function buildGive(spec: ItemSpec, v: GiveVersion): GiveResult {
     } else parts.push(`${key}={predicates:[{blocks:${blocks(list)}}]${show('adventure')}}`);
   }
 
+  // What a spawn egg spawns.
+  // Left out when it would only repeat the egg's own mob.
+  if (kinds.spawnEgg && spec.mob) {
+    const data = entityNbt(spec.mob, v);
+    if (data !== `{id:${q(`minecraft:${eggEntity(spec.item)}`)}}`) parts.push(`entity_data=${data}`);
+  }
+
   // Hiding.
   if (spec.hideTooltip) parts.push(modern ? 'tooltip_display={hide_tooltip:true}' : 'hide_tooltip={}');
   else if (modern && hidden.length) parts.push(`tooltip_display={hidden_components:[${[...new Set(hidden)].map(q).join(',')}]}`);
   else if (!modern && spec.hide.other) parts.push('hide_additional_tooltip={}');
+  return { parts, notes };
+}
 
+export function buildGive(spec: ItemSpec, v: GiveVersion): GiveResult {
+  const { parts, notes } = itemComponents(spec, v);
   const id = spec.item.trim() || 'stone';
   const count = Math.max(1, Math.min(99, Math.round(spec.count) || 1));
   const target = spec.target.trim() || '@p';

@@ -3,6 +3,7 @@ import enchantsRaw from '../../../lib/mc/data/enchantments.json';
 import effectsRaw from '../../../lib/mc/data/effects.json';
 import attributesRaw from '../../../lib/mc/data/attributes.json';
 import blocksRaw from '../../../lib/mc/data/blocks.json';
+import mobsRaw from '../../../lib/mc/data/mobs.json';
 
 export type ItemInfo = { id: string; name: string; stack: number; durability: number; cats: string[] };
 export type EnchInfo = { id: string; name: string; max: number; cat: string; curse: boolean; exclude: string[] };
@@ -17,6 +18,9 @@ export const EFFECTS = (effectsRaw as [string, string, number][]).map(([id, name
 export const EFFECT_BY_ID = new Map(EFFECTS.map((e) => [e.id, e]));
 export const BLOCKS = (blocksRaw as [string, string][]).map(([id, name]) => ({ id, name }));
 export const BLOCK_BY_ID = new Map(BLOCKS.map((b) => [b.id, b]));
+/** Mobs a spawn egg (or later a spawner) can make; `baby`: has a baby form. */
+export const MOBS = (mobsRaw as [string, string, number][]).map(([id, name, baby]) => ({ id, name, baby: !!baby })).sort((a, b) => a.name.localeCompare(b.name));
+export const MOB_BY_ID = new Map(MOBS.map((m) => [m.id, m]));
 
 const titleCase = (id: string) => id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 export const ATTRIBUTES = (attributesRaw as [string, number, number, number][])

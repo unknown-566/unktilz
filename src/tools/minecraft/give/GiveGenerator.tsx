@@ -5,13 +5,15 @@ import { plainText } from '../../../lib/mc/minimessage';
 import { Help } from '../../../components/Help';
 import { CopyButton, Panel, Segmented, TabPanel, Tabs, Toggle, type TabDef } from '../../../components/ui';
 import { Workbench } from '../../../components/Workbench';
-import { GIVE_VERSIONS, atLeast, buildGive, emptySpec, itemKinds, type Attr, type Effect, type Explosion, type GiveVersion, type HideKey, type ItemSpec } from '../../../lib/mc/give';
+import { GIVE_VERSIONS, atLeast, buildGive, eggEntity, emptySpec, itemKinds, type Attr, type Explosion, type GiveVersion, type HideKey, type ItemSpec } from '../../../lib/mc/give';
+import { defaultMob, type MobSpec } from '../../../lib/mc/entity';
 import { MiniToolbar } from '../MiniToolbar';
-import { ATTRIBUTES, BLOCKS, DYE_COLORS, EFFECTS, ENCHANTS, FIREWORK_SHAPES, ITEMS, ITEM_BY_ID, POTIONS, SLOTS, TRIM_MATERIALS, TRIM_PATTERNS, enchantFits, label } from './data';
+import { ATTRIBUTES, BLOCKS, DYE_COLORS, ENCHANTS, FIREWORK_SHAPES, ITEMS, ITEM_BY_ID, MOB_BY_ID, POTIONS, SLOTS, TRIM_MATERIALS, TRIM_PATTERNS, enchantFits, label } from './data';
+import { EffectList, MobEditor } from './MobEditor';
 import { Combo, MultiPick } from './Pickers';
 import { Tooltip } from './Tooltip';
 
-type Tab = 'item' | 'text' | 'enchants' | 'attributes' | 'special' | 'adventure';
+type Tab = 'item' | 'text' | 'enchants' | 'attributes' | 'special' | 'spawns' | 'adventure';
 /** Where the item in progress was kept before it moved to src/lib/saved.ts. */
 const OLD_STORE = 'unktilz-give';
 /** Since 1.20.5 enchantment levels in item components go from 1 to 255; the game rejects more. */
@@ -60,13 +62,41 @@ const PRESETS: { label: string; make: () => ItemSpec }[] = [
     make: () => ({ ...emptySpec(), item: 'written_book', bookTitle: 'Server rules', bookAuthor: 'Admin', bookPages: ['<bold>Welcome!</bold>\nBe nice and have fun.', '<red>No griefing.'] }),
   },
   {
+    label: 'Boss zombie',
+    make: () => ({
+      ...emptySpec(),
+      item: 'zombie_spawn_egg',
+      name: '<dark_red>Boss Egg',
+      mob: {
+        ...defaultMob('zombie'),
+        name: '<red><bold>Boss',
+        nameVisible: true,
+        maxHealth: '100',
+        speed: '0.3',
+        attack: '10',
+        scale: '1.5',
+        persistent: true,
+        equipment: {
+          head: { item: 'netherite_helmet', glint: true, drop: 0 },
+          chest: { item: 'netherite_chestplate', glint: true, drop: 0 },
+          mainhand: { item: 'netherite_sword', glint: true, drop: 1 },
+        },
+        effects: [{ id: 'fire_resistance', level: 1, seconds: -1, particles: false, icon: true }],
+      },
+    }),
+  },
+  {
     label: 'Giant stick',
     make: () => ({ ...emptySpec(), item: 'stick', name: 'Growth Stick', attributes: [{ type: 'scale', slot: 'hand', amount: 1, op: 'add_multiplied_base' }] }),
   },
 ];
 
 /** Fills in anything an older saved item doesn't have yet. */
-const fix = (s: Partial<ItemSpec>): ItemSpec => ({ ...emptySpec(), ...s, hide: { ...emptySpec().hide, ...s.hide } });
+const fix = (s: Partial<ItemSpec>): ItemSpec => ({ ...emptySpec(), ...s, hide: { ...emptySpec().hide, ...s.hide }, mob: s.mob && { ...defaultMob(), ...s.mob } });
+/** A spawn egg's mob: what it's set to, or the egg's own mob. */
+const mobOf = (s: ItemSpec): MobSpec => s.mob ?? defaultMob(eggEntity(s.item));
+/** Whether the mob is just the egg's own, unchanged. */
+const plainMob = (s: ItemSpec) => JSON.stringify(mobOf(s)) === JSON.stringify(defaultMob(eggEntity(s.item)));
 
 type Draft = { spec: ItemSpec; version: GiveVersion };
 
@@ -140,6 +170,9 @@ export default function GiveGenerator() {
     }
   }, []);
 
+  /** Picking another egg swaps the mob too, unless you'd made that mob your own. */
+  const pickItem = (id: string) => set(spec.mob && plainMob(spec) ? { item: id, mob: undefined } : { item: id });
+  const setMob = (p: Partial<MobSpec>) => setSpecRaw((s) => ({ ...s, mob: { ...mobOf(s), ...p } }));
   const kinds = itemKinds(spec.item);
   const info = ITEM_BY_ID.get(spec.item);
   // One extra tab for whatever this item has of its own; leather armor gets color and trim.
@@ -155,18 +188,21 @@ export default function GiveGenerator() {
     { id: 'enchants', label: 'Enchants', dot: spec.enchants.length > 0 },
     { id: 'attributes', label: 'Attributes', dot: spec.attributes.length > 0 },
     ...(special ? [{ id: 'special' as Tab, label: special }] : []),
+    ...(kinds.spawnEgg ? [{ id: 'spawns' as Tab, label: 'Spawns', dot: !plainMob(spec) }] : []),
     { id: 'adventure', label: 'Adventure', dot: spec.canBreak.length + spec.canPlaceOn.length > 0 },
   ];
   useEffect(() => {
-    if (tab === 'special' && !special) setTab('item');
-  }, [tab, special]);
+    if ((tab === 'special' && !special) || (tab === 'spawns' && !kinds.spawnEgg)) setTab('item');
+  }, [tab, special, kinds.spawnEgg]);
 
   // ---- MiniMessage fields: the toolbar edits whichever one was focused last ----
   const fields = useRef(new Map<string, HTMLInputElement | HTMLTextAreaElement>());
   const [active, setActive] = useState('name');
-  const valueOf = (key: string) => (key === 'name' ? spec.name : key.startsWith('lore:') ? spec.lore[+key.slice(5)] ?? '' : spec.bookPages[+key.slice(5)] ?? '');
+  const valueOf = (key: string) =>
+    key === 'name' ? spec.name : key === 'mob' ? mobOf(spec).name : key.startsWith('lore:') ? spec.lore[+key.slice(5)] ?? '' : spec.bookPages[+key.slice(5)] ?? '';
   const setValue = (key: string, v: string) => {
     if (key === 'name') set({ name: v });
+    else if (key === 'mob') setMob({ name: v });
     else if (key.startsWith('lore:')) set({ lore: spec.lore.map((l, i) => (i === +key.slice(5) ? v : l)) });
     else set({ bookPages: spec.bookPages.map((l, i) => (i === +key.slice(5) ? v : l)) });
   };
@@ -204,7 +240,7 @@ export default function GiveGenerator() {
           <span className="field-label">Item</span>
           <Help label="Item" text="Type part of the name (English) or the id. You can also type any id that isn't in the list, e.g. one from a newer version or a mod." />
         </span>
-        <Combo label="Item" options={ITEM_OPTIONS} value={spec.item} onPick={(id) => set({ item: id })} placeholder="search items…" allowCustom />
+        <Combo label="Item" options={ITEM_OPTIONS} value={spec.item} onPick={pickItem} placeholder="search items…" allowCustom />
       </div>
       <div className="fields">
         <div className="field">
@@ -545,6 +581,28 @@ export default function GiveGenerator() {
     </>
   );
 
+  const mob = mobOf(spec);
+  const spawnsTab = (
+    <MobEditor
+      mob={mob}
+      onChange={setMob}
+      nameInput={
+        <>
+          <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint="Click into the mob's name, then pick a color or style." />
+          <div className="field">
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <label htmlFor="g-mobname" className="field-label">
+                Mob name
+              </label>
+              <Help label="Mob name" text="The name above the mob's head. Leave empty for no name. The egg's own name is on the Name & lore tab." />
+            </span>
+            <input id="g-mobname" ref={reg('mob')} className="input mono" value={mob.name} placeholder="e.g. <red>Boss" onFocus={() => setActive('mob')} onChange={(e) => setMob({ name: e.target.value })} spellCheck={false} />
+          </div>
+        </>
+      }
+    />
+  );
+
   const adventureTab = (
     <>
       <p className="note">For Adventure mode, where players can only place or break what an item allows.</p>
@@ -556,6 +614,13 @@ export default function GiveGenerator() {
   const preview = (
     <Panel title="preview">
       <Tooltip spec={spec} version={version} />
+      {kinds.spawnEgg && (
+        <p className="note give-spawns">
+          Spawns: {MOB_BY_ID.get(mob.entity)?.name ?? label(mob.entity)}
+          {mob.name.trim() ? ` “${plainText(mob.name).trim()}”` : ''}
+          {mob.maxHealth.trim() ? ` · ${mob.maxHealth} health` : ''}
+        </p>
+      )}
     </Panel>
   );
 
@@ -619,6 +684,7 @@ export default function GiveGenerator() {
           {tab === 'enchants' && enchTab}
           {tab === 'attributes' && attrTab}
           {tab === 'special' && specialTab}
+          {tab === 'spawns' && spawnsTab}
           {tab === 'adventure' && adventureTab}
         </TabPanel>
       </section>
@@ -629,7 +695,11 @@ export default function GiveGenerator() {
         suggestName={() => plainText(spec.name).trim() || info?.name || spec.item}
         getData={() => spec}
         onLoad={(d) => setSpec(fix(d))}
-        describe={(i) => `${ITEM_BY_ID.get(i.data.item)?.name ?? i.data.item}${i.data.enchants?.length ? ` · ${i.data.enchants.length} enchant${i.data.enchants.length > 1 ? 's' : ''}` : ''}`}
+        describe={(i) =>
+          `${ITEM_BY_ID.get(i.data.item)?.name ?? i.data.item}${i.data.enchants?.length ? ` · ${i.data.enchants.length} enchant${i.data.enchants.length > 1 ? 's' : ''}` : ''}${
+            i.data.mob && itemKinds(i.data.item).spawnEgg ? ` · spawns ${MOB_BY_ID.get(i.data.mob.entity)?.name ?? i.data.mob.entity}` : ''
+          }`
+        }
         emptyText="No saved items yet. Build one and press save."
       />
     </Workbench>
@@ -654,7 +724,6 @@ function NumField({ label: text, value, onChange, placeholder, help }: { label: 
 type EditorProps = { spec: ItemSpec; set: (p: Partial<ItemSpec>) => void };
 
 function PotionEditor({ spec, set }: EditorProps) {
-  const setEff = (i: number, p: Partial<Effect>) => set({ effects: spec.effects.map((e, j) => (j === i ? { ...e, ...p } : e)) });
   return (
     <>
       <div className="fields">
@@ -687,35 +756,7 @@ function PotionEditor({ spec, set }: EditorProps) {
         </div>
       </div>
       <span className="field-label">Custom effects</span>
-      {spec.effects.map((e, i) => (
-        <div key={i} className="give-attr">
-          <select className="select" aria-label="Effect" value={e.id} onChange={(ev) => setEff(i, { id: ev.target.value })}>
-            {EFFECTS.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.name}
-              </option>
-            ))}
-          </select>
-          <label className="give-inline-label">
-            level
-            <input className="input mono give-num" type="number" min={1} max={256} value={e.level} onChange={(ev) => setEff(i, { level: Math.max(1, Math.min(256, Number(ev.target.value) || 1)) })} />
-          </label>
-          <label className="give-inline-label">
-            seconds
-            <input className="input mono give-num" type="number" min={-1} value={e.seconds} onChange={(ev) => setEff(i, { seconds: Number(ev.target.value) })} title="-1 = forever" />
-          </label>
-          <label className="check">
-            <input type="checkbox" checked={e.particles} onChange={(ev) => setEff(i, { particles: ev.target.checked })} />
-            particles
-          </label>
-          <button type="button" className="btn btn-sm" aria-label="Remove effect" onClick={() => set({ effects: spec.effects.filter((_, j) => j !== i) })}>
-            ×
-          </button>
-        </div>
-      ))}
-      <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => set({ effects: [...spec.effects, { id: 'speed', level: 1, seconds: 60, particles: true, icon: true }] })}>
-        + add effect
-      </button>
+      <EffectList effects={spec.effects} onChange={(effects) => set({ effects })} />
       <p className="note">Seconds −1 lasts forever. Level 1 is the normal strength (Speed I).</p>
     </>
   );

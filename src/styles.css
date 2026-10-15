@@ -2535,6 +2535,33 @@ textarea,
   flex: 1 1 150px;
   min-width: 0;
 }
+/* One equipment slot of a spawn egg's mob: name | item | shine | my items | drop | × */
+.give-equip {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) auto 112px auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.give-equip .give-list-name {
+  flex: none;
+}
+.give-equip .pick-chip {
+  justify-self: start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.give-equip .give-num {
+  width: 72px;
+}
+/* Too narrow for both: the item's name is enough here. */
+.give-equip .combo-id {
+  display: none;
+}
+.give-spawns {
+  margin: 10px 0 0;
+}
 .give-inline-label {
   display: inline-flex;
   align-items: center;
