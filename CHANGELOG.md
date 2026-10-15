@@ -2,6 +2,13 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.1.0] - 2026-10-15
+
+### Added
+- **Custom spawn eggs** in the give command generator: pick any spawn egg and a new "Spawns" tab lets you choose what comes out. That can be any mob, with a colored name, more health, speed, attack damage or a different size, armor and weapons (including your saved items with all their enchantments) and a drop chance for each one, effects, and behaviour like no AI, silent, glowing, never despawns or baby.
+- A "Boss zombie" preset to show what it can do.
+- The command uses the right format for your Minecraft version (1.20.5 – 26.3).
+
 ## [1.0.0] - 2026-10-15
 
 The first numbered version. Everything so far:

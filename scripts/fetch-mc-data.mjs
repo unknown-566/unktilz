@@ -20,7 +20,7 @@ const get = async (name) => {
 const snake = (s) => s.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
 const EFFECT_ID = { BadLuck: 'unluck' };
 
-const [items, enchantments, effects, attributes, blocks] = await Promise.all(['items', 'enchantments', 'effects', 'attributes', 'blocks'].map(get));
+const [items, enchantments, effects, attributes, blocks, entities] = await Promise.all(['items', 'enchantments', 'effects', 'attributes', 'blocks', 'entities'].map(get));
 
 const write = (file, data) => {
   writeFileSync(join(out, file), JSON.stringify(data));
@@ -51,5 +51,11 @@ write(
 write(
   'blocks.json',
   blocks.map((b) => [b.name, b.displayName]),
+);
+// Mobs (anything alive that can be summoned, plus armor stands): [id, name, has a baby form]
+const MOB_TYPES = new Set(['mob', 'animal', 'hostile', 'passive', 'ambient', 'water_creature', 'living']);
+write(
+  'mobs.json',
+  entities.filter((e) => MOB_TYPES.has(e.type)).map((e) => [e.name, e.displayName, e.metadataKeys?.includes('baby') ? 1 : 0]),
 );
 writeFileSync(join(out, 'VERSION'), `${VERSION}\n`);
