@@ -4,7 +4,7 @@ import { SavedPanel } from '../../../components/SavedPanel';
 import { CopyButton, Panel, Segmented, Toggle } from '../../../components/ui';
 import { Workbench } from '../../../components/Workbench';
 import { savedWhen, useAutosave, useSaved } from '../../../lib/saved';
-import { LASTS, expiresAt, uploadFile, type Lasts } from '../../../lib/upload';
+import { LASTS, deleteImgur, expiresAt, uploadFile, type Dest, type Host, type Lasts } from '../../../lib/upload';
 import { formatBytes, saveBlob } from '../../../queue/download';
 import { IMAGE_ACCEPTS } from '../formats';
 import { MAX_SECONDS, cropRect, defaultSettings, drawFrame, estimateBytes, fixLayer, frameLimit, frameOrder, outputSize, photoFrames, stickerKey, videoFrameTimes, type Crop, type Filter, type Layer, type Settings, type StickerAnim, type StickerRef } from './compose';
@@ -23,16 +23,21 @@ const BIG = 10 * 1024 * 1024;
 type Photo = { id: string; name: string; bmp: ImageBitmap; thumb: string };
 type Result = { url: string; blob: Blob; w: number; h: number; frames: number; name: string };
 
-type LinkPrefs = { on: boolean; lasts: Lasts };
-const DEFAULT_LINK: LinkPrefs = { on: true, lasts: 'forever' };
-/** A link made earlier, kept in "my links". */
-type GifLink = { url: string; lasts: Lasts; size: number; w: number; h: number };
-type LinkState = { progress: number } | { url: string; lasts: Lasts } | { error: string; lasts: Lasts };
+type LinkPrefs = { on: boolean; host: Host; lasts: Lasts; imgurId: string };
+const DEFAULT_LINK: LinkPrefs = { on: true, host: 'catbox', lasts: 'forever', imgurId: '' };
+/** A link made earlier, kept in "my links" (imgur ones with the code that deletes them). */
+type GifLink = { url: string; lasts: Lasts; size: number; w: number; h: number; host?: Host; deleteHash?: string };
+type LinkState = { progress: number } | { url: string } | { error: string };
 const MAX_LINKS = 20;
+const IMGUR_APPS = 'https://api.imgur.com/oauth2/addclient';
+
+const destOf = (p: LinkPrefs): Dest => (p.host === 'imgur' ? { host: 'imgur', clientId: p.imgurId } : { host: 'catbox', lasts: p.lasts });
+const destLabel = (p: LinkPrefs) => (p.host === 'imgur' ? 'imgur' : LASTS.find((l) => l.value === p.lasts)?.label);
 
 /** "forever", "2 days left", "expired"… */
-function timeLeft(lasts: Lasts, at: number) {
-  const ms = expiresAt(lasts, at) - Date.now();
+function timeLeft(l: GifLink, at: number) {
+  if (l.host === 'imgur') return 'imgur';
+  const ms = expiresAt(l.lasts, at) - Date.now();
   if (!Number.isFinite(ms)) return 'forever';
   if (ms <= 0) return 'expired';
   const h = ms / 3600_000;
@@ -439,26 +444,45 @@ export default function GifMaker() {
   const [autoCopied, setAutoCopied] = useState('');
   const uploading = useRef<AbortController | null>(null);
   useEffect(() => () => uploading.current?.abort(), []);
-  const share = async (r: Result, lasts: Lasts) => {
+  const share = async (r: Result, prefs: LinkPrefs) => {
     uploading.current?.abort();
     const ctl = new AbortController();
     uploading.current = ctl;
     setLink({ progress: 0 });
     setAutoCopied('');
     try {
-      const url = await uploadFile(r.blob, r.name, lasts, (progress) => setLink({ progress }), ctl.signal);
+      const { url, deleteHash } = await uploadFile(r.blob, r.name, destOf(prefs), (progress) => setLink({ progress }), ctl.signal);
       if (ctl.signal.aborted) return;
-      setLink({ url, lasts });
+      setLink({ url });
       navigator.clipboard?.writeText(url).then(
         () => setAutoCopied(url),
         () => {},
       );
-      const item = await links.save(r.name, { url, lasts, size: r.blob.size, w: r.w, h: r.h });
+      const item = await links.save(r.name, { url, lasts: prefs.host === 'imgur' ? 'forever' : prefs.lasts, size: r.blob.size, w: r.w, h: r.h, host: prefs.host, deleteHash });
       // Only the newest ones are kept.
       for (const old of links.items.filter((i) => i.id !== item.id).slice(MAX_LINKS - 1)) void links.remove(old.id);
     } catch (e) {
-      if (!ctl.signal.aborted) setLink({ error: e instanceof Error ? e.message : String(e), lasts });
+      if (!ctl.signal.aborted) setLink({ error: e instanceof Error ? e.message : String(e) });
     }
+  };
+  const [linkError, setLinkError] = useState('');
+  const removeLink = async (id: string, l: GifLink, name: string) => {
+    setLinkError('');
+    if (l.host === 'imgur' && l.deleteHash) {
+      if (!window.confirm(`Delete ${name} from imgur too? The link stops working for everyone.`)) return;
+      try {
+        await deleteImgur(l.deleteHash, linkPrefs.imgurId);
+      } catch (e) {
+        setLinkError(e instanceof Error ? e.message : String(e));
+        return;
+      }
+    }
+    void links.remove(id);
+  };
+  // Dragging the GIF out of the page drops the file itself (into Discord, a folder, any chat).
+  const dragOut = (e: React.DragEvent<HTMLImageElement>, r: Result) => {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('DownloadURL', `image/gif:${r.name}:${r.url}`);
   };
 
   const create = async () => {
@@ -473,7 +497,7 @@ export default function GifMaker() {
       const blob = await makeGif(refs, frames, photoBmps, s, size.w, size.h, setBusy, stickers);
       const r = { url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, frames: refs.length, name: `${baseName}.gif` };
       setResult(r);
-      if (linkPrefs.on) void share(r, linkPrefs.lasts);
+      if (linkPrefs.on) void share(r, linkPrefs);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -681,6 +705,15 @@ export default function GifMaker() {
         </span>
         {linkPrefs.on && (
           <label className="gm-lasts">
+            <span className="muted">on</span>
+            <select className="select" value={linkPrefs.host} onChange={(e) => setLinkPrefs({ ...linkPrefs, host: e.target.value as Host })}>
+              <option value="imgur">imgur (shows on Discord)</option>
+              <option value="catbox">catbox.moe</option>
+            </select>
+          </label>
+        )}
+        {linkPrefs.on && linkPrefs.host === 'catbox' && (
+          <label className="gm-lasts">
             <span className="muted">works</span>
             <select className="select" value={linkPrefs.lasts} onChange={(e) => setLinkPrefs({ ...linkPrefs, lasts: e.target.value as Lasts })}>
               {LASTS.map((l) => (
@@ -692,16 +725,42 @@ export default function GifMaker() {
           </label>
         )}
       </div>
+      {linkPrefs.on && linkPrefs.host === 'imgur' && (
+        <div className="field">
+          <span style={{ display: 'flex', alignItems: 'center' }}>
+            <label htmlFor="gm-imgur" className="field-label">
+              Your imgur Client ID
+            </label>
+            <Help
+              label="imgur Client ID"
+              text={`imgur only takes uploads from apps with a Client ID. Getting one is free: sign in to imgur, open ${IMGUR_APPS}, pick “Anonymous usage without user authorization”, fill in any name, any callback address and your email, and copy the Client ID here (not the secret). It's kept in this browser.`}
+            />
+          </span>
+          <input id="gm-imgur" className="input mono" placeholder="e.g. 1a2b3c4d5e6f7a8" spellCheck={false} autoComplete="off" value={linkPrefs.imgurId} onChange={(e) => setLinkPrefs({ ...linkPrefs, imgurId: e.target.value.trim() })} />
+          {!linkPrefs.imgurId && (
+            <p className="note">
+              Get a free one{' '}
+              <a href={IMGUR_APPS} target="_blank" rel="noreferrer">
+                here
+              </a>{' '}
+              (sign in to imgur, choose “Anonymous usage without user authorization”), then paste the Client ID above.
+            </p>
+          )}
+        </div>
+      )}
       {linkPrefs.on && (
         <p className="note">
-          {linkPrefs.lasts === 'forever'
-            ? 'The GIF is uploaded to catbox.moe and you get a link to share (it works on Discord too). Anyone with the link can see it, and links that last forever can’t be deleted.'
-            : `The GIF is uploaded to litterbox (catbox.moe) and deleted by itself after ${LASTS.find((l) => l.value === linkPrefs.lasts)?.label}. Anyone with the link can see it until then.`}
+          {linkPrefs.host === 'imgur'
+            ? 'The GIF is uploaded to imgur and Discord shows the link as a GIF. Anyone with the link can see it; you can delete it again from “my links”.'
+            : linkPrefs.lasts === 'forever'
+              ? 'The GIF is uploaded to catbox.moe. Anyone with the link can see it, and links that last forever can’t be deleted. Discord may show it as just a link: drag the GIF into Discord instead, or use imgur.'
+              : `The GIF is uploaded to litterbox (catbox.moe) and deleted by itself after ${destLabel(linkPrefs)}. Anyone with the link can see it until then.`}
         </p>
       )}
       {result && (
         <>
-          <img className="gm-result" src={result.url} alt="The finished GIF" />
+          <img className="gm-result" src={result.url} alt="The finished GIF" draggable onDragStart={(e) => dragOut(e, result)} title="Drag me into Discord or any chat" />
+          <p className="note">Drag the GIF into Discord (or any chat, or a folder) to send it as a file: that always shows.</p>
           <p className={`note mono${result.blob.size > BIG ? ' give-warn' : ''}`}>
             {result.w} × {result.h} · {result.frames} frames · {formatBytes(result.blob.size)}
             {result.blob.size > BIG && ' · big: lower the width, fps or colors to make it smaller'}
@@ -723,14 +782,14 @@ export default function GifMaker() {
           {link && 'error' in link && (
             <p className="note give-warn" role="alert">
               Couldn’t make a link: {link.error}{' '}
-              <button type="button" className="btn btn-sm" onClick={() => void share(result, linkPrefs.lasts)}>
+              <button type="button" className="btn btn-sm" onClick={() => void share(result, linkPrefs)}>
                 try again
               </button>
             </p>
           )}
           {!link && (
-            <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => void share(result, linkPrefs.lasts)}>
-              make a link ({LASTS.find((l) => l.value === linkPrefs.lasts)?.label})
+            <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => void share(result, linkPrefs)}>
+              make a link ({destLabel(linkPrefs)})
             </button>
           )}
         </>
@@ -740,7 +799,7 @@ export default function GifMaker() {
           <summary className="field-label">my links · {links.items.length}</summary>
           <ul>
             {links.items.map((i) => {
-              const left = timeLeft(i.data.lasts, i.savedAt);
+              const left = timeLeft(i.data, i.savedAt);
               return (
                 <li key={i.id} className={left === 'expired' ? 'expired' : ''}>
                   <a className="mono" href={i.data.url} target="_blank" rel="noreferrer" title={i.data.url}>
@@ -750,14 +809,25 @@ export default function GifMaker() {
                     {i.name} · {savedWhen(i.savedAt)} · {left}
                   </span>
                   {left === 'expired' ? <span /> : <CopyButton text={i.data.url} />}
-                  <button type="button" className="icon-btn" aria-label={`Remove ${i.name} from my links`} onClick={() => void links.remove(i.id)}>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label={i.data.deleteHash ? `Delete ${i.name} from imgur` : `Remove ${i.name} from my links`}
+                    title={i.data.deleteHash ? 'Delete from imgur' : 'Remove from this list'}
+                    onClick={() => void removeLink(i.id, i.data, i.name)}
+                  >
                     ×
                   </button>
                 </li>
               );
             })}
           </ul>
-          <p className="note">Removing a link here only takes it off this list; the GIF stays online.</p>
+          {linkError && (
+            <p className="note give-warn" role="alert">
+              {linkError}
+            </p>
+          )}
+          <p className="note">× on an imgur link deletes the GIF from imgur. On catbox links it only takes them off this list; the GIF stays online.</p>
         </details>
       )}
     </Panel>

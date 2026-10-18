@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.12.0] - 2026-10-18
+
+### Added
+- GIF maker: **drag the finished GIF straight into Discord** (or any chat, or a folder). It goes in as a real file, so it always shows, in DMs too.
+- **imgur links:** pick "imgur" under "Make a link" and Discord shows the link as a GIF. imgur needs a free Client ID of your own (the "?" says how to get one). imgur GIFs can be deleted again from "my links".
+
+### Changed
+- The catbox note says Discord may show catbox links as just a link.
+
 ## [1.11.2] - 2026-10-18
 
 ### Changed
