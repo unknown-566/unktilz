@@ -623,7 +623,7 @@ export default function GifMaker() {
       <Row label="Boomerang" help="Plays forwards, then backwards, over and over.">
         <Toggle label="Boomerang" checked={s.boomerang} onChange={(boomerang) => set({ boomerang })} />
       </Row>
-      <Labeled label="Filter" help="Changes the colors of the whole GIF.">
+      <Labeled label="Filter" help="Changes the colors of the whole GIF, texts and stickers included.">
         <Segmented label="Filter" value={s.filter} options={FILTERS} onChange={(filter) => set({ filter })} />
       </Labeled>
     </Panel>

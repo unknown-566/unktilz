@@ -340,7 +340,7 @@ export function layerBoxes(ctx: Ctx, W: number, H: number, layers: Layer[], stic
   return out;
 }
 
-/** Draws a whole frame: the picture(s), the filter, then the layers as they are at second `t`. */
+/** Draws a whole frame: the picture(s), then the layers as they are at second `t`, all with the filter. */
 export function drawFrame(
   ctx: Ctx,
   W: number,
@@ -368,6 +368,9 @@ export function drawFrame(
     ctx.rotate(((layer.rotation + st.rotate) * Math.PI) / 180);
     ctx.scale(st.scale * (layer.flip ? -1 : 1), st.scale);
     ctx.globalAlpha = Math.min(1, Math.max(0, layer.opacity * st.alpha));
+    // The filter colors the texts and stickers too, so the whole GIF has one look. (These filters
+    // work pixel by pixel, so filtering each drawing is the same as filtering the finished frame.)
+    ctx.filter = FILTER[s.filter];
     if (layer.kind === 'text') drawText(ctx, H, layer, st.chars);
     else {
       const anim = stickers.get(stickerKey(layer.sticker));

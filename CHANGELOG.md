@@ -2,6 +2,11 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.12.2] - 2026-10-18
+
+### Fixed
+- GIF maker: the filter (black & white, sepia, punchy) now colors texts and stickers too, not just the video or photos.
+
 ## [1.12.1] - 2026-10-18
 
 ### Changed
