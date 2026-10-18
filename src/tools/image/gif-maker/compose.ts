@@ -3,6 +3,7 @@
  * drawFrame(), so what you see is what you get. The timing and layout helpers are plain functions
  * (tested in Node); the drawing needs a canvas.
  */
+import { fixFont, fontCss, fontWeight } from './fontList';
 
 export type Crop = 'original' | '1:1' | '16:9' | '9:16' | '4:5';
 export type Filter = 'none' | 'gray' | 'sepia' | 'contrast';
@@ -83,7 +84,8 @@ export const defaultSettings = (): Settings => ({
 export function fixLayer(l: Partial<Layer> & Record<string, unknown>): Layer {
   const base = { rotation: 0, opacity: 1, flip: false, anim: 'none' as LayerAnim, from: null, to: null, x: 0.5, y: 0.5, size: 0.12, id: String(l.id ?? Math.random()) };
   if (l.kind === 'sticker') return { ...base, ...(l as StickerLayer) };
-  return { ...base, text: '', style: 'meme', font: FONTS[0].value, color: '#ffffff', ...(l as Partial<TextLayer>), kind: 'text' } as TextLayer;
+  const text = { ...base, text: '', style: 'meme', color: '#ffffff', ...(l as Partial<TextLayer>), kind: 'text' } as TextLayer;
+  return { ...text, font: fixFont(l.font) };
 }
 
 export const stickerKey = (r: StickerRef) => (r.type === 'noto' ? `noto:${r.code}` : `mine:${r.id}`);
@@ -277,15 +279,6 @@ type Pic = CanvasImageSource & { width: number; height: number };
 
 const FILTER: Record<Filter, string> = { none: 'none', gray: 'grayscale(1)', sepia: 'sepia(0.85)', contrast: 'contrast(1.35) saturate(1.25)' };
 
-export const FONTS = [
-  { value: 'Impact, "Arial Black", sans-serif', label: 'Impact' },
-  { value: '"Arial Black", Arial, sans-serif', label: 'Arial Black' },
-  { value: 'Arial, Helvetica, sans-serif', label: 'Arial' },
-  { value: '"Comic Sans MS", "Comic Sans", cursive', label: 'Comic Sans' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: '"Courier New", monospace', label: 'Courier' },
-];
-
 /** Draws one picture into the frame: cropped (video), or covering / fitting in (photos). */
 function drawPicture(ctx: Ctx, pic: Pic, W: number, H: number, s: Settings, alpha = 1) {
   ctx.globalAlpha = alpha;
@@ -317,7 +310,7 @@ function textLayout(ctx: Ctx, l: TextLayer, H: number) {
   const lines = (l.style === 'meme' ? l.text.toUpperCase() : l.text).split('\n');
   const px = Math.max(6, l.size * H);
   const lineH = px * 1.15;
-  ctx.font = `${l.style === 'subtitle' ? 600 : 700} ${px}px ${l.font}`;
+  ctx.font = `${fontWeight(l.font, l.style === 'subtitle' ? 600 : 700)} ${px}px ${fontCss(l.font)}`;
   const widths = lines.map((line) => ctx.measureText(line).width);
   const bw = Math.max(...widths, px * 0.5);
   const bh = lineH * lines.length;

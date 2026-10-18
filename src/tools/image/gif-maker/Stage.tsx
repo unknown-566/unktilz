@@ -30,6 +30,7 @@ export function Stage({
   onSelect,
   update,
   pan,
+  fontsVersion = 0,
 }: {
   canvas: RefObject<HTMLCanvasElement | null>;
   W: number;
@@ -42,6 +43,8 @@ export function Stage({
   update: (fn: (layers: Layer[]) => Layer[]) => void;
   /** Dragging the empty picture moves the crop: called with the drag in canvas pixels. */
   pan?: { start: () => void; move: (dx: number, dy: number) => void };
+  /** Goes up when a font finishes loading: texts measure differently then. */
+  fontsVersion?: number;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -60,7 +63,7 @@ export function Stage({
   const k = W / Math.max(1, shown);
 
   const measure = useMemo(() => document.createElement('canvas').getContext('2d')!, []);
-  const boxes = useMemo(() => layerBoxes(measure, W, H, layers, stickers), [measure, W, H, layers, stickers]);
+  const boxes = useMemo(() => layerBoxes(measure, W, H, layers, stickers), [measure, W, H, layers, stickers, fontsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const box = boxes.find((b) => b.id === selected) ?? null;
   const layer = layers.find((l) => l.id === selected) ?? null;
 

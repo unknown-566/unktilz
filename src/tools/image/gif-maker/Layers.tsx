@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 import { Help } from '../../../components/Help';
 import { Segmented, Toggle } from '../../../components/ui';
-import { FONTS, type Layer, type LayerAnim, type StickerLayer, type StickerRef, type TextLayer, type TextStyle } from './compose';
+import { type Layer, type LayerAnim, type StickerLayer, type StickerRef, type TextLayer, type TextStyle } from './compose';
 import { NOTO_BY_CODE } from './stickerData';
+import { DEFAULT_FONT } from './fontList';
+import { FontPicker } from './FontPicker';
 
 const STYLES: { value: TextStyle; label: string }[] = [
   { value: 'meme', label: 'meme' },
@@ -27,7 +29,7 @@ let next = 0;
 export const uid = () => `l${Date.now().toString(36)}${(next++).toString(36)}`;
 
 const base = { rotation: 0, opacity: 1, flip: false, anim: 'none' as LayerAnim, from: null, to: null };
-export const newText = (): TextLayer => ({ ...base, id: uid(), kind: 'text', text: 'Your text', style: 'meme', font: FONTS[0].value, size: 0.12, color: '#ffffff', x: 0.5, y: 0.85 });
+export const newText = (): TextLayer => ({ ...base, id: uid(), kind: 'text', text: 'Your text', style: 'meme', font: DEFAULT_FONT, size: 0.12, color: '#ffffff', x: 0.5, y: 0.85 });
 export const newSticker = (sticker: StickerRef, name: string): StickerLayer => ({ ...base, id: uid(), kind: 'sticker', sticker, name, size: 0.35, x: 0.5, y: 0.5 });
 /** A copy a little down and to the right, so it's visible. */
 export const duplicate = (l: Layer): Layer => ({ ...l, id: uid(), x: Math.min(1, l.x + 0.04), y: Math.min(1, l.y + 0.04) });
@@ -156,17 +158,12 @@ export function LayerProps({ layer, onChange, duration }: { layer: Layer; onChan
           <Field id="gm-text" label="Text">
             <textarea id="gm-text" className="textarea" rows={2} value={text.text} onChange={(e) => onChange({ text: e.target.value } as Partial<TextLayer>)} />
           </Field>
-          <Segmented label="Style" value={text.style} options={STYLES} onChange={(style) => onChange({ style, ...(style === 'meme' ? { font: FONTS[0].value, color: '#ffffff' } : {}) } as Partial<TextLayer>)} />
-          <div className="fields">
-            <Field id="gm-font" label="Font">
-              <select id="gm-font" className="select" value={text.font} onChange={(e) => onChange({ font: e.target.value } as Partial<TextLayer>)}>
-                {FONTS.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
+          <Segmented label="Style" value={text.style} options={STYLES} onChange={(style) => onChange({ style, ...(style === 'meme' ? { font: DEFAULT_FONT, color: '#ffffff' } : {}) } as Partial<TextLayer>)} />
+          <div className="fields gm-font-fields">
+            <div className="field">
+              <span className="field-label">Font</span>
+              <FontPicker value={text.font} onChange={(font) => onChange({ font } as Partial<TextLayer>)} />
+            </div>
             <Field id="gm-color" label="Color">
               <input id="gm-color" type="color" className="give-color" value={text.color} onChange={(e) => onChange({ color: e.target.value } as Partial<TextLayer>)} />
             </Field>

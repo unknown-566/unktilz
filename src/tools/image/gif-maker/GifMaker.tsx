@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { Help } from '../../../components/Help';
 import { SavedPanel } from '../../../components/SavedPanel';
-import { Panel, Segmented, Toggle } from '../../../components/ui';
+import { CopyButton, Panel, Segmented, Toggle } from '../../../components/ui';
 import { Workbench } from '../../../components/Workbench';
-import { useAutosave, useSaved } from '../../../lib/saved';
+import { savedWhen, useAutosave, useSaved } from '../../../lib/saved';
+import { LASTS, expiresAt, uploadFile, type Lasts } from '../../../lib/upload';
 import { formatBytes, saveBlob } from '../../../queue/download';
 import { IMAGE_ACCEPTS } from '../formats';
 import { MAX_SECONDS, cropRect, defaultSettings, drawFrame, estimateBytes, fixLayer, frameLimit, frameOrder, outputSize, photoFrames, stickerKey, videoFrameTimes, type Crop, type Filter, type Layer, type Settings, type StickerAnim, type StickerRef } from './compose';
 import { loadPhoto, makeGif, openVideo, picsFor, videoFrames, videoThumbs, type FrameRef, type VideoSource } from './frames';
+import { loadFont } from './fontLoad';
 import { LayerList, LayerProps, newSticker, newText } from './Layers';
 import { Stage } from './Stage';
 import { StickerPicker } from './Stickers';
@@ -19,7 +21,25 @@ const VIDEO_ACCEPTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.flv', 
 const BIG = 10 * 1024 * 1024;
 
 type Photo = { id: string; name: string; bmp: ImageBitmap; thumb: string };
-type Result = { url: string; blob: Blob; w: number; h: number; frames: number };
+type Result = { url: string; blob: Blob; w: number; h: number; frames: number; name: string };
+
+type LinkPrefs = { on: boolean; lasts: Lasts };
+const DEFAULT_LINK: LinkPrefs = { on: true, lasts: 'forever' };
+/** A link made earlier, kept in "my links". */
+type GifLink = { url: string; lasts: Lasts; size: number; w: number; h: number };
+type LinkState = { progress: number } | { url: string; lasts: Lasts } | { error: string; lasts: Lasts };
+const MAX_LINKS = 20;
+
+/** "forever", "2 days left", "expired"… */
+function timeLeft(lasts: Lasts, at: number) {
+  const ms = expiresAt(lasts, at) - Date.now();
+  if (!Number.isFinite(ms)) return 'forever';
+  if (ms <= 0) return 'expired';
+  const h = ms / 3600_000;
+  if (h >= 24) return `${Math.round(h / 24)} day${Math.round(h / 24) === 1 ? '' : 's'} left`;
+  if (h >= 1) return `${Math.round(h)} h left`;
+  return `${Math.max(1, Math.round(ms / 60_000))} min left`;
+}
 
 const opts = <T extends string>(list: [T, string][]) => list.map(([value, label]) => ({ value, label }));
 const CROPS = opts<Crop>([['original', 'original'], ['1:1', '1:1'], ['16:9', '16:9'], ['9:16', '9:16'], ['4:5', '4:5']]);
@@ -98,6 +118,30 @@ export default function GifMaker() {
     };
   }, [stickerRefs, stickers, mineStore.items]);
   const stickersMissing = [...stickerRefs.keys()].some((k) => !stickers.has(k));
+
+  // ---- fonts ----
+  const fontFamilies = useMemo(() => [...new Set(s.layers.flatMap((l) => (l.kind === 'text' ? [l.font] : [])))], [s.layers]);
+  const fontsKey = fontFamilies.join('|');
+  // Goes up whenever a font has loaded, so the handles measure the texts again.
+  const [fontsVersion, setFontsVersion] = useState(0);
+  const [fontsFailed, setFontsFailed] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    for (const f of fontFamilies) {
+      loadFont(f).then(
+        () => {
+          if (!alive) return;
+          setFontsVersion((v) => v + 1);
+          setFontsFailed((l) => l.filter((x) => x !== f));
+        },
+        () => alive && setFontsFailed((l) => (l.includes(f) ? l : [...l, f])),
+      );
+    }
+    return () => {
+      alive = false;
+    };
+  }, [fontsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const missingFonts = fontsFailed.filter((f) => fontFamilies.includes(f));
 
   const [uploadError, setUploadError] = useState('');
   const addLayer = (l: Layer) => {
@@ -326,20 +370,58 @@ export default function GifMaker() {
   const [busy, setBusy] = useState<number | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   useEffect(() => () => void (result && URL.revokeObjectURL(result.url)), [result]);
+  const baseName = (isVideo ? video?.name : photos[0]?.name)?.replace(/\.[^.]+$/, '') || 'animation';
+
+  // ---- link ----
+  const [linkPrefs, setLinkPrefs] = useState<LinkPrefs>(DEFAULT_LINK);
+  useAutosave<LinkPrefs>('gif-maker-link', linkPrefs, (d) => setLinkPrefs({ ...DEFAULT_LINK, ...d }));
+  const links = useSaved<GifLink>('gif-links');
+  const [link, setLink] = useState<LinkState | null>(null);
+  // The link copied by itself right after uploading (browsers only allow that while the page has focus).
+  const [autoCopied, setAutoCopied] = useState('');
+  const uploading = useRef<AbortController | null>(null);
+  useEffect(() => () => uploading.current?.abort(), []);
+  const share = async (r: Result, lasts: Lasts) => {
+    uploading.current?.abort();
+    const ctl = new AbortController();
+    uploading.current = ctl;
+    setLink({ progress: 0 });
+    setAutoCopied('');
+    try {
+      const url = await uploadFile(r.blob, r.name, lasts, (progress) => setLink({ progress }), ctl.signal);
+      if (ctl.signal.aborted) return;
+      setLink({ url, lasts });
+      navigator.clipboard?.writeText(url).then(
+        () => setAutoCopied(url),
+        () => {},
+      );
+      const item = await links.save(r.name, { url, lasts, size: r.blob.size, w: r.w, h: r.h });
+      // Only the newest ones are kept.
+      for (const old of links.items.filter((i) => i.id !== item.id).slice(MAX_LINKS - 1)) void links.remove(old.id);
+    } catch (e) {
+      if (!ctl.signal.aborted) setLink({ error: e instanceof Error ? e.message : String(e), lasts });
+    }
+  };
+
   const create = async () => {
     if (!ready || !size) return;
     setError('');
     setBusy(0);
+    uploading.current?.abort();
+    setLink(null);
     try {
+      // Texts in fonts still loading would come out in the stand-in font.
+      await Promise.allSettled(fontFamilies.map(loadFont));
       const blob = await makeGif(refs, frames, photoBmps, s, size.w, size.h, setBusy, stickers);
-      setResult({ url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, frames: refs.length });
+      const r = { url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, frames: refs.length, name: `${baseName}.gif` };
+      setResult(r);
+      if (linkPrefs.on) void share(r, linkPrefs.lasts);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(null);
     }
   };
-  const baseName = (isVideo ? video?.name : photos[0]?.name)?.replace(/\.[^.]+$/, '') || 'animation';
 
   // ---- layout ----
   const source = (
@@ -489,6 +571,7 @@ export default function GifMaker() {
             onSelect={setSelected}
             update={(fn) => setS((o) => ({ ...o, layers: fn(o.layers) }))}
             pan={pan}
+            fontsVersion={fontsVersion}
           />
         ) : (
           <span className="muted">{isVideo ? 'Pick a video to start.' : 'Pick some photos to start.'}</span>
@@ -501,6 +584,11 @@ export default function GifMaker() {
         </p>
       )}
       {stickersMissing && <p className="note mono">{stickerError || 'loading stickers…'}</p>}
+      {missingFonts.length > 0 && (
+        <p className="note give-warn">
+          {missingFonts.join(', ')} couldn’t be loaded (no internet?), so {missingFonts.length === 1 ? 'that text uses' : 'those texts use'} a plain font for now.
+        </p>
+      )}
       {(tooMany || tooManyPhotos) && (
         <p className="note give-warn">
           That’s more than {limit} frames for this size. Make it shorter, use fewer frames per second, a smaller width, or fewer photos.
@@ -514,6 +602,31 @@ export default function GifMaker() {
       <button type="button" className="btn btn-primary" disabled={!ready || busy !== null} onClick={create}>
         {busy !== null ? `Making the GIF… ${Math.round(busy * 100)} %` : 'Make GIF'}
       </button>
+      <div className="gm-linkopts">
+        <span className="switch-row">
+          <Toggle label="Make a link" checked={linkPrefs.on} onChange={(on) => setLinkPrefs({ ...linkPrefs, on })} />
+          <span className="opt-label">Make a link</span>
+        </span>
+        {linkPrefs.on && (
+          <label className="gm-lasts">
+            <span className="muted">works</span>
+            <select className="select" value={linkPrefs.lasts} onChange={(e) => setLinkPrefs({ ...linkPrefs, lasts: e.target.value as Lasts })}>
+              {LASTS.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+      {linkPrefs.on && (
+        <p className="note">
+          {linkPrefs.lasts === 'forever'
+            ? 'The GIF is uploaded to catbox.moe and you get a link to share (it works on Discord too). Anyone with the link can see it, and links that last forever can’t be deleted.'
+            : `The GIF is uploaded to litterbox (catbox.moe) and deleted by itself after ${LASTS.find((l) => l.value === linkPrefs.lasts)?.label}. Anyone with the link can see it until then.`}
+        </p>
+      )}
       {result && (
         <>
           <img className="gm-result" src={result.url} alt="The finished GIF" />
@@ -521,10 +634,59 @@ export default function GifMaker() {
             {result.w} × {result.h} · {result.frames} frames · {formatBytes(result.blob.size)}
             {result.blob.size > BIG && ' · big: lower the width, fps or colors to make it smaller'}
           </p>
-          <button type="button" className="btn" onClick={() => saveBlob(result.blob, `${baseName}.gif`)}>
-            Download {baseName}.gif
+          <button type="button" className="btn" onClick={() => saveBlob(result.blob, result.name)}>
+            Download {result.name}
           </button>
+          {link && 'progress' in link && <p className="note mono">uploading… {Math.round(link.progress * 100)} %</p>}
+          {link && 'url' in link && (
+            <div className="gm-link">
+              <input className="input mono" readOnly aria-label="Link to the GIF" value={link.url} onFocus={(e) => e.currentTarget.select()} />
+              <CopyButton text={link.url} />
+              <a className="btn btn-sm" href={link.url} target="_blank" rel="noreferrer">
+                open
+              </a>
+            </div>
+          )}
+          {link && 'url' in link && autoCopied === link.url && <p className="note mono">The link is copied: paste it anywhere.</p>}
+          {link && 'error' in link && (
+            <p className="note give-warn" role="alert">
+              Couldn’t make a link: {link.error}{' '}
+              <button type="button" className="btn btn-sm" onClick={() => void share(result, linkPrefs.lasts)}>
+                try again
+              </button>
+            </p>
+          )}
+          {!link && (
+            <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => void share(result, linkPrefs.lasts)}>
+              make a link ({LASTS.find((l) => l.value === linkPrefs.lasts)?.label})
+            </button>
+          )}
         </>
+      )}
+      {links.items.length > 0 && (
+        <details className="gm-links">
+          <summary className="field-label">my links · {links.items.length}</summary>
+          <ul>
+            {links.items.map((i) => {
+              const left = timeLeft(i.data.lasts, i.savedAt);
+              return (
+                <li key={i.id} className={left === 'expired' ? 'expired' : ''}>
+                  <a className="mono" href={i.data.url} target="_blank" rel="noreferrer" title={i.data.url}>
+                    {i.data.url.replace(/^https:\/\//, '')}
+                  </a>
+                  <span className="note mono">
+                    {i.name} · {savedWhen(i.savedAt)} · {left}
+                  </span>
+                  {left === 'expired' ? <span /> : <CopyButton text={i.data.url} />}
+                  <button type="button" className="icon-btn" aria-label={`Remove ${i.name} from my links`} onClick={() => void links.remove(i.id)}>
+                    ×
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="note">Removing a link here only takes it off this list; the GIF stays online.</p>
+        </details>
       )}
     </Panel>
   );

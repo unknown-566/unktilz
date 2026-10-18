@@ -2,6 +2,14 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.11.0] - 2026-10-18
+
+### Added
+- **Fonts from Google in the GIF maker:** pick any of about 1,800 Google Fonts for your texts. Search them or browse by kind (display, handwriting, pixel…); each name is written in its own font.
+- Ten fonts come with the site and work without the internet: Anton, Bebas Neue, Bangers, Luckiest Guy, Montserrat, Lobster, Pacifico, Caveat, Permanent Marker and Press Start 2P. All but Permanent Marker have Czech letters (č, ř, ž…).
+- **A link to your GIF, made by itself:** after "Make GIF" the GIF is uploaded and you get a link to paste anywhere (Discord shows it as a GIF). It's copied for you when the browser allows it. Pick how long it works: forever, 3 days, 1 day, 12 hours or 1 hour, or turn "Make a link" off.
+- "My links" keeps your last 20 links, with how long each one still works.
+
 ## [1.10.0] - 2026-10-18
 
 ### Added
