@@ -1,7 +1,7 @@
 import { computeValue } from '../../../lib/compute';
 import { ffmpegRun } from '../../../lib/ffmpeg';
 import { isHeic, isTiff } from '../../../workers/tasks/imageCodecs';
-import { drawFrame, type PhotoFrame, type Settings } from './compose';
+import { drawFrame, type PhotoFrame, type Settings, type StickerAnim } from './compose';
 
 export type VideoSource = { name: string; url: string; duration: number; w: number; h: number; converted: boolean };
 
@@ -160,6 +160,7 @@ export async function makeGif(
   W: number,
   H: number,
   onProgress: (p: number) => void,
+  stickers: Map<string, StickerAnim>,
 ): Promise<Blob> {
   const canvas = new OffscreenCanvas(W, H);
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
@@ -171,7 +172,7 @@ export async function makeGif(
   for (let i = 0; i < refs.length; i++) {
     const pics = picsFor(refs[i], video, photos);
     if (!pics) throw new Error('A frame is missing. Wait until the frames are ready and try again.');
-    drawFrame(ctx, W, H, s, pics, i / s.fps, duration);
+    drawFrame(ctx, W, H, s, pics, i / s.fps, duration, stickers);
     const rgba = ctx.getImageData(0, 0, W, H).data;
     for (let p = 0, q = i * frameBytes; p < rgba.length; p += 4, q += 3) {
       raw[q] = rgba[p];

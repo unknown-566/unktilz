@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { Help } from '../../../components/Help';
 import { SavedPanel } from '../../../components/SavedPanel';
 import { Panel, Segmented, Toggle } from '../../../components/ui';
 import { Workbench } from '../../../components/Workbench';
-import { useAutosave } from '../../../lib/saved';
+import { useAutosave, useSaved } from '../../../lib/saved';
 import { formatBytes, saveBlob } from '../../../queue/download';
 import { IMAGE_ACCEPTS } from '../formats';
-import { MAX_SECONDS, cropRect, frameLimit, defaultSettings, drawFrame, estimateBytes, frameOrder, outputSize, photoFrames, videoFrameTimes, type Crop, type Filter, type Settings, type TextBox } from './compose';
+import { MAX_SECONDS, cropRect, defaultSettings, drawFrame, estimateBytes, fixLayer, frameLimit, frameOrder, outputSize, photoFrames, stickerKey, videoFrameTimes, type Crop, type Filter, type Layer, type Settings, type StickerAnim, type StickerRef } from './compose';
 import { loadPhoto, makeGif, openVideo, picsFor, videoFrames, videoThumbs, type FrameRef, type VideoSource } from './frames';
-import { TextLayers } from './TextLayers';
+import { LayerList, LayerProps, newSticker, newText } from './Layers';
+import { Stage } from './Stage';
+import { StickerPicker } from './Stickers';
+import { MAX_STICKER_BYTES, decodeSticker, loadSticker, type MySticker } from './stickerData';
 import { Timeline } from './Timeline';
 
 const VIDEO_ACCEPTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.3gp', '.ts', '.mts', '.mpg', '.mpeg', '.ogv', '.gif'];
@@ -28,6 +31,10 @@ const SPEEDS = ['0.25', '0.5', '1', '1.5', '2', '4'];
  * takes over, and freeing it at once breaks those reads.
  */
 const retire = (url: string) => setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+/** Saved settings from any version: layers brought up to date. */
+const restore = (d: Partial<Settings>): Settings => ({ ...defaultSettings(), ...d, layers: (d.layers ?? []).map((l) => fixLayer(l as Layer & Record<string, unknown>)) });
+const STICKER_TYPES: Record<string, string> = { png: 'image/png', apng: 'image/apng', gif: 'image/gif', webp: 'image/webp' };
 
 async function thumbOf(bmp: ImageBitmap) {
   const h = 56;
@@ -52,7 +59,7 @@ function Row({ label, help, children }: { label: string; help?: string; children
 export default function GifMaker() {
   const [s, setS] = useState<Settings>(defaultSettings);
   const set = (p: Partial<Settings>) => setS((o) => ({ ...o, ...p }));
-  useAutosave<Settings>('gif-maker', s, (d) => setS({ ...defaultSettings(), ...d }));
+  useAutosave<Settings>('gif-maker', s, (d) => setS(restore(d)));
 
   const [video, setVideo] = useState<VideoSource | null>(null);
   const [thumbs, setThumbs] = useState<string[]>([]);
@@ -62,6 +69,79 @@ export default function GifMaker() {
   const [over, setOver] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  // ---- stickers ----
+  const mineStore = useSaved<MySticker>('gif-stickers');
+  const mineUrls = useMemo(() => new Map(mineStore.items.map((i) => [i.id, URL.createObjectURL(new Blob([i.data.bytes as BlobPart], { type: i.data.mime }))])), [mineStore.items]);
+  useEffect(() => () => mineUrls.forEach((u) => URL.revokeObjectURL(u)), [mineUrls]);
+  const [stickers, setStickers] = useState<Map<string, StickerAnim>>(() => new Map());
+  const [stickerError, setStickerError] = useState('');
+  const stickerRefs = useMemo(() => {
+    const m = new Map<string, StickerRef>();
+    for (const l of s.layers) if (l.kind === 'sticker') m.set(stickerKey(l.sticker), l.sticker);
+    return m;
+  }, [s.layers]);
+  useEffect(() => {
+    let alive = true;
+    for (const [key, ref] of stickerRefs) {
+      if (stickers.has(key)) continue;
+      loadSticker(ref, (id) => mineStore.items.find((i) => i.id === id)?.data)
+        .then((anim) => {
+          if (!alive) return;
+          setStickers((m) => new Map(m).set(key, anim));
+          setStickerError('');
+        })
+        .catch((e: Error) => alive && setStickerError(e.message));
+    }
+    return () => {
+      alive = false;
+    };
+  }, [stickerRefs, stickers, mineStore.items]);
+  const stickersMissing = [...stickerRefs.keys()].some((k) => !stickers.has(k));
+
+  const [uploadError, setUploadError] = useState('');
+  const addLayer = (l: Layer) => {
+    setS((o) => {
+      // A new layer on the exact spot of another one moves a little down and right, so both show.
+      let k = 0;
+      const taken = (n: number) => o.layers.some((x) => Math.abs(x.x - (l.x + n * 0.05)) < 0.01 && Math.abs(x.y - (l.y + n * 0.05)) < 0.01);
+      while (k < 8 && taken(k)) k++;
+      return { ...o, layers: [...o.layers, { ...l, x: l.x + k * 0.05, y: l.y + k * 0.05 }] };
+    });
+    setSelected(l.id);
+  };
+  const uploadStickers = async (files: File[]) => {
+    setUploadError('');
+    for (const f of files) {
+      const ext = f.name.toLowerCase().match(/\.([a-z]+)$/)?.[1] ?? '';
+      const mime = STICKER_TYPES[ext] ?? (f.type.startsWith('image/') ? f.type : '');
+      if (!mime) {
+        setUploadError(`${f.name}: use a PNG, GIF or WebP picture.`);
+        continue;
+      }
+      if (f.size > MAX_STICKER_BYTES) {
+        setUploadError(`${f.name} is too big for a sticker (max ${formatBytes(MAX_STICKER_BYTES)}).`);
+        continue;
+      }
+      try {
+        const anim = await decodeSticker(f, mime);
+        const taken = new Set(mineStore.items.map((i) => i.name));
+        const base = f.name.replace(/\.[^.]+$/, '') || 'sticker';
+        let name = base;
+        for (let n = 2; taken.has(name); n++) name = `${base} (${n})`;
+        const item = await mineStore.save(name, { mime, bytes: new Uint8Array(await f.arrayBuffer()), w: anim.w, h: anim.h, frames: anim.frames.length });
+        setStickers((m) => new Map(m).set(stickerKey({ type: 'mine', id: item.id }), anim));
+        addLayer(newSticker({ type: 'mine', id: item.id }, name));
+      } catch {
+        setUploadError(`${f.name} couldn’t be read as a picture.`);
+      }
+    }
+  };
+  const removeMine = (id: string) => {
+    void mineStore.remove(id);
+    // Layers that used it go too; there's nothing left to show.
+    setS((o) => ({ ...o, layers: o.layers.filter((l) => !(l.kind === 'sticker' && l.sticker.type === 'mine' && l.sticker.id === id)) }));
+  };
 
   // ---- sources ----
   const takeVideo = async (file: File) => {
@@ -189,14 +269,13 @@ export default function GifMaker() {
   const photoBmps = useMemo(() => photos.map((p) => p.bmp), [photos]);
   const duration = refs.length / s.fps;
   const tooManyPhotos = !isVideo && refs.length > limit;
-  const ready = !status && !!size && refs.length > 0 && !tooMany && !tooManyPhotos && (isVideo ? !!frames && frames.length === times.length : photos.length > 0);
+  const ready = !status && !stickersMissing && !!size && refs.length > 0 && !tooMany && !tooManyPhotos && (isVideo ? !!frames && frames.length === times.length : photos.length > 0);
 
   // ---- preview ----
   const canvas = useRef<HTMLCanvasElement>(null);
-  const boxes = useRef<TextBox[]>([]);
   const [playing, setPlaying] = useState(true);
-  const state = useRef({ s, refs, frames, photoBmps, size, duration, playing });
-  state.current = { s, refs, frames, photoBmps, size, duration, playing };
+  const state = useRef({ s, refs, frames, photoBmps, size, duration, playing, stickers });
+  state.current = { s, refs, frames, photoBmps, size, duration, playing, stickers };
   const frameAt = useRef(0);
   // A timer at the GIF's own frame rate plays it like the real thing (and keeps drawing while
   // paused, so moving a text shows right away).
@@ -220,53 +299,28 @@ export default function GifMaker() {
         ctx.fillRect(0, 0, el.width, el.height);
         return;
       }
-      boxes.current = drawFrame(ctx, el.width, el.height, st.s, pics, i / st.s.fps, st.duration);
+      drawFrame(ctx, el.width, el.height, st.s, pics, i / st.s.fps, st.duration, st.stickers);
     };
     tick();
     return () => clearTimeout(timer);
   }, []);
 
-  // Drag a text to move it; drag the picture to move the crop.
-  const drag = useRef<{ kind: 'text'; id: string; dx: number; dy: number } | { kind: 'pan'; x0: number; y0: number; px: number; py: number } | null>(null);
-  const toCanvas = (e: PointerEvent) => {
-    const el = canvas.current!;
-    const r = el.getBoundingClientRect();
-    return { x: ((e.clientX - r.left) / r.width) * el.width, y: ((e.clientY - r.top) / r.height) * el.height };
-  };
-  const down = (e: PointerEvent) => {
-    if (!size) return;
-    const p = toCanvas(e);
-    const hit = [...boxes.current].reverse().find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
-    if (hit) {
-      const l = s.layers.find((x) => x.id === hit.id)!;
-      setSelected(hit.id);
-      drag.current = { kind: 'text', id: hit.id, dx: p.x - l.x * size.w, dy: p.y - l.y * size.h };
-    } else if (isVideo && s.crop !== 'original') {
-      drag.current = { kind: 'pan', x0: p.x, y0: p.y, px: s.panX, py: s.panY };
-    } else return;
-    try {
-      (e.currentTarget as Element).setPointerCapture(e.pointerId);
-    } catch {
-      /* synthetic pointer */
-    }
-  };
-  const move = (e: PointerEvent) => {
-    const d = drag.current;
-    if (!d || !size) return;
-    const p = toCanvas(e);
-    if (d.kind === 'text') {
-      const x = Math.min(1, Math.max(0, (p.x - d.dx) / size.w));
-      const y = Math.min(1, Math.max(0, (p.y - d.dy) / size.h));
-      setS((o) => ({ ...o, layers: o.layers.map((l) => (l.id === d.id ? { ...l, x, y } : l)) }));
-    } else if (video) {
-      const c = cropRect(video.w, video.h, s.crop);
-      // Dragging the picture right shows more of its left side.
-      const fx = video.w - c.w > 1 ? ((p.x - d.x0) / size.w) * (c.w / (video.w - c.w)) : 0;
-      const fy = video.h - c.h > 1 ? ((p.y - d.y0) / size.h) * (c.h / (video.h - c.h)) : 0;
-      set({ panX: Math.min(1, Math.max(0, d.px - fx)), panY: Math.min(1, Math.max(0, d.py - fy)) });
-    }
-  };
-  const up = () => (drag.current = null);
+  // Dragging the empty picture moves the crop (videos cropped to a shape).
+  const panFrom = useRef({ x: 0.5, y: 0.5 });
+  const pan =
+    isVideo && video && size && s.crop !== 'original'
+      ? {
+          start: () => (panFrom.current = { x: s.panX, y: s.panY }),
+          move: (dx: number, dy: number) => {
+            const c = cropRect(video.w, video.h, s.crop);
+            // Dragging the picture right shows more of its left side.
+            const fx = video.w - c.w > 1 ? (dx / size.w) * (c.w / (video.w - c.w)) : 0;
+            const fy = video.h - c.h > 1 ? (dy / size.h) * (c.h / (video.h - c.h)) : 0;
+            set({ panX: Math.min(1, Math.max(0, panFrom.current.x - fx)), panY: Math.min(1, Math.max(0, panFrom.current.y - fy)) });
+          },
+        }
+      : undefined;
+  const selectedLayer = s.layers.find((l) => l.id === selected) ?? null;
 
   // ---- export ----
   const [busy, setBusy] = useState<number | null>(null);
@@ -277,7 +331,7 @@ export default function GifMaker() {
     setError('');
     setBusy(0);
     try {
-      const blob = await makeGif(refs, frames, photoBmps, s, size.w, size.h, setBusy);
+      const blob = await makeGif(refs, frames, photoBmps, s, size.w, size.h, setBusy, stickers);
       setResult({ url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, frames: refs.length });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -425,7 +479,17 @@ export default function GifMaker() {
     >
       <div className="gm-stage">
         {size ? (
-          <canvas ref={canvas} className="gm-canvas" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} aria-label="GIF preview. Drag a text to move it." />
+          <Stage
+            canvas={canvas}
+            W={size.w}
+            H={size.h}
+            layers={s.layers}
+            stickers={stickers}
+            selected={selected}
+            onSelect={setSelected}
+            update={(fn) => setS((o) => ({ ...o, layers: fn(o.layers) }))}
+            pan={pan}
+          />
         ) : (
           <span className="muted">{isVideo ? 'Pick a video to start.' : 'Pick some photos to start.'}</span>
         )}
@@ -436,6 +500,7 @@ export default function GifMaker() {
           {size.w} × {size.h} · {s.fps} fps · {duration.toFixed(1)} s · {refs.length} frames · ≈ {formatBytes(estimateBytes(size.w, size.h, refs.length, s.colors))}
         </p>
       )}
+      {stickersMissing && <p className="note mono">{stickerError || 'loading stickers…'}</p>}
       {(tooMany || tooManyPhotos) && (
         <p className="note give-warn">
           That’s more than {limit} frames for this size. Make it shorter, use fewer frames per second, a smaller width, or fewer photos.
@@ -470,8 +535,28 @@ export default function GifMaker() {
       output={output}
     >
       {source}
-      <Panel title="text & stickers">
-        <TextLayers layers={s.layers} selected={selected} onSelect={setSelected} onChange={(layers) => set({ layers })} duration={duration} />
+      <Panel title="add text & stickers">
+        <button type="button" className="btn" style={{ alignSelf: 'flex-start' }} onClick={() => addLayer(newText())}>
+          + text
+        </button>
+        <StickerPicker
+          onAdd={(ref, name) => addLayer(newSticker(ref, name))}
+          mine={mineStore.items}
+          mineUrls={mineUrls}
+          onUpload={(files) => void uploadStickers(files)}
+          onRemoveMine={removeMine}
+          uploadError={uploadError}
+        />
+      </Panel>
+      <Panel title="layers">
+        <LayerList layers={s.layers} selected={selected} onSelect={setSelected} onChange={(layers) => set({ layers })} mineUrls={mineUrls} />
+        {selectedLayer && (
+          <LayerProps
+            layer={selectedLayer}
+            duration={duration}
+            onChange={(p) => setS((o) => ({ ...o, layers: o.layers.map((l) => (l.id === selectedLayer.id ? ({ ...l, ...p } as Layer) : l)) }))}
+          />
+        )}
       </Panel>
       {picture}
       {exportPanel}
@@ -479,10 +564,10 @@ export default function GifMaker() {
         slug="gif-maker"
         title="my gif styles"
         help="Keeps your texts, speed, shape and GIF settings (not the video or photos) so you can use them again. Saved in this browser."
-        suggestName={() => s.layers[0]?.text.split('\n')[0] || 'My GIF style'}
+        suggestName={() => s.layers.map((l) => (l.kind === 'text' ? l.text.split('\n')[0] : l.name)).find(Boolean) || 'My GIF style'}
         getData={() => s}
-        onLoad={(d) => setS({ ...defaultSettings(), ...d, mode: s.mode })}
-        describe={(i) => `${i.data.layers?.length ?? 0} text${i.data.layers?.length === 1 ? '' : 's'} · ${i.data.width} px · ${i.data.fps} fps`}
+        onLoad={(d) => setS({ ...restore(d), mode: s.mode })}
+        describe={(i) => `${i.data.layers?.length ?? 0} layer${i.data.layers?.length === 1 ? '' : 's'} · ${i.data.width} px · ${i.data.fps} fps`}
         emptyText="Nothing saved yet."
       />
     </Workbench>

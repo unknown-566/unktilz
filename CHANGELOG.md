@@ -2,6 +2,18 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.10.0] - 2026-10-18
+
+### Added
+- **Stickers in the GIF maker:** almost 900 animated emoji from Google (search them, or browse by group; they move when you hover them), and your own stickers: add any PNG, GIF or WebP, animated ones too (e.g. saved from Giphy). Your stickers are kept in "my stickers" and in Backup.
+- **Edit right on the preview:** click a text or sticker to select it, then drag it to move it (it snaps to the middle), drag a corner to resize it, or the round handle to turn it (hold Shift for 15° steps).
+- Keyboard: arrow keys nudge (Shift moves further), Delete removes, Ctrl+D duplicates, Ctrl+] and Ctrl+[ bring forward and send back, Esc deselects.
+- A **layers** list: order, duplicate and delete, plus size, turn, opacity and mirror for each layer.
+- New animations for texts and stickers: fade in, spin, wiggle, pulse and float. They loop smoothly with the GIF.
+
+### Changed
+- The old static emoji picker is replaced by the animated stickers. Texts you saved before still load.
+
 ## [1.9.0] - 2026-10-18
 
 ### Added

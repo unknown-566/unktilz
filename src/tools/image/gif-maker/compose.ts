@@ -7,24 +7,31 @@
 export type Crop = 'original' | '1:1' | '16:9' | '9:16' | '4:5';
 export type Filter = 'none' | 'gray' | 'sepia' | 'contrast';
 export type TextStyle = 'meme' | 'subtitle' | 'neon' | 'bubble' | 'plain';
-export type TextAnim = 'none' | 'type' | 'pop' | 'blink';
+export type LayerAnim = 'none' | 'type' | 'pop' | 'fade' | 'blink' | 'spin' | 'wiggle' | 'pulse' | 'float';
 
-export type TextLayer = {
+type LayerBase = {
   id: string;
-  text: string;
-  style: TextStyle;
-  font: string;
-  /** Text height as a share of the GIF's height. */
-  size: number;
-  color: string;
   /** Centre, 0..1 of the GIF's width / height. */
   x: number;
   y: number;
-  anim: TextAnim;
+  /** Height as a share of the GIF's height (text: one line). */
+  size: number;
+  /** Degrees, clockwise. */
+  rotation: number;
+  /** 0..1 */
+  opacity: number;
+  /** Mirrored left ↔ right. */
+  flip: boolean;
+  anim: LayerAnim;
   /** Seconds into the GIF; null = from the start / to the end. */
   from: number | null;
   to: number | null;
 };
+export type TextLayer = LayerBase & { kind: 'text'; text: string; style: TextStyle; font: string; color: string };
+/** A Google Noto animated emoji (by code point), or one of "my stickers" (by id). */
+export type StickerRef = { type: 'noto'; code: string } | { type: 'mine'; id: string };
+export type StickerLayer = LayerBase & { kind: 'sticker'; sticker: StickerRef; name: string };
+export type Layer = TextLayer | StickerLayer;
 
 export type Settings = {
   mode: 'video' | 'photos';
@@ -46,7 +53,8 @@ export type Settings = {
   fps: number;
   loop: 'forever' | 'once' | '3';
   colors: number;
-  layers: TextLayer[];
+  /** Bottom first: later layers are drawn on top. */
+  layers: Layer[];
 };
 
 export const defaultSettings = (): Settings => ({
@@ -70,6 +78,15 @@ export const defaultSettings = (): Settings => ({
   colors: 256,
   layers: [],
 });
+
+/** A layer saved by an older version (texts only, no rotation…) brought up to date. */
+export function fixLayer(l: Partial<Layer> & Record<string, unknown>): Layer {
+  const base = { rotation: 0, opacity: 1, flip: false, anim: 'none' as LayerAnim, from: null, to: null, x: 0.5, y: 0.5, size: 0.12, id: String(l.id ?? Math.random()) };
+  if (l.kind === 'sticker') return { ...base, ...(l as StickerLayer) };
+  return { ...base, text: '', style: 'meme', font: FONTS[0].value, color: '#ffffff', ...(l as Partial<TextLayer>), kind: 'text' } as TextLayer;
+}
+
+export const stickerKey = (r: StickerRef) => (r.type === 'noto' ? `noto:${r.code}` : `mine:${r.id}`);
 
 /** Longest clip and most frames a GIF may have (memory and file size stay sane). */
 export const MAX_SECONDS = 30;
@@ -138,26 +155,117 @@ export function photoFrames(count: number, seconds: number, fps: number, speed: 
   return out;
 }
 
-/** Whether a text shows at second `t`, and how far into its animation it is. */
-export function textState(layer: TextLayer, t: number, duration: number) {
+// ---------- layer animation ----------
+
+export type LayerState = { chars: number; scale: number; rotate: number; dy: number; alpha: number };
+
+/** Turns per second for the looping animations; fitted so they loop exactly with the GIF. */
+const RATE: Partial<Record<LayerAnim, number>> = { spin: 0.5, wiggle: 2, pulse: 1.5, float: 0.8 };
+
+/**
+ * How a layer looks at second `t` of a GIF that's `duration` long: hidden (null), or how much of a
+ * text is typed, extra scale, rotation (degrees), up/down shift (share of the GIF's height), fade.
+ */
+export function layerState(layer: Layer, t: number, duration: number): LayerState | null {
   const from = layer.from ?? 0;
   const to = layer.to ?? duration;
   if (t < from - 1e-6 || t > to + 1e-6) return null;
   const local = t - from;
-  if (layer.anim === 'blink') return Math.floor(local * 2) % 2 === 0 ? { chars: Infinity, scale: 1 } : null;
-  if (layer.anim === 'type') {
-    // About 12 letters a second, but never longer than a second and a half for the whole text.
-    const total = Math.min(1.5, layer.text.length / 12);
-    return { chars: total ? Math.ceil((local / total) * layer.text.length) : Infinity, scale: 1 };
+  const st: LayerState = { chars: Infinity, scale: 1, rotate: 0, dy: 0, alpha: 1 };
+  const span = Math.max(0.1, to - from);
+  // Whole turns over the time the layer shows, so the GIF loops without a jump.
+  const phase = () => {
+    const turns = Math.max(1, Math.round(span * (RATE[layer.anim] ?? 1)));
+    return (local / span) * turns * 2 * Math.PI;
+  };
+  switch (layer.anim) {
+    case 'blink':
+      return Math.floor(local * 2) % 2 === 0 ? st : null;
+    case 'type': {
+      if (layer.kind !== 'text') return st;
+      // About 12 letters a second, but never longer than a second and a half for the whole text.
+      const total = Math.min(1.5, layer.text.length / 12);
+      st.chars = total ? Math.ceil((local / total) * layer.text.length) : Infinity;
+      return st;
+    }
+    case 'pop': {
+      const p = Math.min(1, local / 0.3);
+      // Ease out with a small overshoot.
+      const c = 1.7;
+      st.scale = Math.max(0.01, p >= 1 ? 1 : 1 + (c + 1) * (p - 1) ** 3 + c * (p - 1) ** 2);
+      return st;
+    }
+    case 'fade':
+      st.alpha = Math.min(1, local / 0.5);
+      return st;
+    case 'spin':
+      st.rotate = (phase() * 180) / Math.PI;
+      return st;
+    case 'wiggle':
+      st.rotate = Math.sin(phase()) * 12;
+      return st;
+    case 'pulse':
+      st.scale = 1 + 0.1 * Math.sin(phase());
+      return st;
+    case 'float':
+      st.dy = Math.sin(phase()) * 0.03;
+      return st;
+    default:
+      return st;
   }
-  if (layer.anim === 'pop') {
-    const p = Math.min(1, local / 0.3);
-    // Ease out with a small overshoot.
-    const c = 1.7;
-    const scale = p >= 1 ? 1 : 1 + (c + 1) * (p - 1) ** 3 + c * (p - 1) ** 2;
-    return { chars: Infinity, scale: Math.max(0.01, scale) };
+}
+
+// ---------- animated stickers ----------
+
+/** A decoded sticker: its frames and when each one ends (seconds), looping. */
+export type StickerAnim = { frames: Pic[]; ends: number[]; w: number; h: number };
+
+/** Which frame of a looping sticker shows at second `t`. */
+export function stickerFrame(ends: number[], t: number) {
+  const total = ends[ends.length - 1] ?? 0;
+  if (ends.length < 2 || total <= 0) return 0;
+  const local = ((t % total) + total) % total;
+  let lo = 0;
+  let hi = ends.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (local < ends[mid]) hi = mid;
+    else lo = mid + 1;
   }
-  return { chars: Infinity, scale: 1 };
+  return lo;
+}
+
+// ---------- boxes, picking, snapping ----------
+
+/** A layer's frame on the GIF in canvas pixels: centre, size before turning, and its turn. */
+export type LayerBox = { id: string; cx: number; cy: number; w: number; h: number; rotation: number };
+
+/** Whether point (px, py) is inside a turned box. */
+export function inBox(b: LayerBox, px: number, py: number, pad = 0) {
+  const a = (-b.rotation * Math.PI) / 180;
+  const dx = px - b.cx;
+  const dy = py - b.cy;
+  const x = dx * Math.cos(a) - dy * Math.sin(a);
+  const y = dx * Math.sin(a) + dy * Math.cos(a);
+  return Math.abs(x) <= b.w / 2 + pad && Math.abs(y) <= b.h / 2 + pad;
+}
+
+/** The topmost layer under a point (boxes bottom first, like the layers). */
+export const pickLayer = (boxes: LayerBox[], px: number, py: number) => [...boxes].reverse().find((b) => inBox(b, px, py))?.id ?? null;
+
+/** Pulls a centre onto the GIF's middle lines when it's within `reach` pixels. */
+export function snapCenter(cx: number, cy: number, W: number, H: number, reach: number) {
+  const sx = Math.abs(cx - W / 2) <= reach;
+  const sy = Math.abs(cy - H / 2) <= reach;
+  return { cx: sx ? W / 2 : cx, cy: sy ? H / 2 : cy, guideX: sx, guideY: sy };
+}
+
+/** Turning snaps to the nearest 15° with Shift, and onto 0/90/180/270 when close anyway. */
+export function snapAngle(deg: number, step15: boolean) {
+  const norm = ((((deg + 180) % 360) + 360) % 360) - 180;
+  if (step15) return Math.round(norm / 15) * 15;
+  const right = Math.round(norm / 90) * 90;
+  return Math.abs(norm - right) < 4 ? right : Math.round(norm * 10) / 10;
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -204,14 +312,47 @@ function coverRect(w: number, h: number, ratio: number) {
   return { x: (w - cw) / 2, y: (h - ch) / 2, w: cw, h: ch };
 }
 
-/** Where each text ended up, for dragging it on the preview. */
-export type TextBox = { id: string; x: number; y: number; w: number; h: number };
+/** Text measured for drawing: the lines, their widths, and the box around them. */
+function textLayout(ctx: Ctx, l: TextLayer, H: number) {
+  const lines = (l.style === 'meme' ? l.text.toUpperCase() : l.text).split('\n');
+  const px = Math.max(6, l.size * H);
+  const lineH = px * 1.15;
+  ctx.font = `${l.style === 'subtitle' ? 600 : 700} ${px}px ${l.font}`;
+  const widths = lines.map((line) => ctx.measureText(line).width);
+  const bw = Math.max(...widths, px * 0.5);
+  const bh = lineH * lines.length;
+  const pad = px * 0.35;
+  return { lines, widths, px, lineH, bw, bh, pad, w: bw + pad * 2, h: bh + pad * 2 };
+}
 
-/**
- * Draws a whole frame: the picture(s), the filter, then the texts as they are at second `t`.
- * Returns the texts' boxes in canvas pixels.
- */
-export function drawFrame(ctx: Ctx, W: number, H: number, s: Settings, pics: { a: Pic; b?: Pic; mix?: number }, t: number, duration: number): TextBox[] {
+/** Size of a sticker on a GIF H pixels high (square until its picture has loaded). */
+const stickerSize = (l: StickerLayer, H: number, anim?: StickerAnim) => {
+  const h = Math.max(4, l.size * H);
+  return { w: anim ? (h * anim.w) / anim.h : h, h };
+};
+
+/** Every layer's frame (unanimated), for picking and the handles. */
+export function layerBoxes(ctx: Ctx, W: number, H: number, layers: Layer[], stickers: Map<string, StickerAnim>): LayerBox[] {
+  ctx.save();
+  const out = layers.map((l) => {
+    const { w, h } = l.kind === 'text' ? textLayout(ctx, l, H) : stickerSize(l, H, stickers.get(stickerKey(l.sticker)));
+    return { id: l.id, cx: l.x * W, cy: l.y * H, w, h, rotation: l.rotation };
+  });
+  ctx.restore();
+  return out;
+}
+
+/** Draws a whole frame: the picture(s), the filter, then the layers as they are at second `t`. */
+export function drawFrame(
+  ctx: Ctx,
+  W: number,
+  H: number,
+  s: Settings,
+  pics: { a: Pic; b?: Pic; mix?: number },
+  t: number,
+  duration: number,
+  stickers: Map<string, StickerAnim> = new Map(),
+) {
   ctx.save();
   ctx.fillStyle = s.background;
   ctx.fillRect(0, 0, W, H);
@@ -221,19 +362,30 @@ export function drawFrame(ctx: Ctx, W: number, H: number, s: Settings, pics: { a
   if (pics.b && pics.mix) drawPicture(ctx, pics.b, W, H, s, pics.mix);
   ctx.filter = 'none';
   ctx.restore();
-  const boxes: TextBox[] = [];
   for (const layer of s.layers) {
-    const st = textState(layer, t, duration);
-    if (!st || !layer.text) continue;
-    const box = drawText(ctx, W, H, layer, st.chars, st.scale);
-    if (box) boxes.push({ id: layer.id, ...box });
+    const st = layerState(layer, t, duration);
+    if (!st || (layer.kind === 'text' && !layer.text)) continue;
+    ctx.save();
+    ctx.translate(layer.x * W, (layer.y + st.dy) * H);
+    ctx.rotate(((layer.rotation + st.rotate) * Math.PI) / 180);
+    ctx.scale(st.scale * (layer.flip ? -1 : 1), st.scale);
+    ctx.globalAlpha = Math.min(1, Math.max(0, layer.opacity * st.alpha));
+    if (layer.kind === 'text') drawText(ctx, H, layer, st.chars);
+    else {
+      const anim = stickers.get(stickerKey(layer.sticker));
+      if (anim) {
+        const { w, h } = stickerSize(layer, H, anim);
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(anim.frames[stickerFrame(anim.ends, t - (layer.from ?? 0))], -w / 2, -h / 2, w, h);
+      }
+    }
+    ctx.restore();
   }
-  return boxes;
 }
 
-function drawText(ctx: Ctx, W: number, H: number, l: TextLayer, chars: number, scale: number) {
-  const full = l.style === 'meme' ? l.text.toUpperCase() : l.text;
-  const lines = full.split('\n');
+/** Draws a text around (0, 0); the caller has moved, turned and scaled the canvas. */
+function drawText(ctx: Ctx, H: number, l: TextLayer, chars: number) {
+  const { lines, widths, px, lineH, bw, bh, pad } = textLayout(ctx, l, H);
   // Typing shows the first `chars` letters, line by line; the box keeps its full size.
   let left = chars;
   const shown = lines.map((line) => {
@@ -241,20 +393,8 @@ function drawText(ctx: Ctx, W: number, H: number, l: TextLayer, chars: number, s
     left -= line.length + 1;
     return part;
   });
-  const px = Math.max(6, l.size * H);
-  const lineH = px * 1.15;
-  ctx.save();
-  ctx.font = `${l.style === 'subtitle' ? 600 : 700} ${px}px ${l.font}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  const widths = lines.map((line) => ctx.measureText(line).width);
-  const bw = Math.max(...widths, px * 0.5);
-  const bh = lineH * lines.length;
-  const cx = l.x * W;
-  const cy = l.y * H;
-  ctx.translate(cx, cy);
-  ctx.scale(scale, scale);
-  const pad = px * 0.35;
   if (l.style === 'subtitle') {
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     roundRect(ctx, -bw / 2 - pad, -bh / 2 - pad * 0.5, bw + pad * 2, bh + pad, px * 0.2);
@@ -262,6 +402,7 @@ function drawText(ctx: Ctx, W: number, H: number, l: TextLayer, chars: number, s
     ctx.fillStyle = '#ffffff';
     roundRect(ctx, -bw / 2 - pad, -bh / 2 - pad * 0.6, bw + pad * 2, bh + pad * 1.2, px * 0.6);
   }
+  const alpha = ctx.globalAlpha;
   shown.forEach((line, i) => {
     if (!line) return;
     const y = -bh / 2 + lineH * (i + 0.5);
@@ -280,12 +421,10 @@ function drawText(ctx: Ctx, W: number, H: number, l: TextLayer, chars: number, s
       ctx.shadowBlur = px * 0.15;
     }
     ctx.fillStyle = l.style === 'bubble' && l.color.toLowerCase() === '#ffffff' ? '#111111' : l.style === 'neon' ? '#ffffff' : l.color;
-    if (l.style === 'neon') ctx.globalAlpha = 0.85;
+    if (l.style === 'neon') ctx.globalAlpha = alpha * 0.85;
     ctx.fillText(line, x, y);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = alpha;
   });
-  ctx.restore();
-  return { x: cx - (bw / 2 + pad) * scale, y: cy - (bh / 2 + pad) * scale, w: (bw + pad * 2) * scale, h: (bh + pad * 2) * scale };
 }
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {

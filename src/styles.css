@@ -1095,8 +1095,13 @@ textarea,
 }
 .range input[type='range'] {
   width: 200px;
+  min-width: 80px;
+  flex-shrink: 1;
   accent-color: var(--accent);
   min-height: 44px;
+}
+.opt-row .range {
+  min-width: 0;
 }
 .range output {
   font-family: var(--mono);
@@ -3020,7 +3025,8 @@ textarea,
 }
 .gm-layers li {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
 }
 .gm-layer {
   flex: 1;
@@ -3081,12 +3087,53 @@ textarea,
   background-image: conic-gradient(var(--line) 25%, transparent 0 50%, var(--line) 0 75%, transparent 0);
   background-size: 20px 20px;
 }
+/* The canvas and the handles drawn over it are the same size, whatever size the GIF is shown at. */
+.gm-canvas-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+.gm-canvas-wrap:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
 .gm-canvas {
   display: block;
   max-width: 100%;
   max-height: 60vh;
+}
+.gm-handles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.gm-handles [data-handle] {
+  pointer-events: all;
+}
+.gm-frame {
+  fill: none;
+  stroke: #ffffff;
+}
+.gm-frame-shadow {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.45);
+}
+.gm-corner {
+  fill: #ffffff;
+  stroke: #1d6bff;
+}
+.gm-knob {
+  fill: #1d6bff;
+  stroke: #ffffff;
   cursor: grab;
-  touch-action: none;
+}
+.gm-guide {
+  stroke: #ff3db8;
 }
 .gm-loading {
   position: absolute;
@@ -3103,4 +3150,94 @@ textarea,
   max-width: 100%;
   border-radius: 8px;
   image-rendering: auto;
+}
+
+/* Stickers */
+.gm-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.gm-sticker-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+}
+.gm-sticker-cell:hover,
+.gm-sticker-cell:focus-visible {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.gm-sticker-cell img {
+  position: absolute;
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  object-fit: contain;
+}
+.gm-mine {
+  position: relative;
+}
+.gm-mine .gm-sticker-cell {
+  border-color: var(--line);
+  background-color: var(--surface);
+  background-image: conic-gradient(var(--line) 25%, transparent 0 50%, var(--line) 0 75%, transparent 0);
+  background-size: 12px 12px;
+}
+.gm-mine-x {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0;
+}
+.gm-mine:hover .gm-mine-x,
+.gm-mine-x:focus-visible {
+  opacity: 1;
+}
+.gm-sticker-drop {
+  padding: 16px;
+}
+.gm-layer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gm-layer-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gm-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  line-height: 1;
+  object-fit: contain;
+}
+.gm-thumb-t {
+  border-radius: 6px;
+  background: var(--line);
+  font: 700 15px var(--mono);
 }

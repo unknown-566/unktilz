@@ -76,7 +76,7 @@ Option types are `choice` (segmented buttons), `range`, `number`, `text` and `to
 
 ## Third-party services
 
-Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, skin and head images come from `mc-heads.net`, and the skin editor loads skins from `textures.minecraft.net`. Everything else works offline once loaded.
+Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, skin and head images come from `mc-heads.net`, the skin editor loads skins from `textures.minecraft.net`, and the GIF maker loads animated emoji stickers from `fonts.gstatic.com` ([Noto Emoji Animation](https://googlefonts.github.io/noto-emoji-animation/) by Google, CC BY 4.0; the list of them is in `src/lib/noto-emoji.json`, refreshed with `node scripts/fetch-noto-emoji.mjs`). Everything else works offline once loaded.
 
 ## Seed map (cubiomes)
 
