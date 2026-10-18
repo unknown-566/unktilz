@@ -2,6 +2,17 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.8.0] - 2026-10-18
+
+### Added
+- **Seed map full screen:** a new button in the map's corner fills the whole screen with the map. Esc goes back.
+
+### Changed
+- Typing in the tool search on the home page scrolls the search box up, so the matching tools show right under it and you can just click one.
+
+### Removed
+- The "Add process" (+) button in the queue panel. It didn't work well; open a tool and add files there instead.
+
 ## [1.7.0] - 2026-10-15
 
 ### Changed

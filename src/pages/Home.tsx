@@ -102,6 +102,15 @@ export default function Home() {
   const typed = useTypedHint(!typedOnce);
   const hero = useRef<HTMLElement>(null);
   useParallax(hero);
+  const searchBox = useRef<HTMLDivElement>(null);
+
+  // Once you start typing, bring the search box up to the top so the matches show right under it.
+  const searching = q.trim() !== '';
+  useEffect(() => {
+    if (!searching) return;
+    const t = setTimeout(() => searchBox.current?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' }), 120);
+    return () => clearTimeout(t);
+  }, [searching]);
 
   // The search field draws the same green block caret as the typing animation instead of the
   // browser's thin one: measure the text up to the caret and put the block there.
@@ -164,7 +173,7 @@ export default function Home() {
             Minecraft utilities, dev tools, file converters and everyday helpers, in one place. Everything runs right here in your browser, so your files never
             leave your computer.
           </p>
-          <div className="search">
+          <div className="search" ref={searchBox}>
             <SearchIcon />
             <div className={`search-field${caret && q === '' ? ' caret-at-start' : ''}`}>
               <label htmlFor="q" className="sr-only">
@@ -217,7 +226,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="wrap home-main">
+      <div className={`wrap home-main${searching ? ' searching' : ''}`}>
         <div className="chips" role="group" aria-label="Filter by category">
           {chips.map((c) => (
             <button key={c.id} type="button" className="chip" aria-pressed={c.id === cat} onClick={() => pick(c.id)}>

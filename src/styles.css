@@ -439,66 +439,6 @@ textarea,
   color: var(--muted);
   white-space: nowrap;
 }
-.picker {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--line);
-  background: var(--bg);
-  max-height: 320px;
-  overflow-y: auto;
-}
-.picker button {
-  min-height: 44px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  font-size: 14px;
-  text-align: left;
-  white-space: nowrap;
-  transition: border-color 150ms ease;
-}
-.picker button:hover {
-  border-color: var(--accent);
-}
-.picker .badge {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.rail-foot {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-top: 1px solid var(--line);
-}
-.add-btn {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  border: 1px dashed var(--accent-text);
-  background: transparent;
-  color: var(--accent-text);
-  font-size: 22px;
-  line-height: 1;
-}
-.add-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--accent-text);
-  white-space: nowrap;
-}
-
 /* ---------- home ---------- */
 
 /* Two grid layers that follow the mouse at different speeds (parallax, set from Home.tsx). */
@@ -560,6 +500,8 @@ textarea,
 .search {
   max-width: 640px;
   margin-top: 8px;
+  /* Room above it when typing scrolls it to the top. */
+  scroll-margin-top: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -656,6 +598,11 @@ textarea,
   display: flex;
   flex-direction: column;
   gap: 40px;
+}
+/* While searching, the page stays tall enough that the search box can scroll to the top with the
+   matches right under it, even when there are only a few. */
+.home-main.searching {
+  min-height: calc(100vh - 160px);
 }
 .chips {
   display: flex;
@@ -2198,6 +2145,17 @@ textarea,
   position: relative;
   height: min(76vh, 760px);
   min-height: 360px;
+}
+/* Full screen: the map covers the whole window, controls stay on top of it. */
+.sm-mapwrap.full {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border: 0;
+  border-radius: 0;
+}
+.sm-mapwrap.full .sm-map {
+  height: 100vh;
 }
 .sm-map canvas {
   position: absolute;

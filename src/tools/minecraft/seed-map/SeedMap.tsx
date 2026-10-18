@@ -232,8 +232,34 @@ export default function SeedMap() {
     setSelected({ x: Math.floor(x), z: Math.floor(z), biome: null });
   };
 
+  // Full screen: the map covers the whole window (works everywhere) and also asks the browser for
+  // real full screen, which hides the browser's own bars when it's allowed. Esc leaves both.
+  const mapWrap = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setFull(false);
+    // Leaving the browser's full screen (Esc there is taken by the browser) leaves ours too.
+    const onChange = () => !document.fullscreenElement && setFull(false);
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('fullscreenchange', onChange);
+    };
+  }, [full]);
+  const toggleFull = () => {
+    if (full) {
+      setFull(false);
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    } else {
+      setFull(true);
+      void document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+  };
+
   const map = (
-    <div className="sm-mapwrap">
+    <div className={`sm-mapwrap${full ? ' full' : ''}`} ref={mapWrap}>
       {engine ? (
         <MapCanvas
           engine={engine}
@@ -262,6 +288,9 @@ export default function SeedMap() {
         </button>
         <button type="button" className="btn btn-sm" title="Back to 0, 0" aria-label="Back to 0, 0" onClick={() => setCommand({ n: Date.now(), kind: 'goto', x: 0, z: 0 })}>
           ⌂
+        </button>
+        <button type="button" className="btn btn-sm" title={full ? 'Leave full screen (Esc)' : 'Full screen'} aria-label={full ? 'Leave full screen' : 'Full screen'} aria-pressed={full} onClick={toggleFull}>
+          {full ? '⤡' : '⤢'}
         </button>
       </div>
       {hover?.sx !== undefined && isPlace(hover) && (

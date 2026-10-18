@@ -1,10 +1,7 @@
-import { useRef, useState, type FocusEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { acceptsFile, fileTools, type Tool } from '../registry';
+import { useState, type FocusEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueue, type Job } from '../queue/store';
 import { downloadJob } from '../queue/download';
-import { useStaging } from '../queue/staging';
-import { useLaunch } from './Transition';
 import { CategoryIcon, DownloadIcon, LayersIcon } from './icons';
 
 const pct = (j: Job) => `${Math.round((j.status === 'done' ? 1 : j.progress) * 100)}%`;
@@ -73,39 +70,12 @@ function JobItem({ job, open }: { job: Job; open: boolean }) {
 export function QueueRail() {
   const jobs = useQueue((s) => s.jobs);
   const clearDone = useQueue((s) => s.clearDone);
-  const stage = useStaging((s) => s.add);
-  const launch = useLaunch();
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);
   const [pinned, setPinned] = useState(false);
-  const [picking, setPicking] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const pickFor = useRef<Tool | null>(null);
 
-  const open = hover || focus || pinned || picking;
+  const open = hover || focus || pinned;
   const active = jobs.filter((j) => j.status === 'queued' || j.status === 'running').length;
-
-  const choose = (tool: Tool) => {
-    pickFor.current = tool;
-    const input = fileInput.current!;
-    input.accept = tool.accepts?.join(',') ?? '';
-    input.multiple = true;
-    input.value = '';
-    input.click();
-  };
-
-  const onFiles = (list: FileList | null) => {
-    const tool = pickFor.current;
-    if (!tool || !list?.length) return;
-    // Files wait on the tool page so options can be set before Run.
-    stage(tool.slug, [...list].filter((f) => acceptsFile(tool, f)));
-    setPicking(false);
-    setHover(false);
-    if (pathname === `/t/${tool.slug}`) navigate(pathname, { replace: true });
-    else launch(null, tool.slug);
-  };
 
   const onBlur = (e: FocusEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocus(false);
@@ -117,10 +87,7 @@ export function QueueRail() {
         className={`rail${open ? ' open' : ''}${open && !pinned ? ' floating' : ''}`}
         aria-label="Process queue"
         onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => {
-          setHover(false);
-          if (!pinned) setPicking(false);
-        }}
+        onMouseLeave={() => setHover(false)}
         onFocus={(e) => {
           // Only keyboard focus opens the rail; a mouse click already counts as hover.
           if (e.target.matches(':focus-visible')) setFocus(true);
@@ -128,7 +95,6 @@ export function QueueRail() {
         onBlur={onBlur}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
-            setPicking(false);
             setFocus(false);
             setPinned(false);
             (document.activeElement as HTMLElement | null)?.blur();
@@ -165,24 +131,6 @@ export function QueueRail() {
           {open && jobs.length === 0 && <li className="rail-empty">Queue is empty.</li>}
         </ul>
 
-        {picking && open && (
-          <div className="picker" role="group" aria-label="Pick a process">
-            {fileTools.map((t) => (
-              <button key={t.slug} type="button" onClick={() => choose(t)}>
-                <span>{t.name}</span>
-                <span className="badge">{t.accepts?.slice(0, 2).join(' ')}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="rail-foot">
-          <button type="button" className="add-btn" onClick={() => setPicking(!picking)} aria-label="Add process" aria-expanded={picking}>
-            +
-          </button>
-          {open && <span className="add-label">Add process</span>}
-        </div>
-        <input ref={fileInput} type="file" hidden onChange={(e) => onFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
       </aside>
     </div>
   );
