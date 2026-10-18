@@ -731,21 +731,32 @@ export default function GifMaker() {
             <label htmlFor="gm-imgur" className="field-label">
               Your imgur Client ID
             </label>
-            <Help
-              label="imgur Client ID"
-              text={`imgur only takes uploads from apps with a Client ID. Getting one is free: sign in to imgur, open ${IMGUR_APPS}, pick “Anonymous usage without user authorization”, fill in any name, any callback address and your email, and copy the Client ID here (not the secret). It's kept in this browser.`}
-            />
+            <Help label="imgur Client ID" text="A code that tells imgur which app is uploading. imgur only takes uploads from apps that have one. It's free, it isn't a password, and it stays in this browser." />
           </span>
-          <input id="gm-imgur" className="input mono" placeholder="e.g. 1a2b3c4d5e6f7a8" spellCheck={false} autoComplete="off" value={linkPrefs.imgurId} onChange={(e) => setLinkPrefs({ ...linkPrefs, imgurId: e.target.value.trim() })} />
-          {!linkPrefs.imgurId && (
-            <p className="note">
-              Get a free one{' '}
-              <a href={IMGUR_APPS} target="_blank" rel="noreferrer">
-                here
-              </a>{' '}
-              (sign in to imgur, choose “Anonymous usage without user authorization”), then paste the Client ID above.
-            </p>
-          )}
+          <input id="gm-imgur" className="input mono" placeholder="paste your Client ID here" spellCheck={false} autoComplete="off" value={linkPrefs.imgurId} onChange={(e) => setLinkPrefs({ ...linkPrefs, imgurId: e.target.value.trim() })} />
+          <details className="gm-imgur-how" open={!linkPrefs.imgurId}>
+            <summary className="note">How to get one (free, about 2 minutes)</summary>
+            <ol className="note">
+              <li>
+                Sign in to{' '}
+                <a href="https://imgur.com/signin" target="_blank" rel="noreferrer">
+                  imgur
+                </a>{' '}
+                (or make an account).
+              </li>
+              <li>
+                Open{' '}
+                <a href={IMGUR_APPS} target="_blank" rel="noreferrer">
+                  api.imgur.com/oauth2/addclient
+                </a>
+                <CopyButton text={IMGUR_APPS} label="copy address" />
+              </li>
+              <li>Application name: anything (e.g. “my gifs”).</li>
+              <li>Authorization type: “Anonymous usage without user authorization”.</li>
+              <li>Authorization callback URL: anything (e.g. https://example.com). Email: yours.</li>
+              <li>Submit, then copy the <b>Client ID</b> (not the Client secret) and paste it above.</li>
+            </ol>
+          </details>
         </div>
       )}
       {linkPrefs.on && (

@@ -2,6 +2,11 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.12.1] - 2026-10-18
+
+### Changed
+- GIF maker: how to get an imgur Client ID is now step by step under the field, with a link you can click or copy. The "?" only says what a Client ID is.
+
 ## [1.12.0] - 2026-10-18
 
 ### Added

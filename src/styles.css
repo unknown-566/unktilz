@@ -3493,3 +3493,17 @@ textarea,
   pointer-events: none;
   z-index: 3;
 }
+
+.gm-imgur-how summary {
+  cursor: pointer;
+}
+.gm-imgur-how ol {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gm-imgur-how li .btn {
+  margin-left: 8px;
+}
