@@ -103,18 +103,29 @@ export async function videoThumbs(src: VideoSource, count: number, height: numbe
  * Takes the frames at `times` from the video, at `w`×`h` (the whole picture, sized so the cropped
  * part comes out at the GIF's width). Stops early when `cancelled()` turns true.
  */
-export async function videoFrames(src: VideoSource, times: number[], w: number, h: number, onProgress: (p: number) => void, cancelled: () => boolean): Promise<ImageBitmap[] | null> {
+export async function videoFrames(
+  src: VideoSource,
+  times: number[],
+  w: number,
+  h: number,
+  onProgress: (p: number) => void,
+  cancelled: () => boolean,
+  /** Gets each frame as soon as it's read; the caller then owns it (it isn't closed on cancel). */
+  onFrame?: (time: number, frame: ImageBitmap) => void,
+): Promise<ImageBitmap[] | null> {
   const v = newVideo(src.url);
   await once(v, 'loadeddata');
   const out: ImageBitmap[] = [];
   try {
     for (let i = 0; i < times.length; i++) {
       if (cancelled()) {
-        out.forEach((b) => b.close());
+        if (!onFrame) out.forEach((b) => b.close());
         return null;
       }
       await seek(v, times[i]);
-      out.push(await createImageBitmap(v, { resizeWidth: w, resizeHeight: h, resizeQuality: 'high' }));
+      const frame = await createImageBitmap(v, { resizeWidth: w, resizeHeight: h, resizeQuality: 'high' });
+      out.push(frame);
+      onFrame?.(times[i], frame);
       onProgress((i + 1) / times.length);
     }
     return out;

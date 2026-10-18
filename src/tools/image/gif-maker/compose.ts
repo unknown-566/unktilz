@@ -124,10 +124,15 @@ export function outputSize(srcW: number, srcH: number, s: Pick<Settings, 'crop' 
 /** How many video frames to take from a clip of `seconds` (one per output frame before speed). */
 export const videoFrameCount = (seconds: number, fps: number, speed: number) => Math.max(1, Math.round(seconds * fps * speed));
 
-/** Times (seconds from the clip's start) of the frames to take from the video. */
+/**
+ * Times (seconds into the video) of the frames to take from it. They sit on one grid from the
+ * video's start, so moving the clip's ends keeps the frames already read (see GifMaker's cache).
+ */
 export function videoFrameTimes(start: number, end: number, fps: number, speed: number) {
+  const step = 1 / (fps * speed);
   const n = videoFrameCount(end - start, fps, speed);
-  return Array.from({ length: n }, (_, k) => start + k / (fps * speed));
+  const k0 = Math.ceil(start / step - 1e-6);
+  return Array.from({ length: n }, (_, k) => Math.round((k0 + k) * step * 1e6) / 1e6);
 }
 
 /** Playing order of `n` frames: forwards, backwards, or there and back (no frame twice in a row). */

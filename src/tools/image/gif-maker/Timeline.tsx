@@ -1,12 +1,40 @@
-import { useRef, type PointerEvent } from 'react';
+import { useEffect, useRef, type PointerEvent } from 'react';
 import { MAX_SECONDS } from './compose';
 
 const MIN = 0.2;
 const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
 
 /** The clip's thumbnails with two handles: where the GIF starts and ends. Drag the middle to move both. */
-export function Timeline({ duration, start, end, thumbs, onChange }: { duration: number; start: number; end: number; thumbs: string[]; onChange: (start: number, end: number) => void }) {
+export function Timeline({
+  duration,
+  start,
+  end,
+  thumbs,
+  onChange,
+  now,
+}: {
+  duration: number;
+  start: number;
+  end: number;
+  thumbs: string[];
+  onChange: (start: number, end: number) => void;
+  /** Where in the video the preview is playing, in seconds (below 0: nothing to show). */
+  now?: () => number;
+}) {
   const bar = useRef<HTMLDivElement>(null);
+  const head = useRef<HTMLDivElement>(null);
+  // Moved directly (not through React) ten times a second, so nothing else redraws.
+  useEffect(() => {
+    if (!now || duration <= 0) return;
+    const id = window.setInterval(() => {
+      const el = head.current;
+      if (!el) return;
+      const t = now();
+      el.style.display = t < 0 ? 'none' : '';
+      el.style.left = `${Math.min(100, (t / duration) * 100)}%`;
+    }, 100);
+    return () => clearInterval(id);
+  }, [now, duration]);
   const drag = useRef<{ what: 'start' | 'end' | 'both'; x0: number; s0: number; e0: number } | null>(null);
   const pct = (t: number) => `${(t / duration) * 100}%`;
 
@@ -61,6 +89,7 @@ export function Timeline({ duration, start, end, thumbs, onChange }: { duration:
             <img key={i} src={t} alt="" draggable={false} />
           ))}
         </div>
+        {now && <div ref={head} className="gm-now" aria-hidden="true" />}
         <div className="gm-shade" style={{ left: 0, width: pct(start) }} />
         <div className="gm-shade" style={{ left: pct(end), right: 0 }} />
         <div className="gm-range" style={{ left: pct(start), width: pct(end - start) }} onPointerDown={down('both')} title="Drag to move the whole clip" />

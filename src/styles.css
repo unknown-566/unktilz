@@ -3480,3 +3480,16 @@ textarea,
   pointer-events: none;
   z-index: 1;
 }
+
+/* Where the preview is playing, on the video strip */
+.gm-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 3;
+}

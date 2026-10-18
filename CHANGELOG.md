@@ -2,6 +2,12 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.11.2] - 2026-10-18
+
+### Changed
+- GIF maker: the video strip at the top shows a line where the preview is playing.
+- Making the clip shorter no longer reads the video again: the preview just plays the shorter part right away. Making it longer only reads the new part.
+
 ## [1.11.1] - 2026-10-18
 
 ### Changed

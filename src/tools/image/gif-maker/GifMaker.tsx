@@ -295,19 +295,54 @@ export default function GifMaker() {
   const [framesDone, setFramesDone] = useState(0);
   const limit = size ? frameLimit(size.w, size.h) : 300;
   const tooMany = isVideo ? frameOrder(times.length, s.reverse, s.boomerang).length > limit : false;
+  // Every frame read so far, by its time in the video. A shorter clip (or one moved over parts
+  // already read) just picks frames from here instead of reading the video again; only a new video,
+  // size or shape starts over.
+  const frameCache = useRef<{ key: string; map: Map<number, ImageBitmap> }>({ key: '', map: new Map() });
+  useEffect(
+    () => () => {
+      const old = [...frameCache.current.map.values()];
+      frameCache.current.map = new Map();
+      old.forEach((b) => b.close());
+    },
+    [],
+  );
   useEffect(() => {
     if (!video || !cache || !times.length || tooMany) return;
+    const key = `${video.url}|${cache.w}x${cache.h}`;
+    const fc = frameCache.current;
+    if (fc.key !== key) {
+      const old = [...fc.map.values()];
+      // The preview may still draw one of them for a moment.
+      setTimeout(() => old.forEach((b) => b.close()), 1000);
+      fc.key = key;
+      fc.map = new Map();
+    }
+    const finish = () => {
+      setFrames(times.map((t) => fc.map.get(t)!));
+      // Don't let it grow without end: once it's big, forget the frames outside the clip.
+      if (fc.map.size > times.length * 3 + 100) {
+        const keep = new Set(times);
+        const drop = [...fc.map.entries()].filter(([t]) => !keep.has(t));
+        drop.forEach(([t]) => fc.map.delete(t));
+        setTimeout(() => drop.forEach(([, b]) => b.close()), 1000);
+      }
+    };
+    const missing = times.filter((t) => !fc.map.has(t));
+    if (!missing.length) {
+      finish();
+      return;
+    }
     let cancelled = false;
     setFramesDone(0);
-    setFrames((old) => {
-      old?.forEach((b) => b.close());
-      return null;
-    });
+    setFrames(null);
     const t = setTimeout(async () => {
       try {
-        const f = await videoFrames(video, times, cache.w, cache.h, setFramesDone, () => cancelled);
-        if (f && !cancelled) setFrames(f);
-        else f?.forEach((b) => b.close());
+        const f = await videoFrames(video, missing, cache.w, cache.h, setFramesDone, () => cancelled, (time, frame) => {
+          if (fc.key === key) fc.map.set(time, frame);
+          else frame.close();
+        });
+        if (f && !cancelled && fc.key === key) finish();
       } catch (e) {
         if (!cancelled) setError(`Couldn’t read the video’s frames (${e instanceof Error ? e.message : e}).`);
       }
@@ -331,10 +366,19 @@ export default function GifMaker() {
   // ---- preview ----
   const canvas = useRef<HTMLCanvasElement>(null);
   const [playing, setPlaying] = useState(true);
-  const state = useRef({ s, refs, frames, photoBmps, size, duration, playing, stickers });
-  state.current = { s, refs, frames, photoBmps, size, duration, playing, stickers };
+  const state = useRef({ s, refs, frames, photoBmps, size, duration, playing, stickers, times });
+  state.current = { s, refs, frames, photoBmps, size, duration, playing, stickers, times };
   const frameAt = useRef(0);
   const previewTime = useMemo(() => () => frameAt.current / state.current.s.fps, []);
+  // The same moment as a time in the source video, for the clip's strip (-1: nothing to show).
+  const videoTime = useMemo(
+    () => () => {
+      const st = state.current;
+      const ref = st.refs[Math.min(frameAt.current, st.refs.length - 1)];
+      return typeof ref === 'number' ? (st.times[ref] ?? -1) : -1;
+    },
+    [],
+  );
   // A timer at the GIF's own frame rate plays it like the real thing (and keeps drawing while
   // paused, so moving a text shows right away).
   useEffect(() => {
@@ -489,7 +533,7 @@ export default function GifMaker() {
             {video.name} · {video.w} × {video.h}
             {video.converted && ' · converted to be shown here'}
           </p>
-          <Timeline duration={video.duration} start={start} end={end} thumbs={thumbs} onChange={(a, b) => set({ start: a, end: b })} />
+          <Timeline duration={video.duration} start={start} end={end} thumbs={thumbs} onChange={(a, b) => set({ start: a, end: b })} now={videoTime} />
         </>
       )}
       {!isVideo && photos.length > 0 && (
