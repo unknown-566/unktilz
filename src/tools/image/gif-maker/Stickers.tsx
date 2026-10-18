@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import type { SavedItem } from '../../../lib/saved';
 import { Segmented } from '../../../components/ui';
 import type { StickerRef } from './compose';
@@ -8,11 +8,33 @@ const SHORT = ['Smileys', 'People', 'Animals', 'Food', 'Travel', 'Activities', '
 const PAGE = 120;
 const ACCEPT = '.png,.gif,.webp,.apng,image/png,image/gif,image/webp';
 
-/** One emoji: the still emoji from the system right away, the animated one while hovered. */
+/**
+ * One emoji: the still emoji from the system, and the animated one only while it's hovered. Each
+ * animated one is a 512 px animation, so leaving them all playing after the mouse passed made the
+ * list crawl.
+ */
 function EmojiCell({ code, char, name, onPick }: { code: string; char: string; name: string; onPick: () => void }) {
   const [live, setLive] = useState(false);
+  // Only once the mouse stays a moment: sweeping across the grid shouldn't start dozens of downloads.
+  const timer = useRef(0);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const show = (on: boolean) => {
+    clearTimeout(timer.current);
+    if (on) timer.current = window.setTimeout(() => setLive(true), 150);
+    else setLive(false);
+  };
   return (
-    <button type="button" className="gm-sticker-cell" title={name} aria-label={`Add ${name}`} onClick={onPick} onPointerEnter={() => setLive(true)} onFocus={() => setLive(true)}>
+    <button
+      type="button"
+      className="gm-sticker-cell"
+      title={name}
+      aria-label={`Add ${name}`}
+      onClick={onPick}
+      onPointerEnter={() => show(true)}
+      onPointerLeave={() => show(false)}
+      onFocus={() => show(true)}
+      onBlur={() => show(false)}
+    >
       <span aria-hidden="true">{char}</span>
       {live && <img src={notoUrl(code)} alt="" draggable={false} onError={(e) => (e.currentTarget.style.display = 'none')} />}
     </button>

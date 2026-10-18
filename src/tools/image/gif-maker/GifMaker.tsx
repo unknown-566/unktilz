@@ -64,6 +64,19 @@ async function thumbOf(bmp: ImageBitmap) {
   return URL.createObjectURL(await c.convertToBlob({ type: 'image/jpeg', quality: 0.75 }));
 }
 
+/** A setting with its name (and what it does) above the choices. */
+function Labeled({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
+  return (
+    <div className="field">
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        <span className="field-label">{label}</span>
+        {help && <Help label={label} text={help} />}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function Row({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
   return (
     <div className="opt-row">
@@ -321,6 +334,7 @@ export default function GifMaker() {
   const state = useRef({ s, refs, frames, photoBmps, size, duration, playing, stickers });
   state.current = { s, refs, frames, photoBmps, size, duration, playing, stickers };
   const frameAt = useRef(0);
+  const previewTime = useMemo(() => () => frameAt.current / state.current.s.fps, []);
   // A timer at the GIF's own frame rate plays it like the real thing (and keeps drawing while
   // paused, so moving a text shows right away).
   useEffect(() => {
@@ -426,15 +440,17 @@ export default function GifMaker() {
   // ---- layout ----
   const source = (
     <section className="panel" aria-label="Source">
-      <Segmented
-        label="Make it from"
-        value={s.mode}
-        options={[
-          { value: 'video', label: 'a video' },
-          { value: 'photos', label: 'photos' },
-        ]}
-        onChange={(mode) => set({ mode })}
-      />
+      <Labeled label="Make it from">
+        <Segmented
+          label="Make it from"
+          value={s.mode}
+          options={[
+            { value: 'video', label: 'a video' },
+            { value: 'photos', label: 'photos' },
+          ]}
+          onChange={(mode) => set({ mode })}
+        />
+      </Labeled>
       <div
         className={`drop gm-drop${over ? ' over' : ''}`}
         onDragOver={(e) => {
@@ -526,24 +542,36 @@ export default function GifMaker() {
 
   const picture = (
     <Panel title="picture">
-      <Segmented label="Shape" value={s.crop} options={CROPS} onChange={(crop) => set({ crop, panX: 0.5, panY: 0.5 })} />
+      <Labeled label="Shape" help="Cuts the picture to this shape: square for chats and profile pictures, 9:16 for stories, 16:9 for widescreen.">
+        <Segmented label="Shape" value={s.crop} options={CROPS} onChange={(crop) => set({ crop, panX: 0.5, panY: 0.5 })} />
+      </Labeled>
       {isVideo && s.crop !== 'original' && <p className="note">Drag the preview to choose which part of the video is kept.</p>}
-      <Segmented label="Speed" value={String(s.speed)} options={SPEEDS.map((v) => ({ value: v, label: `${v}×` }))} onChange={(v) => set({ speed: Number(v) })} />
+      <Labeled label="Speed" help="How fast the GIF plays compared to the video: 2× is twice as fast (and half as long), 0.5× is slow motion.">
+        <Segmented label="Speed" value={String(s.speed)} options={SPEEDS.map((v) => ({ value: v, label: `${v}×` }))} onChange={(v) => set({ speed: Number(v) })} />
+      </Labeled>
       <Row label="Backwards">
         <Toggle label="Backwards" checked={s.reverse} onChange={(reverse) => set({ reverse })} />
       </Row>
       <Row label="Boomerang" help="Plays forwards, then backwards, over and over.">
         <Toggle label="Boomerang" checked={s.boomerang} onChange={(boomerang) => set({ boomerang })} />
       </Row>
-      <Segmented label="Filter" value={s.filter} options={FILTERS} onChange={(filter) => set({ filter })} />
+      <Labeled label="Filter" help="Changes the colors of the whole GIF.">
+        <Segmented label="Filter" value={s.filter} options={FILTERS} onChange={(filter) => set({ filter })} />
+      </Labeled>
     </Panel>
   );
 
   const exportPanel = (
     <Panel title="gif settings">
-      <Segmented label="Width (px)" value={String(s.width)} options={['240', '320', '480', '640'].map((v) => ({ value: v, label: v }))} onChange={(v) => set({ width: Number(v) })} />
-      <Segmented label="Frames per second" value={String(s.fps)} options={['10', '15', '20', '25'].map((v) => ({ value: v, label: v }))} onChange={(v) => set({ fps: Number(v) })} />
-      <Segmented label="Plays" value={s.loop} options={opts([['forever', 'forever'], ['once', 'once'], ['3', '3 times']])} onChange={(loop) => set({ loop })} />
+      <Labeled label="Width (pixels)" help="How wide the GIF is; the height follows the shape. Wider looks sharper but makes a bigger file. Smaller videos are never stretched bigger.">
+        <Segmented label="Width (pixels)" value={String(s.width)} options={['240', '320', '480', '640'].map((v) => ({ value: v, label: `${v} px` }))} onChange={(v) => set({ width: Number(v) })} />
+      </Labeled>
+      <Labeled label="Frames per second" help="How many pictures the GIF shows each second. More is smoother but makes a bigger file; 10–15 is usual for GIFs.">
+        <Segmented label="Frames per second" value={String(s.fps)} options={['10', '15', '20', '25'].map((v) => ({ value: v, label: `${v} fps` }))} onChange={(v) => set({ fps: Number(v) })} />
+      </Labeled>
+      <Labeled label="Plays" help="How many times the GIF plays before it stops. “forever” loops it, like most GIFs.">
+        <Segmented label="Plays" value={s.loop} options={opts([['forever', 'forever'], ['once', 'once'], ['3', '3 times']])} onChange={(loop) => set({ loop })} />
+      </Labeled>
       <Row label="Colors" help="A GIF can have at most 256 colors. Fewer colors make a smaller file but can look blotchy.">
         <Segmented label="Colors" compact value={String(s.colors)} options={['256', '128', '64', '32'].map((v) => ({ value: v, label: v }))} onChange={(v) => set({ colors: Number(v) })} />
       </Row>
@@ -716,6 +744,7 @@ export default function GifMaker() {
           <LayerProps
             layer={selectedLayer}
             duration={duration}
+            now={previewTime}
             onChange={(p) => setS((o) => ({ ...o, layers: o.layers.map((l) => (l.id === selectedLayer.id ? ({ ...l, ...p } as Layer) : l)) }))}
           />
         )}

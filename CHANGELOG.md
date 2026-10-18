@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.11.1] - 2026-10-18
+
+### Changed
+- GIF maker: **when a text or sticker shows** is now a bar over the whole GIF. Drag its two ends (or the middle to move it); a thin line shows where the preview is playing. No more typing seconds.
+- Every choice in the GIF maker now says what it is (shape, speed, filter, width, frames per second, plays, style, animation), with a "?" that explains it.
+
+### Fixed
+- The animated emoji list got very slow: every emoji the mouse passed over kept playing. Now only the one under the mouse moves.
+
 ## [1.11.0] - 2026-10-18
 
 ### Added

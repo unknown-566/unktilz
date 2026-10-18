@@ -3411,3 +3411,72 @@ textarea,
   color: var(--muted);
   text-decoration: line-through;
 }
+
+/* When a layer shows */
+.gm-show {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gm-show-bar {
+  position: relative;
+  height: 28px;
+  margin: 0 8px;
+  border-radius: 6px;
+  background: var(--line);
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+.gm-show-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  border-top: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  cursor: grab;
+}
+.gm-show-handle {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 12px;
+  margin-left: -6px;
+  border-radius: 4px;
+  background: var(--accent);
+  cursor: ew-resize;
+  z-index: 2;
+}
+.gm-show-handle::after {
+  content: '';
+  position: absolute;
+  inset: 9px 4px;
+  border-left: 2px solid rgba(0, 0, 0, 0.45);
+}
+.gm-show-handle:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+.gm-show-times {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.gm-show-times > span:nth-child(2) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.gm-show-now {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--fg);
+  pointer-events: none;
+  z-index: 1;
+}

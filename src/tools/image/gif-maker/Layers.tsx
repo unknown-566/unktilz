@@ -5,6 +5,7 @@ import { type Layer, type LayerAnim, type StickerLayer, type StickerRef, type Te
 import { NOTO_BY_CODE } from './stickerData';
 import { DEFAULT_FONT } from './fontList';
 import { FontPicker } from './FontPicker';
+import { ShowRange } from './ShowRange';
 
 const STYLES: { value: TextStyle; label: string }[] = [
   { value: 'meme', label: 'meme' },
@@ -142,10 +143,9 @@ function Field({ id, label, help, children }: { id?: string; label: string; help
   );
 }
 
-const num = (v: string) => (v.trim() === '' || !Number.isFinite(Number(v)) ? null : Math.max(0, Number(v)));
 
 /** Everything about the selected layer. */
-export function LayerProps({ layer, onChange, duration }: { layer: Layer; onChange: (p: Partial<Layer>) => void; duration: number }) {
+export function LayerProps({ layer, onChange, duration, now }: { layer: Layer; onChange: (p: Partial<Layer>) => void; duration: number; now?: () => number }) {
   const text = layer.kind === 'text' ? layer : null;
   return (
     <div className="give-box">
@@ -158,7 +158,9 @@ export function LayerProps({ layer, onChange, duration }: { layer: Layer; onChan
           <Field id="gm-text" label="Text">
             <textarea id="gm-text" className="textarea" rows={2} value={text.text} onChange={(e) => onChange({ text: e.target.value } as Partial<TextLayer>)} />
           </Field>
-          <Segmented label="Style" value={text.style} options={STYLES} onChange={(style) => onChange({ style, ...(style === 'meme' ? { font: DEFAULT_FONT, color: '#ffffff' } : {}) } as Partial<TextLayer>)} />
+          <Field label="Style" help="meme: white letters with a black outline. subtitle: on a dark box. neon: glowing. bubble: in a speech bubble. plain: letters with a soft shadow.">
+            <Segmented label="Style" value={text.style} options={STYLES} onChange={(style) => onChange({ style, ...(style === 'meme' ? { font: DEFAULT_FONT, color: '#ffffff' } : {}) } as Partial<TextLayer>)} />
+          </Field>
           <div className="fields gm-font-fields">
             <div className="field">
               <span className="field-label">Font</span>
@@ -177,15 +179,12 @@ export function LayerProps({ layer, onChange, duration }: { layer: Layer; onChan
         <span className="opt-label">Mirror</span>
         <Toggle label="Mirror" checked={layer.flip} onChange={(flip) => onChange({ flip })} />
       </div>
-      <Segmented label="Animation" value={layer.anim} options={ANIMS.filter((a) => !a.text || text)} onChange={(anim) => onChange({ anim })} />
-      <div className="fields">
-        <Field id="gm-from" label="Shows from" help={`Seconds into the GIF (it's ${duration.toFixed(1)} s long). Empty = from the start / until the end.`}>
-          <input id="gm-from" className="input mono" type="number" min={0} step={0.1} placeholder="start" value={layer.from ?? ''} onChange={(e) => onChange({ from: num(e.target.value) })} />
-        </Field>
-        <Field id="gm-to" label="until">
-          <input id="gm-to" className="input mono" type="number" min={0} step={0.1} placeholder="end" value={layer.to ?? ''} onChange={(e) => onChange({ to: num(e.target.value) })} />
-        </Field>
-      </div>
+      <Field label="Animation" help="How it moves. pop in, fade in and typing happen when it appears; the others repeat for as long as it shows.">
+        <Segmented label="Animation" value={layer.anim} options={ANIMS.filter((a) => !a.text || text)} onChange={(anim) => onChange({ anim })} />
+      </Field>
+      <Field label="When it shows" help="Drag the two ends to choose when in the GIF this shows; drag the middle to move it. The thin line is where the preview is playing. Arrow keys move a selected end (Shift: 1 s).">
+        <ShowRange duration={duration} from={layer.from} to={layer.to} onChange={(from, to) => onChange({ from, to })} now={now} />
+      </Field>
     </div>
   );
 }
