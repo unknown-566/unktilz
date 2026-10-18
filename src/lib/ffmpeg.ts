@@ -150,3 +150,54 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
 
   return ch;
 }
+
+/**
+ * Runs ffmpeg on several files (e.g. a folder of PNG frames) and returns the named outputs.
+ * For tools that drive ffmpeg themselves; ffmpegJob is the simpler path for one file in, one out.
+ */
+export async function ffmpegRun(
+  inputs: { name: string; data: Uint8Array }[],
+  args: string[],
+  outputs: string[],
+  { signal, onProgress }: { signal?: AbortSignal; onProgress?: (p: number) => void } = {},
+): Promise<Uint8Array[]> {
+  const ff = await get();
+  if (signal?.aborted) throw abortError();
+  const log: string[] = [];
+  const onLog = ({ message }: { message: string }) => {
+    log.push(message);
+    if (log.length > 200) log.shift();
+  };
+  const onProg = ({ progress }: { progress: number }) => progress > 0 && progress <= 1 && onProgress?.(progress);
+  const onAbort = () => reset(ff);
+  signal?.addEventListener('abort', onAbort, { once: true });
+  ff.on('log', onLog);
+  ff.on('progress', onProg);
+  let failed = false;
+  try {
+    for (const f of inputs) await ff.writeFile(f.name, f.data);
+    let code: number;
+    try {
+      code = await ff.exec(['-hide_banner', ...args]);
+    } catch (e) {
+      failed = true;
+      throw new Error(`ffmpeg crashed (${String(e).replace(/^RuntimeError: /, '')}).`);
+    }
+    if (signal?.aborted) throw abortError();
+    if (code !== 0) {
+      failed = true;
+      const reason = log.filter((l) => /error|invalid|unsupported|not found|no such/i.test(l)).pop();
+      throw new Error(reason ? `ffmpeg: ${reason.trim()}` : `ffmpeg exited with code ${code}.`);
+    }
+    return (await Promise.all(outputs.map((o) => ff.readFile(o)))) as Uint8Array[];
+  } finally {
+    signal?.removeEventListener('abort', onAbort);
+    if (!signal?.aborted) {
+      ff.off('log', onLog);
+      ff.off('progress', onProg);
+      // After a failed run the instance isn't reliable any more; the next run loads a fresh one.
+      if (failed) reset(ff);
+      else for (const name of [...inputs.map((f) => f.name), ...outputs]) await ff.deleteFile(name).catch(() => {});
+    }
+  }
+}

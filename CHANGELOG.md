@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.9.0] - 2026-10-18
+
+### Added
+- **GIF maker**, like Giphy: make a GIF from a video clip (pick the part with two handles on the timeline) or from photos (a slideshow, with fades between them).
+  - Meme text, subtitles, neon and speech-bubble styles, emoji stickers, and text that types itself, pops in or blinks. Drag texts on the preview to place them.
+  - Crop to square, 16:9, 9:16 or 4:5 (drag the preview to choose the part), speed from 0.25× to 4×, backwards, boomerang and filters.
+  - Width, frames per second, number of colors and how many times it plays. The preview plays exactly what you'll get.
+  - Videos the browser can't play (AVI, some iPhone videos) are converted first. "My GIF styles" saves your texts and settings.
+
 ## [1.8.0] - 2026-10-18
 
 ### Added
