@@ -2,6 +2,11 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.12.3] - 2026-10-18
+
+### Removed
+- GIF maker: imgur links. imgur no longer lets anyone get the Client ID they need (its sign-up page just goes back to the home page). Links go to catbox.moe again; to post a GIF on Discord, drag it in.
+
 ## [1.12.2] - 2026-10-18
 
 ### Fixed
