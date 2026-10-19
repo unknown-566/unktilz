@@ -3776,3 +3776,62 @@ textarea,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Background remover */
+.bgr-drop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  border: 1px dashed var(--chip-line);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+.bgr-drop:hover {
+  border-color: var(--accent);
+}
+.bgr-viewport {
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  overscroll-behavior: contain;
+}
+/* See-through parts show as grey checks. */
+.bgr-checker {
+  background-color: #cfcfcf;
+  background-image: linear-gradient(45deg, #a8a8a8 25%, transparent 25%), linear-gradient(-45deg, #a8a8a8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #a8a8a8 75%), linear-gradient(-45deg, transparent 75%, #a8a8a8 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+.bgr-stage {
+  position: relative;
+}
+.bgr-canvas {
+  display: block;
+  touch-action: none;
+  cursor: none;
+}
+.bgr-tool-pick {
+  cursor: crosshair;
+}
+.bgr-brush {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px #000;
+  pointer-events: none;
+}
+.bgr-viewbar {
+  margin-top: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.bgr-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--chip-line);
+}

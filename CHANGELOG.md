@@ -2,6 +2,13 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.17.0] - 2026-10-19
+
+- New tool: Background remover (AI, by colour, or by hand with a brush)
+
+### Added
+- Background remover (beta): remove the background of a photo automatically with AI (it runs on your computer, on the graphics card when it can; the first time it downloads its 98 MB model), or by clicking the background's colour with an adjustable tolerance, then fix the result by hand with an erase / restore brush (undo, redo, zoom). See what was removed in red, check it on white, black or green, crop to the subject and save as a see-through PNG / WebP or a JPG on a colour. Reads iPhone (HEIC) and TIFF photos too.
+
 ## [1.16.0] - 2026-10-19
 
 ### Added

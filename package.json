@@ -1,7 +1,7 @@
 {
   "name": "unktilz",
   "private": true,
-  "version": "1.16.0",
+  "version": "1.17.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,6 +29,7 @@
     "fflate": "^0.8.2",
     "idb-keyval": "^6.2.2",
     "libheif-js": "1.19.8",
+    "onnxruntime-web": "1.30.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "5.7.284",
     "react": "^19.1.0",

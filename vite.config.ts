@@ -51,6 +51,7 @@ export default defineConfig({
   // The version the site shows and compares with GitHub when checking for updates.
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   // ffmpeg.wasm spawns its own worker from inside the package; pre-bundling breaks that URL.
-  optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'] },
+  // (onnxruntime-web finds its .wasm next to itself the same way.)
+  optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', 'onnxruntime-web'] },
   worker: { format: 'es' },
 });
