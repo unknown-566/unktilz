@@ -128,8 +128,9 @@ export default function Home() {
     setCaret((c) => ({ x: m.offsetWidth - el.scrollLeft, n: (c?.n ?? 0) + 1, end: (el.selectionStart ?? 0) >= el.value.length }));
   };
 
-  const catParam = params.get('cat') as Category | null;
-  const cat = catParam && groups.some((g) => g.id === catParam) ? catParam : 'all';
+  // Categories picked with the chips (?cat=pdf,image); none picked shows everything.
+  const pickedIn = (p: URLSearchParams) => new Set((p.get('cat') ?? '').split(',').filter((c): c is Category => groups.some((g) => g.id === c)));
+  const picked = pickedIn(params);
 
   useEffect(() => {
     document.title = 'unktilz';
@@ -139,15 +140,31 @@ export default function Home() {
     if ((location.state as { focusSearch?: boolean } | null)?.focusSearch) input.current?.focus();
   }, [location.state]);
 
-  const pick = (c: Category | 'all') => {
-    const next = new URLSearchParams(params);
-    if (c === 'all') next.delete('cat');
-    else next.set('cat', c);
-    setParams(next, { replace: true });
-  };
+  /**
+   * Changes the picked categories, starting from the address as it is now so quick clicks add up
+   * (the router hands its updater the params of the last render, not the newest ones).
+   */
+  const updatePicked = (change: (cats: Set<Category>) => void) =>
+    setParams(
+      () => {
+        const prev = new URLSearchParams(window.location.search);
+        const cats = pickedIn(prev);
+        change(cats);
+        const next = new URLSearchParams(prev);
+        // Kept in the page's order, so the address is the same whatever order they were clicked in.
+        const list = groups.map((g) => g.id).filter((id) => cats.has(id));
+        if (list.length) next.set('cat', list.join(','));
+        else next.delete('cat');
+        return next;
+      },
+      { replace: true },
+    );
+  /** A chip switches its category on or off; "All" switches every one off. */
+  const toggle = (c: Category) => updatePicked((cats) => void (cats.delete(c) || cats.add(c)));
+  const clearPicked = () => updatePicked((cats) => cats.clear());
 
   const shown = groups
-    .filter((g) => cat === 'all' || g.id === cat)
+    .filter((g) => picked.size === 0 || picked.has(g.id))
     .map((g) => ({ ...g, tools: g.tools.filter((t) => matches(t, q)) }))
     .filter((g) => g.tools.length > 0);
 
@@ -228,13 +245,23 @@ export default function Home() {
       </section>
 
       <div className={`wrap home-main${searching ? ' searching' : ''}`}>
-        <div className="chips" role="group" aria-label="Filter by category">
-          {chips.map((c) => (
-            <button key={c.id} type="button" className="chip" aria-pressed={c.id === cat} onClick={() => pick(c.id)}>
-              <span>{c.label}</span>
-              <span className="count">{c.count}</span>
-            </button>
-          ))}
+        <div className="chips" role="group" aria-label="Show categories (pick one or more)">
+          {chips.map((c) => {
+            const on = c.id === 'all' ? picked.size === 0 : picked.has(c.id);
+            return (
+              <span key={c.id} className="chip-wrap">
+                <button type="button" className="chip" aria-pressed={on} onClick={() => (c.id === 'all' ? clearPicked() : toggle(c.id))}>
+                  <span>{c.label}</span>
+                  <span className="count">{c.count}</span>
+                </button>
+                {on && c.id !== 'all' && (
+                  <button type="button" className="chip-x" aria-label={`Stop showing only ${c.label}`} title="Unpick" onClick={() => toggle(c.id)}>
+                    ×
+                  </button>
+                )}
+              </span>
+            );
+          })}
         </div>
 
         {shown.map((g) => (

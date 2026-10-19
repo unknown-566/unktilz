@@ -3570,3 +3570,30 @@ textarea,
   justify-content: space-between;
   gap: 12px;
 }
+
+/* Category chips on the home page: several can be picked, each with a small × to unpick it. */
+.chip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.chip-x {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 600 13px/1 var(--mono);
+  cursor: pointer;
+}
+.chip-x:hover,
+.chip-x:focus-visible {
+  background: var(--accent);
+  color: var(--on-accent);
+}

@@ -2,6 +2,11 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.13.1] - 2026-10-19
+
+### Changed
+- Home page: the category buttons switch on and off, so you can show several categories at once (e.g. Image and PDF). A small × on a picked one unpicks it, and "All" shows everything again.
+
 ## [1.13.0] - 2026-10-19
 
 ### Added
