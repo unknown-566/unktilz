@@ -12,6 +12,7 @@ export default defineTool({
   category: 'pdf',
   order: 5,
   meta: '.jpg → .pdf',
+  beta: true,
   description: 'Put images into one PDF, one per page. Photos of paper can be cleaned up so they read like a scan.',
   keywords: ['jpg to pdf', 'png to pdf', 'scan', 'photos', 'document', 'scanner', 'paper', 'homework'],
   accepts: IMAGE_ACCEPTS,

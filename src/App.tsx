@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
 import { QueueRail } from './components/QueueRail';
@@ -7,9 +7,22 @@ import Home from './pages/Home';
 import ToolPage from './pages/ToolPage';
 import Request from './pages/Request';
 import NotFound from './pages/NotFound';
+import { hasUnseenVersion } from './components/whatsNewSeen';
 
 const Backup = lazy(() => import('./pages/Backup'));
 const Changelog = lazy(() => import('./pages/Changelog'));
+const WhatsNew = lazy(() => import('./components/WhatsNew'));
+
+/** The "what's new" popup, once per new version (loaded only then). */
+function NewVersionPopup() {
+  const [show, setShow] = useState(hasUnseenVersion);
+  if (!show) return null;
+  return (
+    <Suspense fallback={null}>
+      <WhatsNew onClose={() => setShow(false)} />
+    </Suspense>
+  );
+}
 
 function Shortcuts() {
   const navigate = useNavigate();
@@ -39,6 +52,7 @@ export default function App() {
     <BrowserRouter>
       <TransitionProvider>
         <Shortcuts />
+        <NewVersionPopup />
         <div className="shell">
           <Header />
           <div className="body">

@@ -6,6 +6,7 @@ import { loadFileTool, preloadTool } from '../registry/preload';
 
 const FileTool = lazy(() => loadFileTool().then((m) => ({ default: m.FileTool })));
 import { SwapIcon } from '../components/icons';
+import { ToolTags } from '../components/ToolTags';
 import { prefersReducedMotion } from '../lib/theme';
 import NotFound from './NotFound';
 
@@ -82,7 +83,9 @@ function ToolView({ slug }: { slug: string }) {
 
   const relatedLinks = related(tool, 4).map((t) => (
     <a key={t.slug} className="rel" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)} onMouseEnter={() => preloadTool(t)} onFocus={() => preloadTool(t)}>
-      <span>{t.name}</span>
+      <span>
+        {t.name} <ToolTags tool={t} />
+      </span>
       <span className="card-meta">{t.meta}</span>
     </a>
   ));
@@ -93,6 +96,7 @@ function ToolView({ slug }: { slug: string }) {
         <h1 aria-label={tool.name}>
           <span aria-hidden="true">{title}</span>
         </h1>
+        <ToolTags tool={tool} explain />
         {reverse && (
           <button type="button" className="swap" onClick={swap} aria-label={`Swap direction: ${reverse.name}`}>
             <SwapIcon rotate={rot} />

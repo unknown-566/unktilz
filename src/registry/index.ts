@@ -1,6 +1,7 @@
 import type { Category, Opts, Tool } from './types';
 
 export type { Category, Opts, Tool } from './types';
+export { isNew, NEW_DAYS } from './types';
 
 export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'minecraft', label: 'Minecraft' },

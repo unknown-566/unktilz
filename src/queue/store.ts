@@ -3,6 +3,7 @@ import { persist, type PersistStorage } from 'zustand/middleware';
 import { del, get, set } from 'idb-keyval';
 import type { Category, Opts, Tool } from '../registry';
 import { controllers, dropAll, putInputs } from './blobs';
+import { TASK_GONE, dropTask, putTask, type TaskRun } from './tasks';
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'error';
 
@@ -19,12 +20,19 @@ export type Job = {
   error?: string;
   outputs?: { name: string; size: number; type: string }[];
   createdAt: number;
+  /** Made by a tool page from what it has in memory (see tasks.ts), not from saved files. */
+  task?: boolean;
 };
+
+/** What the queue shows for a task. */
+export type TaskInfo = { slug: string; name: string; category: Category; file: string };
 
 type QueueState = {
   jobs: Job[];
   hydrated: boolean;
   add: (tool: Tool, files: File[], opts: Opts) => void;
+  /** Queues work a tool page does itself; `release` runs once it's over (done, failed or removed). Returns the job id. */
+  addTask: (info: TaskInfo, run: TaskRun, release?: () => void) => string;
   remove: (id: string) => void;
   clearDone: () => void;
   patch: (id: string, patch: Partial<Job>) => void;
@@ -66,8 +74,17 @@ export const useQueue = create<QueueState>()(
         setState({ jobs: [...getState().jobs, ...jobs] });
       },
 
+      addTask: (info, run, release) => {
+        const id = newId();
+        putTask(id, run, release);
+        setState({ jobs: [...getState().jobs, { ...info, id, status: 'queued', progress: 0, opts: {}, createdAt: Date.now(), task: true }] });
+        return id;
+      },
+
       remove: (id) => {
         controllers.get(id)?.abort();
+        // A running task is dropped by the runner when it stops; one still waiting goes now.
+        if (!controllers.has(id)) dropTask(id);
         setState({ jobs: getState().jobs.filter((j) => j.id !== id) });
         void dropAll(id);
       },
@@ -75,7 +92,10 @@ export const useQueue = create<QueueState>()(
       clearDone: () => {
         const gone = getState().jobs.filter((j) => j.status === 'done' || j.status === 'error');
         setState({ jobs: getState().jobs.filter((j) => !gone.includes(j)) });
-        gone.forEach((j) => void dropAll(j.id));
+        gone.forEach((j) => {
+          dropTask(j.id);
+          void dropAll(j.id);
+        });
       },
 
       patch: (id, patch) => {
@@ -93,10 +113,17 @@ export const useQueue = create<QueueState>()(
         return { ...current, jobs: [...stored, ...current.jobs.filter((j) => !ids.has(j.id))] };
       },
       onRehydrateStorage: () => () => {
-        // A job that was running when the tab closed starts over.
+        // A job that was running when the tab closed starts over; a task can't (what it was made
+        // from was only in memory).
         useQueue.setState((s) => ({
           hydrated: true,
-          jobs: s.jobs.map((j) => (j.status === 'running' ? { ...j, status: 'queued', progress: 0 } : j)),
+          jobs: s.jobs.map((j) =>
+            j.task && (j.status === 'running' || j.status === 'queued')
+              ? { ...j, status: 'error', error: TASK_GONE }
+              : j.status === 'running'
+                ? { ...j, status: 'queued', progress: 0 }
+                : j,
+          ),
         }));
       },
     },

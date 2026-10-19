@@ -44,6 +44,10 @@ export type Tool = {
    * offline (it asks an online service), 'partly' when only some features need the internet.
    */
   online?: 'required' | 'partly';
+  /** When the tool came out ('YYYY-MM-DD'): it wears a "new" tag for NEW_DAYS after that. */
+  added?: string;
+  /** Still being tested: wears a "beta" tag. */
+  beta?: boolean;
   /** File extensions for file tools, with the dot. */
   accepts?: string[];
   /** All chosen files become one job (merge tools) instead of one job per file. */
@@ -69,6 +73,18 @@ export type Tool = {
 };
 
 export const defineTool = (tool: Tool): Tool => tool;
+
+/** How long a tool counts as new. */
+export const NEW_DAYS = 5;
+
+/** Whether the "new" tag still shows (it goes away by itself NEW_DAYS after `added`). */
+export function isNew(tool: Pick<Tool, 'added'>, now = Date.now()) {
+  if (!tool.added) return false;
+  const [y, m, d] = tool.added.split('-').map(Number);
+  // From the start of that day (local time) until NEW_DAYS later.
+  const from = new Date(y, m - 1, d).getTime();
+  return Number.isFinite(from) && now >= from && now < from + NEW_DAYS * 86_400_000;
+}
 
 /** A lazily loaded tool page that can also be fetched ahead of time (e.g. when its card is hovered). */
 export type LazyTool = LazyExoticComponent<ComponentType> & { preload: () => Promise<unknown> };

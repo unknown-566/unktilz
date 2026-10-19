@@ -179,6 +179,7 @@ export async function makeGif(
   H: number,
   onProgress: (p: number) => void,
   stickers: Map<string, StickerAnim>,
+  signal?: AbortSignal,
 ): Promise<Blob> {
   const canvas = new OffscreenCanvas(W, H);
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
@@ -188,6 +189,7 @@ export async function makeGif(
   const frameBytes = W * H * 3;
   const raw = new Uint8Array(frameBytes * refs.length);
   for (let i = 0; i < refs.length; i++) {
+    if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
     const pics = picsFor(refs[i], video, photos);
     if (!pics) throw new Error('A frame is missing. Wait until the frames are ready and try again.');
     drawFrame(ctx, W, H, s, pics, i / s.fps, duration, stickers);
@@ -204,6 +206,7 @@ export async function makeGif(
   const vf = `split[a][b];[a]palettegen=max_colors=${s.colors}:stats_mode=diff[p];[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle`;
   const input = ['-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', `${W}x${H}`, '-framerate', String(s.fps), '-i', 'frames.rgb'];
   const [gif] = await ffmpegRun([{ name: 'frames.rgb', data: raw }], [...input, '-vf', vf, '-loop', LOOP[s.loop], 'out.gif'], ['out.gif'], {
+    signal,
     onProgress: (p) => onProgress(0.3 + p * 0.7),
   });
   return new Blob([gif as BlobPart], { type: 'image/gif' });

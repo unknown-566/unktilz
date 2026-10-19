@@ -14,6 +14,9 @@ import { LayerList, LayerProps, newSticker, newText } from './Layers';
 import { Stage } from './Stage';
 import { StickerPicker } from './Stickers';
 import { MAX_STICKER_BYTES, decodeSticker, forgetSticker, loadSticker, type MySticker } from './stickerData';
+import { holdMemory, memoryHeld, whenFree } from './hold';
+import { useQueue } from '../../../queue/store';
+import { getOutputs } from '../../../queue/blobs';
 import { Timeline } from './Timeline';
 
 const VIDEO_ACCEPTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.3gp', '.ts', '.mts', '.mpg', '.mpeg', '.ogv', '.gif'];
@@ -135,15 +138,14 @@ export default function GifMaker() {
 
   // A sticker's frames are freed once no layer has used it for a few seconds (not at once: one
   // deleted by mistake and added back shouldn't load again), and all of them when leaving the page.
-  const exporting = useRef(false);
   const stickersNow = useRef({ stickers, stickerRefs });
   stickersNow.current = { stickers, stickerRefs };
   useEffect(() => {
     if (![...stickers.keys()].some((k) => !stickerRefs.has(k))) return;
     let t: ReturnType<typeof setTimeout>;
     const sweep = () => {
-      // A GIF being made may still draw them: look again a moment later.
-      if (exporting.current) {
+      // A GIF waiting in the queue or being made may still draw them: look again a moment later.
+      if (memoryHeld()) {
         t = setTimeout(sweep, 2000);
         return;
       }
@@ -163,7 +165,8 @@ export default function GifMaker() {
   }, [stickers, stickerRefs]);
   useEffect(
     () => () => {
-      for (const [k, anim] of stickersNow.current.stickers) forgetSticker(k, anim);
+      const all = [...stickersNow.current.stickers];
+      whenFree(() => all.forEach(([k, anim]) => forgetSticker(k, anim)));
     },
     [],
   );
@@ -322,10 +325,9 @@ export default function GifMaker() {
       const { video: v, thumbs: t, photos: p } = live.current;
       if (v) URL.revokeObjectURL(v.url);
       t.forEach((u) => URL.revokeObjectURL(u));
-      p.forEach((x) => {
-        x.bmp.close();
-        URL.revokeObjectURL(x.thumb);
-      });
+      p.forEach((x) => URL.revokeObjectURL(x.thumb));
+      // A GIF in the queue may still be made from the photos.
+      whenFree(() => p.forEach((x) => x.bmp.close()));
     },
     [],
   );
@@ -359,7 +361,7 @@ export default function GifMaker() {
     () => () => {
       const old = [...frameCache.current.map.values()];
       frameCache.current.map = new Map();
-      old.forEach((b) => b.close());
+      whenFree(() => old.forEach((b) => b.close()));
     },
     [],
   );
@@ -369,8 +371,7 @@ export default function GifMaker() {
     const fc = frameCache.current;
     // Freed a moment later: the preview (or a GIF being made) may still draw them.
     const closeLater = (list: ImageBitmap[]) => {
-      const go = () => (exporting.current ? setTimeout(go, 1000) : list.forEach((b) => b.close()));
-      setTimeout(go, 1000);
+      setTimeout(() => whenFree(() => list.forEach((b) => b.close())), 1000);
     };
     if (fc.key !== key) {
       closeLater([...fc.map.values()]);
@@ -485,8 +486,12 @@ export default function GifMaker() {
   const selectedLayer = s.layers.find((l) => l.id === selected) ?? null;
 
   // ---- export ----
-  const [busy, setBusy] = useState<number | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  // The GIF being made in the queue (its job id), and what it'll be.
+  const [jobId, setJobId] = useState<string | null>(null);
+  const pending = useRef<Omit<Result, 'url' | 'blob'> | null>(null);
+  const job = useQueue((q) => (jobId ? q.jobs.find((j) => j.id === jobId) : undefined));
+  const busy = job && (job.status === 'queued' || job.status === 'running') ? job : null;
   useEffect(() => () => void (result && URL.revokeObjectURL(result.url)), [result]);
   const baseName = (isVideo ? video?.name : photos[0]?.name)?.replace(/\.[^.]+$/, '') || 'animation';
 
@@ -526,27 +531,49 @@ export default function GifMaker() {
     e.dataTransfer.setData('DownloadURL', `image/gif:${r.name}:${r.url}`);
   };
 
-  const create = async () => {
-    if (!ready || !size) return;
+  // "Make GIF" queues the work like the other tools: it runs in turn (never at the same time as
+  // another ffmpeg job), shows in the queue panel and keeps going if you leave this page.
+  const create = () => {
+    if (!ready || !size || busy) return;
     setError('');
-    setBusy(0);
-    exporting.current = true;
     uploading.current?.abort();
     setLink(null);
-    try {
-      // Texts in fonts still loading would come out in the stand-in font.
-      await Promise.allSettled(fontFamilies.map(loadFont));
-      const blob = await makeGif(refs, frames, photoBmps, s, size.w, size.h, setBusy, stickers);
-      const r = { url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, frames: refs.length, name: `${baseName}.gif` };
-      setResult(r);
-      if (linkPrefs.on) void share(r, linkPrefs);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-      exporting.current = false;
-    }
+    // What the GIF is made from, as it is now: later changes on the page don't touch it.
+    const job = { refs, frames, photoBmps, s, W: size.w, H: size.h, stickers, fonts: fontFamilies, name: `${baseName}.gif` };
+    pending.current = { w: job.W, h: job.H, frames: job.refs.length, name: job.name };
+    const id = useQueue.getState().addTask(
+      { slug: 'gif-maker', name: 'GIF maker', category: 'image', file: job.name },
+      async (signal, onProgress) => {
+        // Texts in fonts still loading would come out in the stand-in font.
+        await Promise.allSettled(job.fonts.map(loadFont));
+        const blob = await makeGif(job.refs, job.frames, job.photoBmps, job.s, job.W, job.H, onProgress, job.stickers, signal);
+        return [{ name: job.name, blob }];
+      },
+      holdMemory(),
+    );
+    setJobId(id);
   };
+  // When it's done, the GIF shows here (and gets its link); a failure shows as an error.
+  useEffect(() => {
+    if (!jobId || !job) {
+      if (jobId && !job) setJobId(null);
+      return;
+    }
+    if (job.status === 'error') {
+      setError(job.error ?? 'The GIF couldn’t be made.');
+      setJobId(null);
+    } else if (job.status === 'done') {
+      const meta = pending.current;
+      setJobId(null);
+      void getOutputs(job.id).then((out) => {
+        const blob = out?.[0]?.blob;
+        if (!blob || !meta || !mounted.current) return;
+        const r = { ...meta, url: URL.createObjectURL(blob), blob };
+        setResult(r);
+        if (linkPrefs.on) void share(r, linkPrefs);
+      });
+    }
+  }, [job?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- layout ----
   const source = (
@@ -621,7 +648,7 @@ export default function GifMaker() {
                   className="icon-btn"
                   aria-label={`Remove ${p.name}`}
                   onClick={() => {
-                    p.bmp.close();
+                    whenFree(() => p.bmp.close());
                     URL.revokeObjectURL(p.thumb);
                     setPhotos((l) => l.filter((x) => x.id !== p.id));
                   }}
@@ -738,9 +765,10 @@ export default function GifMaker() {
 
   const output = (
     <Panel title="gif">
-      <button type="button" className="btn btn-primary" disabled={!ready || busy !== null} onClick={create}>
-        {busy !== null ? `Making the GIF… ${Math.round(busy * 100)} %` : 'Make GIF'}
+      <button type="button" className="btn btn-primary" disabled={!ready || !!busy} onClick={create}>
+        {busy ? (busy.status === 'queued' ? 'In the queue…' : `Making the GIF… ${Math.round(busy.progress * 100)} %`) : 'Make GIF'}
       </button>
+      {busy && <p className="note">It’s in the queue (left). You can leave this page; the GIF waits there when it’s done.</p>}
       <div className="gm-linkopts">
         <span className="switch-row">
           <Toggle label="Make a link" checked={linkPrefs.on} onChange={(on) => setLinkPrefs({ ...linkPrefs, on })} />

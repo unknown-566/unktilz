@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.13.0] - 2026-10-19
+
+### Added
+- **"New" and "beta" tags:** tools that came out in the last 5 days say "new" (it goes away by itself), and tools still being tested say "beta": the GIF maker and all PDF tools for now.
+- **What's new popup:** after the site updates, this list shows once.
+
+### Changed
+- **The GIF maker uses the queue** like the other tools: "Make GIF" puts it in the queue panel with its progress, it never runs at the same time as another video job, × stops it, and you can leave the page while it's made; the GIF waits in the queue to download.
+
 ## [1.12.4] - 2026-10-19
 
 ### Fixed

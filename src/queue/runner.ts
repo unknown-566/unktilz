@@ -1,6 +1,7 @@
 import { ALIASES, defaultOpts, getTool } from '../registry';
 import { controllers, dropInputs, getInputs, putOutputs, type Output } from './blobs';
 import { useQueue, type Job } from './store';
+import { TASK_GONE, dropTask, getTask } from './tasks';
 
 // Jobs run one at a time, in the order they were added, whatever page is open.
 let busy = false;
@@ -23,27 +24,33 @@ async function run(job: Job) {
   controllers.set(job.id, controller);
   patch(job.id, { status: 'running', progress: 0, error: undefined });
 
+  let last = 0;
+  const progress = (value: number) => {
+    const now = performance.now();
+    if (now - last > 100) {
+      last = now;
+      patch(job.id, { progress: clamp(value) });
+    }
+  };
   try {
-    // Jobs saved under an old address run in the tool that replaced it.
-    const alias = ALIASES[job.slug];
-    const tool = getTool(job.slug) ?? getTool(alias?.to);
-    const opts = alias && tool && !getTool(job.slug) ? { ...defaultOpts(tool), ...job.opts, ...alias.opts } : job.opts;
-    if (!tool?.run) throw new Error('This tool is no longer available.');
-    const files = await getInputs(job.id);
-    if (!files?.length) throw new Error('The input file is gone. Add it again.');
-
     const outputs: Output[] = [];
-    let last = 0;
-    for await (const ev of tool.run(files, opts, { signal: controller.signal })) {
-      if (controller.signal.aborted) break;
-      if (ev.type === 'progress') {
-        const now = performance.now();
-        if (now - last > 100) {
-          last = now;
-          patch(job.id, { progress: clamp(ev.value) });
-        }
-      } else {
-        outputs.push({ name: ev.name, blob: ev.blob });
+    if (job.task) {
+      const task = getTask(job.id);
+      if (!task) throw new Error(TASK_GONE);
+      outputs.push(...(await task.run(controller.signal, progress)));
+    } else {
+      // Jobs saved under an old address run in the tool that replaced it.
+      const alias = ALIASES[job.slug];
+      const tool = getTool(job.slug) ?? getTool(alias?.to);
+      const opts = alias && tool && !getTool(job.slug) ? { ...defaultOpts(tool), ...job.opts, ...alias.opts } : job.opts;
+      if (!tool?.run) throw new Error('This tool is no longer available.');
+      const files = await getInputs(job.id);
+      if (!files?.length) throw new Error('The input file is gone. Add it again.');
+
+      for await (const ev of tool.run(files, opts, { signal: controller.signal })) {
+        if (controller.signal.aborted) break;
+        if (ev.type === 'progress') progress(ev.value);
+        else outputs.push({ name: ev.name, blob: ev.blob });
       }
     }
     if (controller.signal.aborted) return;
@@ -60,6 +67,7 @@ async function run(job: Job) {
     if (!controller.signal.aborted) patch(job.id, { status: 'error', error: message(e) });
   } finally {
     controllers.delete(job.id);
+    if (job.task) dropTask(job.id);
     busy = false;
     setTimeout(tick, 0);
   }

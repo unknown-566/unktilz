@@ -3,6 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { CATEGORIES, groups, matches, tools, type Category } from '../registry';
 import { useLaunch } from '../components/Transition';
 import { SearchIcon } from '../components/icons';
+import { ToolTags } from '../components/ToolTags';
 import { preloadTool } from '../registry/preload';
 import { prefersReducedMotion } from '../lib/theme';
 
@@ -248,7 +249,10 @@ export default function Home() {
                   <span className="card-name">{t.name}</span>
                   <span className="card-foot">
                     <span className="card-meta">{t.meta}</span>
-                    {t.online && <NetTag level={t.online} />}
+                    <span className="card-tags">
+                      <ToolTags tool={t} />
+                      {t.online && <NetTag level={t.online} />}
+                    </span>
                   </span>
                 </a>
               ))}

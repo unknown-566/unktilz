@@ -7,6 +7,7 @@ export default defineTool({
   category: 'pdf',
   order: 1,
   meta: 'a + b',
+  beta: true,
   description: 'Combine PDFs into one file. Pages keep the order you pick the files in.',
   keywords: ['combine', 'join', 'pdf'],
   accepts: ['.pdf'],
