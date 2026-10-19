@@ -58,6 +58,7 @@ Things that don't work in this ffmpeg.wasm build (0.12.10), and what's used inst
 - `libopus` crashes on stereo: Opus uses ffmpeg's own encoder (`-c:a opus -strict -2 -ar 48000`).
 - `loudnorm` needs `aformat=sample_fmts=fltp` right after it, a fixed sample format at the end of the chain and `-ar` (not an `aresample` filter), or the encoders fail.
 - After any failed run the instance is unreliable, so `ffmpegJob` throws it away and the next attempt or job loads a fresh one.
+- Its wasm memory only grows, so the instance is also thrown away 30 seconds after the last job (`hold`/`letGo` in `src/lib/ffmpeg.ts`); the next job loads it again from the browser cache in about a second.
 
 Other file libraries, all loaded only when a job needs them: pdf.js (`pdfjs-dist`, Apache-2.0) draws PDF pages, pdf-lib (MIT) writes PDFs, libheif-js (LGPL-3.0) reads HEIC photos and utif2 (MIT) reads TIFF.
 
@@ -75,6 +76,8 @@ Option types are `choice` (segmented buttons), `range`, `number`, `text` and `to
 - `src/queue/store.ts` is a Zustand store persisted to IndexedDB. Job metadata is written on every change. Input and output files go into their own IndexedDB store once (`src/queue/blobs.ts`).
 - `src/queue/runner.ts` runs one job at a time in the order they were added, on whatever page is open. A job that was running when the tab closed starts over on the next load.
 - Removing a running job aborts it: the ffmpeg instance or compute worker is terminated and a fresh one is made for the next job.
+- **Tasks** are jobs a tool page makes from what it has in memory, which can't be saved to IndexedDB (the GIF maker's video frames and stickers). `useQueue.getState().addTask(info, run, release)` queues them; the work itself lives only in memory (`src/queue/tasks.ts`), runs in turn with the other jobs, and its outputs are stored like any job's. `release` runs when the task is over (done, failed or removed). A task can't survive the tab closing: on the next load it shows as failed.
+- The GIF maker frees its frames, photos and stickers through `whenFree()` (`src/tools/image/gif-maker/hold.ts`), which waits while a GIF that uses them is queued or being made, even after leaving the page.
 
 ## Third-party services
 
@@ -86,6 +89,6 @@ The seed map runs [xpple's fork](https://github.com/xpple/cubiomes) of [cubiomes
 
 ## Versions and updates
 
-The version lives in `package.json` and every change is listed in `CHANGELOG.md` (newest first, `## [x.y.z] - YYYY-MM-DD`). The middle number goes up for new features, the last one for fixes. The site shows its version in the footer; the Changelog page (`/changelog`) has a "Check for updates" button that compares it with `package.json` on GitHub, and the header shows "update available" when there's a newer one (checked at most once a day). Updating is a double-click on `update.bat`; saved items stay because they live in the browser.
+The version lives in `package.json` and every change is listed in `CHANGELOG.md` (newest first, `## [x.y.z] - YYYY-MM-DD`). The middle number goes up for new features, the last one for fixes. The site shows its version in the footer; the Changelog page (`/changelog`) has a "Check for updates" button that compares it with `package.json` on GitHub, and the header shows "update available" when there's a newer one (checked at most once a day). Updating is a double-click on `update.bat`; saved items stay because they live in the browser. After an update, a "What's new" popup (`src/components/WhatsNew.tsx`) shows the changelog entries since the version last seen in this browser (kept in `localStorage`), once.
 
 Saved items and work in progress are kept in IndexedDB per address (always `localhost:5173` with `start.bat`). `/backup` downloads them as one JSON file and loads them on another computer.
