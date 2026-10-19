@@ -1,5 +1,6 @@
 @echo off
 rem Double-click to run unktilz. Opens the site in your browser; closing this window stops it.
+rem "start.bat dev" runs the development server instead (live reload while editing the code).
 setlocal
 cd /d "%~dp0"
 title unktilz
@@ -31,6 +32,13 @@ if not exist "node_modules\vite\bin\vite.js" (
 )
 if not exist "node_modules\vite\bin\vite.js" goto failed
 
+rem The finished, packed site (dist) is much faster than the development server. It's rebuilt only
+rem when it's missing or the code changed (the first start after an update takes about half a minute).
+if /i not "%~1"=="dev" (
+  node "%~dp0scripts\ensure-build.mjs"
+  if errorlevel 1 goto failed
+)
+
 echo.
 echo  ============================================================
 echo   unktilz is running at http://localhost:5173
@@ -40,7 +48,11 @@ echo  ============================================================
 echo.
 rem Vite is started with node directly instead of "npm run dev": npm's launcher scripts break
 rem when the folder path contains characters like & (e.g. "Minecraft & games").
-node "%~dp0node_modules\vite\bin\vite.js" --open --port 5173 --strictPort
+if /i "%~1"=="dev" (
+  node "%~dp0node_modules\vite\bin\vite.js" --open --port 5173 --strictPort
+) else (
+  node "%~dp0node_modules\vite\bin\vite.js" preview --open --port 5173 --strictPort
+)
 goto end
 
 rem ---- Node.js: install it with winget if it's missing (asks first) ----

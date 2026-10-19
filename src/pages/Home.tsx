@@ -320,7 +320,15 @@ export default function Home() {
 
         {shown.length === 0 && (
           <div className="empty" role="status">
-            No tool matches “{q}”.
+            {q.trim() ? <>No tool matches “{q}”.</> : 'No tool has all the picked filters.'}
+            {(picked.size > 0 || pickedTags.size > 0) && (
+              <>
+                {' '}
+                <button type="button" className="link-btn" onClick={clearPicked}>
+                  Show all tools
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

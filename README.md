@@ -17,7 +17,7 @@ npm run preview   # serve dist/ locally
 
 ### Windows without the terminal
 
-- **`start.bat`**: double-click to run the site; the browser opens by itself. If Node.js is missing it offers to install it (winget, Node.js LTS), and the first run installs the dependencies. Closing the black window stops the site.
+- **`start.bat`**: double-click to run the site; the browser opens by itself. If Node.js is missing it offers to install it (winget, Node.js LTS), and the first run installs the dependencies. Closing the black window stops the site. It runs the built site (`vite preview` on port 5173), which is much faster than the development server: `scripts/ensure-build.mjs` rebuilds `dist/` first only when it's missing, a source file is newer than the last build, or `package.json` has another version (so the first start after an update takes about half a minute). `start.bat dev` runs the development server instead.
 - **`update.bat`**: double-click to update to the newest version from GitHub and start it. Works for a ZIP download (no Git needed) as well as a `git clone`. It replaces the site's own files (`src/`, `public/`, …) and leaves `node_modules` and any of your own extra files alone.
 
 ### Windows: folder paths with `&`
@@ -50,6 +50,10 @@ PowerShell blocks `npm` by default, because there `npm` is a script (`npm.ps1`).
 
 GIF links (the GIF maker's "Make a link") upload through the `/upload/catbox` and `/upload/litterbox` proxies in `vite.config.ts`, so they only work where Vite serves the site (`npm run dev`, `npm run preview`, start.bat). A static host needs the same two rewrites to `https://catbox.moe/user/api.php` and `https://litterbox.catbox.moe/resources/internals/api.php`, or the GIF maker says links aren't available.
 
+Everything in `dist/assets/` has its content hash in the file name, so it can be cached for good: `vite preview` (and so start.bat) sends `Cache-Control: public, max-age=31536000, immutable` for `/assets/*` (the `cacheAssets` plugin in `vite.config.ts`), and `index.html` stays `no-cache` so a new version shows up right away. Do the same on a static host.
+
+The site's fonts (Geist, Geist Mono) come from `@fontsource-variable` packages and ship with the site; nothing is loaded from Google Fonts except the GIF maker's online font list.
+
 The ffmpeg core (`ffmpeg-core-*.wasm`, about 32 MB, about 10 MB gzipped) only downloads the first time someone runs an audio or video job. It uses the single-threaded core, so no COOP/COEP headers are needed.
 
 Things that don't work in this ffmpeg.wasm build (0.12.10), and what's used instead:
@@ -60,7 +64,7 @@ Things that don't work in this ffmpeg.wasm build (0.12.10), and what's used inst
 - After any failed run the instance is unreliable, so `ffmpegJob` throws it away and the next attempt or job loads a fresh one.
 - Its wasm memory only grows, so the instance is also thrown away 30 seconds after the last job (`hold`/`letGo` in `src/lib/ffmpeg.ts`); the next job loads it again from the browser cache in about a second.
 
-Other file libraries, all loaded only when a job needs them: pdf.js (`pdfjs-dist`, Apache-2.0) draws PDF pages, pdf-lib (MIT) writes PDFs, libheif-js (LGPL-3.0) reads HEIC photos and utif2 (MIT) reads TIFF.
+Other file libraries, all loaded only when a job needs them: pdf.js (`pdfjs-dist`, Apache-2.0) draws PDF pages, pdf-lib (MIT) writes PDFs (only inside the compute worker, `src/workers/tasks/pdf.ts`, so it's downloaded once), libheif-js (LGPL-3.0) reads HEIC photos and utif2 (MIT) reads TIFF.
 
 ## Adding a tool
 
@@ -81,7 +85,16 @@ Option types are `choice` (segmented buttons), `range`, `number`, `text` and `to
 
 ## Third-party services
 
-Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, skin and head images come from `mc-heads.net`, the skin editor loads skins from `textures.minecraft.net`, and the GIF maker loads animated emoji stickers from `fonts.gstatic.com` ([Noto Emoji Animation](https://googlefonts.github.io/noto-emoji-animation/) by Google, CC BY 4.0; the list of them is in `src/lib/noto-emoji.json`, refreshed with `node scripts/fetch-noto-emoji.mjs`). The GIF maker's fonts: ten come with the site from the `@fontsource/*` packages (Anton, Bebas Neue, Bangers, Luckiest Guy, Montserrat, Lobster, Pacifico, Caveat, Press Start 2P under the SIL Open Font License, Permanent Marker under Apache 2.0) and work offline; any other [Google Font](https://fonts.google.com) loads from `fonts.googleapis.com` when picked (the list is in `src/lib/google-fonts.json`, refreshed with `node scripts/fetch-google-fonts.mjs`). Its "Make a link" uploads the finished GIF to [catbox.moe](https://catbox.moe) (forever) or [litterbox](https://litterbox.catbox.moe) (1 hour to 3 days), through the site's own server (see Deploying). Everything else works offline once loaded.
+Some Minecraft tools call public APIs straight from the browser: server status uses `api.mcsrvstat.us`, profile lookups use `playerdb.co`, skin and head images come from `mc-heads.net`, the skin editor loads skins from `textures.minecraft.net`, and the GIF maker loads animated emoji stickers from `fonts.gstatic.com` ([Noto Emoji Animation](https://googlefonts.github.io/noto-emoji-animation/) by Google, CC BY 4.0; the list of them is in `src/lib/noto-emoji.json`, refreshed with `node scripts/fetch-noto-emoji.mjs`). The GIF maker's fonts: ten come with the site from the `@fontsource/*` packages (Anton, Bebas Neue, Bangers, Luckiest Guy, Montserrat, Lobster, Pacifico, Caveat, Press Start 2P under the SIL Open Font License, Permanent Marker under Apache 2.0) and work offline; any other [Google Font](https://fonts.google.com) loads from `fonts.googleapis.com` when picked (the list is in `src/lib/google-fonts.json`, refreshed with `node scripts/fetch-google-fonts.mjs`). Its "Make a link" uploads the finished GIF to [catbox.moe](https://catbox.moe) (forever) or [litterbox](https://litterbox.catbox.moe) (1 hour to 3 days), through the site's own server (see Deploying). The video & audio downloader reads from the sites you give it, through yt-dlp on this computer (see below). Everything else works offline once loaded.
+
+## Video & audio downloader (yt-dlp + aria2c)
+
+The downloader tool works like the [Seal](https://github.com/junkfood02/Seal) app: it runs [yt-dlp](https://github.com/yt-dlp/yt-dlp) (Unlicense) on this computer, with [aria2c](https://aria2.github.io/) (GPL-2.0) downloading in 16 connections at once and [ffmpeg](https://ffmpeg.org) (GPL build from [yt-dlp/FFmpeg-Builds](https://github.com/yt-dlp/FFmpeg-Builds)) joining video and sound and embedding covers and subtitles. Content behind DRM (Spotify, Netflix…) isn't supported by yt-dlp.
+
+- **Server part:** `scripts/downloader-server.ts`, a Vite plugin in both the dev and the preview server (so it works with start.bat, not on a static host), under `/api/dl/`: `status`, `install`, `update` (`yt-dlp -U`), `info` (`yt-dlp -J --flat-playlist`), `start`, `job/:id` (progress), `job/:id/cancel` (kills yt-dlp, aria2c and ffmpeg with `taskkill /T`), `job/:id/file/:n` and `job/:id/forget`. Downloads go to `%TEMP%\unktilz-dl\<id>` and are deleted once the page has the files (leftovers on the next start). Node is passed to yt-dlp as its JavaScript runtime (`--js-runtimes node:…`), which YouTube needs.
+- **Programs:** "Install" downloads them into `bin/` (git-ignored, left alone by update.bat): yt-dlp.exe checked against `SHA2-256SUMS`, ffmpeg (the `win64-gpl-shared` build, 91 MB) against `checksums.sha256`, and aria2 1.37.0, which publishes no checksums, against a hash pinned in the code. On other systems the programs are used from PATH. Vite doesn't watch `bin/`.
+- **Safety:** the API only answers this site's own pages: the `Host` must be localhost, a cross-site `Origin` / `Sec-Fetch-Site` is refused, and every request needs the `X-Unktilz: 1` header (another website can't send it without a CORS preflight, which this server never allows). Arguments go to yt-dlp as a list, never through a shell, and only http(s) addresses are accepted. The "extra yt-dlp options" field refuses options that run programs or write outside the download folder (`--exec`, `-o`, `-P`, `--downloader-args`, `--use-postprocessor`, `--netrc-cmd`, `--cookies`, `--config-locations` … see `checkExtra` in `src/tools/video/downloader/args.ts`).
+- **Page:** `src/tools/video/downloader/` (`Downloader.tsx`, `api.ts`, `args.ts` with the option → argument logic shared with the server). Each download is a queue task (`addTask`), so the finished file lands in the queue like any other result.
 
 ## Seed map (cubiomes)
 

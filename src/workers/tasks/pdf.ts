@@ -25,6 +25,20 @@ export async function mergePdf(p: MergePdfPayload, report: Report): Promise<Task
   return [{ name: p.files.length > 1 ? `${first}-merged.pdf` : `${first}.pdf`, blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) }];
 }
 
+export type JpgsToPdfPayload = { pages: { jpg: Blob; width: number; height: number }[] };
+
+/** Pages that are already JPGs (Compress PDF), each filling a page of its size. */
+export async function jpgsToPdf(p: JpgsToPdfPayload, report: Report): Promise<Blob> {
+  const out = await PDFDocument.create();
+  for (let i = 0; i < p.pages.length; i++) {
+    const { jpg, width, height } = p.pages[i];
+    const img = await out.embedJpg(new Uint8Array(await jpg.arrayBuffer()));
+    out.addPage([width, height]).drawImage(img, { x: 0, y: 0, width, height });
+    report((i + 1) / p.pages.length);
+  }
+  return new Blob([(await out.save()) as BlobPart], { type: 'application/pdf' });
+}
+
 export type ImagesToPdfPayload = {
   files: File[];
   page: 'fit' | 'a4' | 'letter';

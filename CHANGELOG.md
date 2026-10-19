@@ -2,6 +2,18 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.16.0] - 2026-10-19
+
+### Added
+- Video & audio downloader (beta), like the Seal app: paste a link from YouTube, SoundCloud, Twitch, Reddit, TikTok or 1800+ other sites and download the video in the quality you pick (mp4, mkv or webm), or just the sound as MP3 / M4A / Opus with its cover and tags. Whole playlists with a pick list, subtitles, cutting out sponsors (SponsorBlock), exact formats, extra yt-dlp options and saved templates, and a history. It uses yt-dlp and aria2c (16 connections at once) on your computer: the first time, one click installs them. Needs the site started with start.bat.
+
+### Changed
+- Much faster: start.bat now runs the finished, packed site instead of the development version. Pages open several times faster and everything runs smoother. The first start after an update prepares the site first (about half a minute); every other start is instant. (`start.bat dev` still runs the development version.)
+- Files you've already downloaded once (like the 32 MB video/audio engine) are kept by the browser and not checked again on every visit.
+- The site's fonts now come with the site instead of from Google: nothing is loaded from outside to show a page, and it looks right offline too.
+- Compress PDF puts the PDF together in the background: the page doesn't freeze, and it downloads about 440 KB less.
+- Home page: when the picked filters have no tools in common, it says so and offers to show all tools.
+
 ## [1.15.0] - 2026-10-19
 
 ### Added

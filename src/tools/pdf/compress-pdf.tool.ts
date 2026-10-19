@@ -2,6 +2,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { defineTool, type Opts, type RunEvent } from '../../registry/types';
 import { formatBytes } from '../../queue/download';
 import { baseName, canvasBlob, openPdf, renderPage } from '../../lib/pdfjs';
+import { computeValue } from '../../lib/compute';
 
 /** Resolution and JPG quality per level. */
 const LEVELS: Record<string, { dpi: number; quality: number }> = {
@@ -61,23 +62,23 @@ export default defineTool({
   ],
   run: ([file], opts, { signal }) =>
     (async function* (): AsyncGenerator<RunEvent> {
-      const { PDFDocument } = await import('pdf-lib');
       const doc = await openPdf(file);
       try {
-        const out = await PDFDocument.create();
+        // Pages are drawn here (pdf.js needs the page), then put together in the PDF worker, which
+        // already has pdf-lib: the page doesn't load a second copy or freeze while it's assembled.
+        const pages: { jpg: Blob; width: number; height: number }[] = [];
         for (let i = 0; i < doc.numPages; i++) {
           if (signal.aborted) return;
-          const { jpg, width, height } = await compressPage(doc, i, opts);
-          const img = await out.embedJpg(new Uint8Array(await jpg.arrayBuffer()));
-          out.addPage([width, height]).drawImage(img, { x: 0, y: 0, width, height });
-          yield { type: 'progress', value: ((i + 1) / doc.numPages) * 0.95 };
+          pages.push(await compressPage(doc, i, opts));
+          yield { type: 'progress', value: ((i + 1) / doc.numPages) * 0.9 };
         }
-        const bytes = await out.save();
-        if (bytes.length >= file.size)
+        const pdf = await computeValue('jpgs-to-pdf', { pages });
+        if (signal.aborted) return;
+        if (pdf.size >= file.size)
           throw new Error(
-            `This PDF is already small (${formatBytes(file.size)}; it's probably mostly text): compressing would make it bigger (${formatBytes(bytes.length)}).${opts.level === 'strong' ? '' : ' “Strong” might still help.'}`,
+            `This PDF is already small (${formatBytes(file.size)}; it's probably mostly text): compressing would make it bigger (${formatBytes(pdf.size)}).${opts.level === 'strong' ? '' : ' “Strong” might still help.'}`,
           );
-        yield { type: 'result', name: `${baseName(file.name)}-compressed.pdf`, blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) };
+        yield { type: 'result', name: `${baseName(file.name)}-compressed.pdf`, blob: pdf };
       } finally {
         void doc.destroy();
       }

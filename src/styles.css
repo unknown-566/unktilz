@@ -13,8 +13,8 @@
   --rail-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   --danger: #ff8a7a;
   --rail: 72px;
-  --mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: dark;
 }
 
@@ -3653,4 +3653,126 @@ textarea,
   bottom: 8px;
   display: flex;
   gap: 4px;
+}
+/* A button that looks like a link (inside a sentence). */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Video & audio downloader */
+.dl {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dl-link {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.dl-versions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+}
+.dl-update-msg {
+  flex-basis: 100%;
+  white-space: pre-wrap;
+}
+.dl-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.dl-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 300ms linear;
+}
+.dl-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.dl-thumb {
+  width: 200px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--line);
+  flex: none;
+}
+.dl-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.dl-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dl-items .check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dl-items .check > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dl-advanced {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dl-advanced > summary {
+  cursor: pointer;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.dl-live,
+.dl-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dl-live li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dl-history li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dl-history-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
