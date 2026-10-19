@@ -13,7 +13,7 @@ import { loadFont } from './fontLoad';
 import { LayerList, LayerProps, newSticker, newText } from './Layers';
 import { Stage } from './Stage';
 import { StickerPicker } from './Stickers';
-import { MAX_STICKER_BYTES, decodeSticker, loadSticker, type MySticker } from './stickerData';
+import { MAX_STICKER_BYTES, decodeSticker, forgetSticker, loadSticker, type MySticker } from './stickerData';
 import { Timeline } from './Timeline';
 
 const VIDEO_ACCEPTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.3gp', '.ts', '.mts', '.mpg', '.mpeg', '.ogv', '.gif'];
@@ -133,6 +133,41 @@ export default function GifMaker() {
   }, [stickerRefs, stickers, mineStore.items]);
   const stickersMissing = [...stickerRefs.keys()].some((k) => !stickers.has(k));
 
+  // A sticker's frames are freed once no layer has used it for a few seconds (not at once: one
+  // deleted by mistake and added back shouldn't load again), and all of them when leaving the page.
+  const exporting = useRef(false);
+  const stickersNow = useRef({ stickers, stickerRefs });
+  stickersNow.current = { stickers, stickerRefs };
+  useEffect(() => {
+    if (![...stickers.keys()].some((k) => !stickerRefs.has(k))) return;
+    let t: ReturnType<typeof setTimeout>;
+    const sweep = () => {
+      // A GIF being made may still draw them: look again a moment later.
+      if (exporting.current) {
+        t = setTimeout(sweep, 2000);
+        return;
+      }
+      const { stickers: now, stickerRefs: used } = stickersNow.current;
+      const unused = [...now.entries()].filter(([k]) => !used.has(k));
+      if (!unused.length) return;
+      setStickers((m) => {
+        const next = new Map(m);
+        for (const [k] of unused) next.delete(k);
+        return next;
+      });
+      // The preview only draws stickers that layers use, so these can go right away.
+      for (const [k, anim] of unused) forgetSticker(k, anim);
+    };
+    t = setTimeout(sweep, 8000);
+    return () => clearTimeout(t);
+  }, [stickers, stickerRefs]);
+  useEffect(
+    () => () => {
+      for (const [k, anim] of stickersNow.current.stickers) forgetSticker(k, anim);
+    },
+    [],
+  );
+
   // ---- fonts ----
   const fontFamilies = useMemo(() => [...new Set(s.layers.flatMap((l) => (l.kind === 'text' ? [l.font] : [])))], [s.layers]);
   const fontsKey = fontFamilies.join('|');
@@ -202,11 +237,23 @@ export default function GifMaker() {
   };
 
   // ---- sources ----
+  // Work still finishing after leaving the page frees what it made instead of keeping it.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const takeVideo = async (file: File) => {
     setError('');
     setStatus('Opening the video…');
     try {
       const v = await openVideo(file, setStatus);
+      if (!mounted.current) {
+        URL.revokeObjectURL(v.url);
+        return;
+      }
       setVideo((old) => {
         if (old) retire(old.url);
         return v;
@@ -215,6 +262,10 @@ export default function GifMaker() {
       setS((o) => ({ ...o, mode: 'video', ...(o.end <= v.duration && o.end > o.start ? {} : { start: 0, end: Math.round(Math.min(v.duration, 4) * 100) / 100 }) }));
       setStatus('');
       const t = await videoThumbs(v, 10, 48);
+      if (!mounted.current) {
+        t.forEach((u) => URL.revokeObjectURL(u));
+        return;
+      }
       setThumbs((old) => {
         old.forEach(retire);
         return t;
@@ -231,6 +282,10 @@ export default function GifMaker() {
       setStatus(`Loading ${f.name}…`);
       try {
         const bmp = await loadPhoto(f);
+        if (!mounted.current) {
+          bmp.close();
+          return;
+        }
         const photo = { id: `${f.name}-${f.size}-${Math.random()}`, name: f.name, bmp, thumb: await thumbOf(bmp) };
         setPhotos((p) => [...p, photo]);
       } catch (e) {
@@ -312,21 +367,25 @@ export default function GifMaker() {
     if (!video || !cache || !times.length || tooMany) return;
     const key = `${video.url}|${cache.w}x${cache.h}`;
     const fc = frameCache.current;
+    // Freed a moment later: the preview (or a GIF being made) may still draw them.
+    const closeLater = (list: ImageBitmap[]) => {
+      const go = () => (exporting.current ? setTimeout(go, 1000) : list.forEach((b) => b.close()));
+      setTimeout(go, 1000);
+    };
     if (fc.key !== key) {
-      const old = [...fc.map.values()];
-      // The preview may still draw one of them for a moment.
-      setTimeout(() => old.forEach((b) => b.close()), 1000);
+      closeLater([...fc.map.values()]);
       fc.key = key;
       fc.map = new Map();
     }
+    // Frames outside the clip are kept for going back, but only up to about 150 MB.
+    const spare = Math.floor(150e6 / (cache.w * cache.h * 4));
     const finish = () => {
       setFrames(times.map((t) => fc.map.get(t)!));
-      // Don't let it grow without end: once it's big, forget the frames outside the clip.
-      if (fc.map.size > times.length * 3 + 100) {
+      if (fc.map.size > times.length + spare) {
         const keep = new Set(times);
         const drop = [...fc.map.entries()].filter(([t]) => !keep.has(t));
         drop.forEach(([t]) => fc.map.delete(t));
-        setTimeout(() => drop.forEach(([, b]) => b.close()), 1000);
+        closeLater(drop.map(([, b]) => b));
       }
     };
     const missing = times.filter((t) => !fc.map.has(t));
@@ -471,6 +530,7 @@ export default function GifMaker() {
     if (!ready || !size) return;
     setError('');
     setBusy(0);
+    exporting.current = true;
     uploading.current?.abort();
     setLink(null);
     try {
@@ -484,6 +544,7 @@ export default function GifMaker() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(null);
+      exporting.current = false;
     }
   };
 

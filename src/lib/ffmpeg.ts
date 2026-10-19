@@ -28,6 +28,30 @@ function get() {
   return instance;
 }
 
+/**
+ * The wasm memory only ever grows: after a big job (a long video, a GIF's raw frames) the instance
+ * keeps hundreds of MB. So once nothing has used it for a while it's thrown away; the next job loads
+ * it again (from the browser's cache, about a second).
+ */
+const IDLE_MS = 30_000;
+let jobs = 0;
+let idle: ReturnType<typeof setTimeout> | undefined;
+function hold() {
+  jobs++;
+  clearTimeout(idle);
+}
+function letGo() {
+  jobs = Math.max(0, jobs - 1);
+  if (jobs) return;
+  clearTimeout(idle);
+  idle = setTimeout(() => {
+    const was = instance;
+    if (jobs || !was) return;
+    instance = null;
+    was.then((ff) => ff.terminate()).catch(() => {});
+  }, IDLE_MS);
+}
+
 function reset(ff: FFmpeg) {
   try {
     ff.terminate();
@@ -107,6 +131,7 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
     };
 
     signal.addEventListener('abort', onAbort, { once: true });
+    hold();
     try {
       ff = await open();
       ch.push({ type: 'progress', value: 0.05 });
@@ -145,6 +170,7 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
         await f.deleteFile(input).catch(() => {});
         await f.deleteFile(output).catch(() => {});
       }
+      letGo();
     }
   })().catch((e) => ch.fail(e));
 
@@ -159,7 +185,21 @@ export async function ffmpegRun(
   inputs: { name: string; data: Uint8Array }[],
   args: string[],
   outputs: string[],
-  { signal, onProgress }: { signal?: AbortSignal; onProgress?: (p: number) => void } = {},
+  opts: { signal?: AbortSignal; onProgress?: (p: number) => void } = {},
+): Promise<Uint8Array[]> {
+  hold();
+  try {
+    return await runOnce(inputs, args, outputs, opts);
+  } finally {
+    letGo();
+  }
+}
+
+async function runOnce(
+  inputs: { name: string; data: Uint8Array }[],
+  args: string[],
+  outputs: string[],
+  { signal, onProgress }: { signal?: AbortSignal; onProgress?: (p: number) => void },
 ): Promise<Uint8Array[]> {
   const ff = await get();
   if (signal?.aborted) throw abortError();

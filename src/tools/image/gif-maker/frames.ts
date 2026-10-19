@@ -86,17 +86,24 @@ export async function videoThumbs(src: VideoSource, count: number, height: numbe
   await once(v, 'loadeddata');
   const w = Math.max(1, Math.round((height * src.w) / src.h));
   const out: string[] = [];
-  for (let i = 0; i < count; i++) {
-    await seek(v, ((i + 0.5) / count) * src.duration);
-    const bmp = await createImageBitmap(v, { resizeWidth: w, resizeHeight: height, resizeQuality: 'medium' });
-    const c = new OffscreenCanvas(w, height);
-    c.getContext('2d')!.drawImage(bmp, 0, 0);
-    bmp.close();
-    out.push(URL.createObjectURL(await c.convertToBlob({ type: 'image/jpeg', quality: 0.7 })));
+  try {
+    for (let i = 0; i < count; i++) {
+      await seek(v, ((i + 0.5) / count) * src.duration);
+      const bmp = await createImageBitmap(v, { resizeWidth: w, resizeHeight: height, resizeQuality: 'medium' });
+      const c = new OffscreenCanvas(w, height);
+      c.getContext('2d')!.drawImage(bmp, 0, 0);
+      bmp.close();
+      out.push(URL.createObjectURL(await c.convertToBlob({ type: 'image/jpeg', quality: 0.7 })));
+    }
+    return out;
+  } catch (e) {
+    // The ones made so far would never be freed otherwise.
+    out.forEach((u) => URL.revokeObjectURL(u));
+    throw e;
+  } finally {
+    v.removeAttribute('src');
+    v.load();
   }
-  v.removeAttribute('src');
-  v.load();
-  return out;
 }
 
 /**

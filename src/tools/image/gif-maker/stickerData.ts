@@ -79,6 +79,18 @@ function fit(w: number, h: number) {
 
 const cache = new Map<string, Promise<StickerAnim>>();
 
+/** Frees a sticker's frames (an animated emoji is about 10 MB of them); it loads again if needed. */
+export function forgetSticker(key: string, anim?: StickerAnim) {
+  const p = cache.get(key);
+  cache.delete(key);
+  if (anim) closeFrames(anim);
+  p?.then(closeFrames).catch(() => {});
+}
+
+function closeFrames(a: StickerAnim) {
+  for (const f of a.frames) if (f instanceof ImageBitmap) f.close();
+}
+
 /** Loads (once) the frames of a sticker; `mine` looks up a saved sticker by id. */
 export function loadSticker(ref: StickerRef, mine: (id: string) => MySticker | undefined): Promise<StickerAnim> {
   const key = stickerKey(ref);

@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.12.4] - 2026-10-19
+
+### Fixed
+- Memory that was never given back:
+  - GIF maker stickers stayed in memory after their layer was deleted and after leaving the page (about 10 MB per animated emoji). They are now freed a few seconds after nothing uses them.
+  - The video, audio and GIF tools kept ffmpeg's memory (up to hundreds of MB after a big job) until the page was closed. It is now freed 30 seconds after the last job.
+  - The GIF maker keeps at most about 150 MB of video frames outside the chosen clip.
+  - Video thumbnails, photos or a video still loading when you leave the GIF maker are freed too.
+
 ## [1.12.3] - 2026-10-18
 
 ### Removed
