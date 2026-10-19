@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ALIASES, categoryLabel, getTool, related } from '../registry';
-import { useLaunch } from '../components/Transition';
+import { GoLink, useLaunch } from '../components/Transition';
 import { loadFileTool, preloadTool } from '../registry/preload';
 
 const FileTool = lazy(() => loadFileTool().then((m) => ({ default: m.FileTool })));
@@ -120,9 +120,9 @@ function ToolView({ slug }: { slug: string }) {
 
   const crumbs = (
     <nav aria-label="Breadcrumb" className="crumbs">
-      <Link to="/">tools</Link>
+      <GoLink to="/">tools</GoLink>
       <span aria-hidden="true">/</span>
-      <Link to={`/?cat=${tool.category}`}>{cat}</Link>
+      <GoLink to={`/?cat=${tool.category}`}>{cat}</GoLink>
       <span aria-hidden="true">/</span>
       <span aria-current="page">{tool.slug}</span>
     </nav>

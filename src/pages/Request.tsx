@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { GoLink } from '../components/Transition';
 
 export default function Request() {
   useEffect(() => {
@@ -8,7 +8,7 @@ export default function Request() {
   return (
     <div className="wrap tool-wrap">
       <nav aria-label="Breadcrumb" className="crumbs">
-        <Link to="/">tools</Link>
+        <GoLink to="/">tools</GoLink>
         <span aria-hidden="true">/</span>
         <span aria-current="page">request</span>
       </nav>

@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import changelog from '../../CHANGELOG.md?raw';
 import { Markdown } from '../lib/markdown';
 import { APP_VERSION, changelogSections, compareVersions } from '../lib/updates';
 import { markSeen, seenVersion } from './whatsNewSeen';
+import { GoLink } from './Transition';
 
 /** How many versions the popup lists at most (after a big update, the rest is on the changelog page). */
 const MAX = 4;
@@ -56,13 +56,13 @@ export default function WhatsNew({ onClose }: { onClose: () => void }) {
         </div>
         <div className="whats-new-foot">
           {fresh.length > MAX ? (
-            <Link to="/changelog" onClick={close}>
+            <GoLink to="/changelog" onClick={close}>
               {fresh.length - MAX} more version{fresh.length - MAX === 1 ? '' : 's'} in the changelog
-            </Link>
+            </GoLink>
           ) : (
-            <Link to="/changelog" onClick={close}>
+            <GoLink to="/changelog" onClick={close}>
               whole changelog
-            </Link>
+            </GoLink>
           )}
           <button type="button" className="btn btn-primary" onClick={close} autoFocus>
             Got it

@@ -1,6 +1,6 @@
 import { defineTool } from '../../registry/types';
 import { ffmpegJob } from '../../lib/ffmpeg';
-import { badName, badOptions, badVideoCommand } from './badArgs';
+import { badName, badOptions, badVideoAttempts, badVideoCommand } from './badArgs';
 
 export default defineTool({
   slug: 'bad-video',
@@ -20,6 +20,6 @@ export default defineTool({
   run: ([file], opts, { signal }) => {
     // Built now so typing mistakes in the times show up as the job's error right away.
     badVideoCommand(opts, 'in', 'out');
-    return ffmpegJob(file, badName(file.name, 'mp4'), (i, o) => badVideoCommand(opts, i, o), 'video/mp4', signal);
+    return ffmpegJob(file, badName(file.name, 'mp4'), badVideoAttempts(opts), 'video/mp4', signal);
   },
 });

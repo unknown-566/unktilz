@@ -2,6 +2,18 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.15.0] - 2026-10-19
+
+### Added
+- Circle generator is now the Circle & shape generator: besides circles, ovals and spheres it makes polygons (triangle to 12 sides), stars, hearts, and layer by layer domes, cylinders, cones, pyramids, eggs and donuts. Layers count from the bottom, and the guide shows blocks for this layer and the whole shape.
+- Shape generator: 3D shapes can be seen in 3D (drag to turn, + / − to zoom). The layer you're building glows, the layers below stay solid and the ones above turn see-through. Scroll the mouse wheel over the guide to move through the layers; in the flat layer view the layer below shows faintly.
+
+### Changed
+- Every link between the site's pages now opens with the block transition: All tools and Request a tool at the top, the tools / category links above a tool, the queue, the 404 page, the what's-new popup and "edit in skin editor".
+
+### Fixed
+- Make video bad: fixed "Error submitting audio frame to the encoder". The sound is now always turned into a plain, steady format before it's encoded, and if making the video still fails it's tried again by itself (and as a last resort with MP3 sound).
+
 ## [1.14.0] - 2026-10-19
 
 ### Added

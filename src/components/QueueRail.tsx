@@ -1,8 +1,8 @@
 import { useState, type FocusEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { useQueue, type Job } from '../queue/store';
 import { downloadJob } from '../queue/download';
 import { CategoryIcon, DownloadIcon, LayersIcon } from './icons';
+import { GoLink } from './Transition';
 
 const pct = (j: Job) => `${Math.round((j.status === 'done' ? 1 : j.progress) * 100)}%`;
 
@@ -34,9 +34,9 @@ function JobItem({ job, open }: { job: Job; open: boolean }) {
         <>
           <div className="job-info">
             <div className="job-row">
-              <Link to={`/t/${job.slug}`} className="job-name">
+              <GoLink to={`/t/${job.slug}`} className="job-name">
                 {job.name}
-              </Link>
+              </GoLink>
               <span className="job-status" data-status={job.status}>
                 {status}
               </span>

@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ComponentProps, type MouseEvent, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { prefersReducedMotion } from '../lib/theme';
 
 type Launch = (e: MouseEvent | null, slug: string) => void;
@@ -11,6 +11,21 @@ const LaunchContext = createContext<Launch>(() => {});
  * Pass the click event so the wave starts under the cursor.
  */
 export const useLaunch = () => useContext(LaunchContext);
+
+/** A link to another page of the site that opens it through the transition. */
+export function GoLink({ to, onClick, ...rest }: ComponentProps<typeof Link> & { to: string }) {
+  const launch = useLaunch();
+  return (
+    <Link
+      to={to}
+      onClick={(e) => {
+        onClick?.(e);
+        launch(e, to);
+      }}
+      {...rest}
+    />
+  );
+}
 
 const COLS = 16;
 const ROWS = 10;
@@ -24,7 +39,7 @@ export const scrollToTop = () => document.getElementById('scroll')?.scrollTo(0, 
 
 export function TransitionProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const [phase, setPhase] = useState<null | 'cover' | 'uncover'>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [slug, setSlug] = useState('');
@@ -45,8 +60,9 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
       if (covering.current) return;
       clear();
       const to = target.startsWith('/') ? target : `/t/${target}`;
-      // Already there (e.g. the logo on the home page): just go back to the top.
-      if (to === pathname) {
+      // Already there (e.g. the logo on the home page): just go back to the top. A different query
+      // ("All tools" from a filtered home page) is a different page.
+      if (to === pathname + search) {
         scrollToTop();
         return;
       }
@@ -73,7 +89,8 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 
       covering.current = true;
       setCells(next);
-      setSlug(target.startsWith('/') ? target.slice(1) : target);
+      // The label shows the page's name: "unktilz/skin-editor", "unktilz/changelog".
+      setSlug(to.split('?')[0].replace(/^\/(t\/)?/, ''));
       setPhase('cover');
       // Route changes only once the screen is fully covered, then the same wave uncovers it.
       timers.current.push(
@@ -86,7 +103,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
         }, max + BLOCK + 20),
       );
     },
-    [navigate, pathname],
+    [navigate, pathname, search],
   );
 
   return (

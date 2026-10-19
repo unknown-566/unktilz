@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { GoLink } from '../components/Transition';
 import changelog from '../../CHANGELOG.md?raw';
 import { Markdown } from '../lib/markdown';
 import { APP_VERSION, changelogSections, checkForUpdate, compareVersions, remoteChangelog } from '../lib/updates';
@@ -29,7 +29,7 @@ export default function Changelog() {
   return (
     <div className="wrap tool-wrap">
       <nav aria-label="Breadcrumb" className="crumbs">
-        <Link to="/">tools</Link>
+        <GoLink to="/">tools</GoLink>
         <span aria-hidden="true">/</span>
         <span aria-current="page">changelog</span>
       </nav>

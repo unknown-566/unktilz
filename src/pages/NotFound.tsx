@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { GoLink } from '../components/Transition';
 
 export default function NotFound() {
   const { pathname } = useLocation();
@@ -16,12 +17,12 @@ export default function NotFound() {
         <p className="tool-desc">That tool doesn't exist yet, or the link is wrong.</p>
       </div>
       <div className="inline">
-        <Link to="/" className="btn">
+        <GoLink to="/" className="btn">
           All tools
-        </Link>
-        <Link to="/request" className="btn">
+        </GoLink>
+        <GoLink to="/request" className="btn">
           Request a tool
-        </Link>
+        </GoLink>
       </div>
     </div>
   );

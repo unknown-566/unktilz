@@ -3630,3 +3630,27 @@ textarea,
 :root[data-theme='light'] .chip-beta[aria-pressed='true'] {
   color: #fff;
 }
+
+/* Shape generator: 3D view */
+.shape3d {
+  position: relative;
+  border-radius: 6px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.shape3d-view {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.shape3d-view:active {
+  cursor: grabbing;
+}
+.shape3d-tools {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 4px;
+}

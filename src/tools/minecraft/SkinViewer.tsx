@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { Panel, TextField } from '../../components/ui';
+import { GoLink } from '../../components/Transition';
 import { saveBlob } from '../../queue/download';
 import { isName, lookupProfile, type Profile } from '../../lib/mc/uuid';
 
@@ -63,9 +63,9 @@ export default function SkinViewer() {
           title={profile.name}
           actions={
             <span className="inline">
-              <Link className="btn btn-sm" to={`/t/skin-editor?player=${encodeURIComponent(profile.name)}`}>
+              <GoLink className="btn btn-sm" to={`/t/skin-editor?player=${encodeURIComponent(profile.name)}`}>
                 edit in skin editor
-              </Link>
+              </GoLink>
               <button type="button" className="btn btn-sm" onClick={download}>
                 download .png
               </button>

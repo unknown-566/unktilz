@@ -1,4 +1,5 @@
 import type { OptionSchema, Opts } from '../../registry/types';
+import type { Attempt } from '../../lib/ffmpeg';
 import { trimArgs } from '../../lib/timecode';
 import { fitShortSide } from './videoArgs';
 
@@ -68,11 +69,18 @@ function pictureFilters(picture: Picture, l: Level) {
   return [`${fitShortSide(small)}:flags=area`, upTo(SHOW_SIDE, pic.up), ...pic.after];
 }
 
-/** The sound filters and encoding settings for a level and effect (no codec). */
-function soundArgs(o: Opts) {
+/**
+ * The sound filters and encoding settings for a level and effect (no codec). The sound always ends
+ * up as plain 16-bit at one fixed rate and layout: whatever the video's sound does along the way
+ * (switching to stereo halfway, odd channel setups, a filter overshooting into values the encoder
+ * refuses), the encoder only ever gets ordinary samples.
+ */
+function soundArgs(o: Opts, minRate = 0) {
   const l = LEVELS[o.badness as Badness] ?? LEVELS.bad;
+  const rate = Math.max(l.rate, minRate);
   const fx = SOUND_FX[o.soundFx as SoundFx] ?? [];
-  return [...(fx.length ? ['-af', fx.join(',')] : []), '-b:a', `${l.kbps}k`, '-ar', String(l.rate), ...(l.mono ? ['-ac', '1'] : [])];
+  const steady = [`aresample=${rate}`, `aformat=sample_fmts=s16:sample_rates=${rate}:channel_layouts=${l.mono ? 'mono' : 'stereo'}`];
+  return ['-af', [...fx, ...steady].join(','), '-b:a', `${l.kbps}k`];
 }
 
 /** ffmpeg arguments for the audio tool: an MP3 (also from the sound of a video). Throws on badly typed times. */
@@ -81,14 +89,31 @@ export function badAudioCommand(o: Opts, input: string, output: string): string[
   return [...trim.before, '-i', input, ...trim.after, '-map', '0:a:0', '-vn', ...soundArgs(o), '-c:a', 'libmp3lame', output];
 }
 
-/** ffmpeg arguments for the video tool: a small, ugly MP4. Throws on badly typed times. */
-export function badVideoCommand(o: Opts, input: string, output: string): string[] {
+/**
+ * ffmpeg arguments for the video tool: a small, ugly MP4 (AAC sound, or MP3 sound for the second
+ * try). Throws on badly typed times.
+ */
+export function badVideoCommand(o: Opts, input: string, output: string, audioCodec: 'aac' | 'libmp3lame' = 'aac'): string[] {
   const trim = trimArgs(String(o.start ?? ''), String(o.end ?? ''));
   const l = LEVELS[o.badness as Badness] ?? LEVELS.bad;
   const vf = [`fps=${l.fps}`, ...pictureFilters(o.picture as Picture, l), 'setsar=1', 'format=yuv420p'].join(',');
   const video = ['-c:v', 'libx264', '-preset', 'veryfast', '-b:v', `${l.vkbps}k`, '-maxrate', `${l.vkbps}k`, '-bufsize', `${l.vkbps * 2}k`];
-  const sound = o.audio === 'remove' ? ['-an'] : ['-map', '0:a:0?', ...soundArgs(o), '-c:a', 'aac'];
+  const sound = o.audio === 'remove' ? ['-an'] : ['-map', '0:a:0?', ...soundArgs(o, audioCodec === 'aac' ? 0 : MP4_MP3_MIN_RATE), '-c:a', audioCodec];
   return [...trim.before, '-i', input, ...trim.after, '-map', '0:v:0', ...sound, '-vf', vf, ...video, '-movflags', '+faststart', output];
+}
+
+/** MP4 only takes MP3 sound at 16 kHz or more (not the 8 and 11 kHz of the worst levels). */
+const MP4_MP3_MIN_RATE = 16000;
+
+/**
+ * The ways to make the video, best first. A failed run throws its ffmpeg away, so the second try is
+ * the same thing in a fresh one (ffmpeg.wasm sometimes trips after several jobs); the last resort is
+ * MP3 sound instead of AAC (MP4 holds that too, and browsers and Discord play it).
+ */
+export function badVideoAttempts(o: Opts): Attempt[] {
+  const aac: Attempt = { args: (i, out) => badVideoCommand(o, i, out) };
+  if (o.audio === 'remove') return [aac, aac];
+  return [aac, aac, { args: (i, out) => badVideoCommand(o, i, out, 'libmp3lame') }];
 }
 
 /** "clip.mp4" → "clip-bad.mp4". */

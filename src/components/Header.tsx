@@ -18,14 +18,16 @@ export function Header() {
         </Link>
         <nav className="nav" aria-label="Main">
           {update?.newer && (
-            <Link to="/changelog" className="update-pill" title={`Version ${update.latest} is out (you have ${APP_VERSION})`}>
+            <Link to="/changelog" className="update-pill" title={`Version ${update.latest} is out (you have ${APP_VERSION})`} onClick={(e) => launch(e, '/changelog')}>
               update available
             </Link>
           )}
-          <NavLink to="/" end>
+          <NavLink to="/" end onClick={(e) => launch(e, '/')}>
             All tools
           </NavLink>
-          <NavLink to="/request">Request a tool</NavLink>
+          <NavLink to="/request" onClick={(e) => launch(e, '/request')}>
+            Request a tool
+          </NavLink>
           <button type="button" className="theme-btn" onClick={toggle} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
             theme: {theme}
           </button>
