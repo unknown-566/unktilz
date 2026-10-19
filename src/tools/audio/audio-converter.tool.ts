@@ -13,7 +13,6 @@ export default defineTool({
   category: 'audio',
   order: 1,
   meta: 'mp3 · wav · ogg · flac',
-  added: '2026-10-15',
   description: 'Convert sound to MP3, WAV, OGG, Opus, FLAC or M4A, or take the sound out of a video. Can also cut it shorter, fade it in and out and fix the volume.',
   keywords: [
     'ogg to mp3', 'mp3 to ogg', 'wav to mp3', 'mp3 to wav', 'flac to mp3', 'm4a to mp3', 'mp4 to mp3', 'video to mp3', 'extract audio', 'opus', 'vorbis',

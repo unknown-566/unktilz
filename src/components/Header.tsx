@@ -36,18 +36,26 @@ export function Header() {
 }
 
 export function Footer() {
+  const launch = useLaunch();
   return (
     <footer className="footer">
       <div className="footer-inner">
         <span className="footer-links">
           <span>unktilz</span>
-          <Link to="/changelog" className="mono" title="What changed, and check for updates">
+          <Link to="/changelog" className="mono" title="What changed, and check for updates" onClick={(e) => launch(e, '/changelog')}>
             v{APP_VERSION}
           </Link>
         </span>
         <span className="footer-links">
-          <Link to="/backup">backup</Link>
-          <span>made by unknown_56</span>
+          <Link to="/backup" onClick={(e) => launch(e, '/backup')}>
+            backup
+          </Link>
+          <span>
+            made by{' '}
+            <a href="https://github.com/unknown-566" target="_blank" rel="noopener noreferrer">
+              unknown_56
+            </a>
+          </span>
         </span>
       </div>
     </footer>

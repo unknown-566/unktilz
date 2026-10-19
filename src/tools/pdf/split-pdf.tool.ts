@@ -15,7 +15,6 @@ export default defineTool({
   category: 'pdf',
   order: 3,
   meta: 'pages · split',
-  added: '2026-10-15',
   beta: true,
   description: 'Take pages out of a PDF, put them in another order, split it into several PDFs, or turn pages that are sideways.',
   keywords: ['split pdf', 'extract pages', 'remove pages', 'delete pages', 'reorder pages', 'rotate pdf', 'organize', 'separate'],

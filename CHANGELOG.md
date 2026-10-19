@@ -2,6 +2,18 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.14.0] - 2026-10-19
+
+### Added
+- Make video bad and Make audio bad: ruin a video or a sound on purpose for memes. Pick how bad (from "a bit" to "unusable"), a look for videos (blurry, pixelated or deep fried) and a sound effect (bass boosted, earrape, phone call, underwater or crushed). Videos come out as a small MP4, sounds as an MP3, and the audio one also takes the sound out of a video.
+- Home page: New and Beta filters next to the categories. They work together with the categories, e.g. PDF + Beta shows only the PDF tools still in testing.
+
+### Changed
+- Home page: clicking a picked filter no longer unpicks it. Only its small × does, so a misclick can't hide what you picked.
+- The version and backup links at the bottom open with the same block transition as the tools, and "unknown_56" links to the GitHub profile (opens in a new tab).
+- Only tools that are really new wear the "new" tag now (GIF maker, Make video bad, Make audio bad).
+- Home page: the new / beta / online tags always sit on the right of a tool's card, also when a long description pushes them onto their own line.
+
 ## [1.13.1] - 2026-10-19
 
 ### Changed

@@ -3525,10 +3525,13 @@ textarea,
   font-size: 13px;
   padding: 3px 10px;
 }
+/* Always on the right, also when a long meta pushes them onto their own line. */
 .card-tags {
   display: inline-flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 4px;
+  margin-left: auto;
 }
 
 /* "What's new" popup after an update */
@@ -3596,4 +3599,34 @@ textarea,
 .chip-x:focus-visible {
   background: var(--accent);
   color: var(--on-accent);
+}
+/* The New / Beta filters come after the categories, set apart by a thin line. */
+.chip-tags-start {
+  margin-left: 9px;
+}
+.chip-tags-start::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 10px;
+  bottom: 10px;
+  border-left: 1px solid var(--chip-line);
+}
+.chip-beta {
+  --beta: #ffb020;
+  border-color: var(--beta);
+}
+:root[data-theme='light'] .chip-beta {
+  --beta: #b26a00;
+}
+.chip-beta:hover {
+  border-color: var(--beta);
+}
+.chip-beta[aria-pressed='true'] {
+  background: var(--beta);
+  border-color: var(--beta);
+  color: #000;
+}
+:root[data-theme='light'] .chip-beta[aria-pressed='true'] {
+  color: #fff;
 }

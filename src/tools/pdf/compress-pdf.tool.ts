@@ -31,7 +31,6 @@ export default defineTool({
   category: 'pdf',
   order: 4,
   meta: 'smaller .pdf',
-  added: '2026-10-15',
   beta: true,
   description:
     'Make PDFs smaller by redrawing every page as a compressed picture. Works best on scans and photos. The text can’t be selected or searched afterwards, so keep the original if you need that.',

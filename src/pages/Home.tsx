@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { CATEGORIES, groups, matches, tools, type Category } from '../registry';
+import { CATEGORIES, groups, isNew, matches, tools, type Category, type Tool } from '../registry';
 import { useLaunch } from '../components/Transition';
 import { SearchIcon } from '../components/icons';
 import { ToolTags } from '../components/ToolTags';
@@ -93,6 +93,19 @@ function NetTag({ level }: { level: 'required' | 'partly' }) {
   );
 }
 
+/** Filters by tag, next to the categories. */
+const TAGS = [
+  { id: 'new', label: 'New', has: (t: Tool) => isNew(t) },
+  { id: 'beta', label: 'Beta', has: (t: Tool) => !!t.beta },
+] as const;
+type Tag = (typeof TAGS)[number]['id'];
+type ChipId = Category | Tag;
+const isTag = (id: string): id is Tag => TAGS.some((t) => t.id === id);
+
+const pickedIn = (p: URLSearchParams) => new Set((p.get('cat') ?? '').split(',').filter((c): c is Category => groups.some((g) => g.id === c)));
+// A tag whose chip isn't shown (no new tools left) doesn't filter either, or the page would be empty.
+const tagsIn = (p: URLSearchParams) => new Set((p.get('tag') ?? '').split(',').filter((t): t is Tag => TAGS.some((x) => x.id === t && tools.some(x.has))));
+
 export default function Home() {
   const launch = useLaunch();
   const location = useLocation();
@@ -128,9 +141,9 @@ export default function Home() {
     setCaret((c) => ({ x: m.offsetWidth - el.scrollLeft, n: (c?.n ?? 0) + 1, end: (el.selectionStart ?? 0) >= el.value.length }));
   };
 
-  // Categories picked with the chips (?cat=pdf,image); none picked shows everything.
-  const pickedIn = (p: URLSearchParams) => new Set((p.get('cat') ?? '').split(',').filter((c): c is Category => groups.some((g) => g.id === c)));
+  // Categories picked with the chips (?cat=pdf,image) and tags (?tag=new); none picked shows everything.
   const picked = pickedIn(params);
+  const pickedTags = tagsIn(params);
 
   useEffect(() => {
     document.title = 'unktilz';
@@ -144,28 +157,40 @@ export default function Home() {
    * Changes the picked categories, starting from the address as it is now so quick clicks add up
    * (the router hands its updater the params of the last render, not the newest ones).
    */
-  const updatePicked = (change: (cats: Set<Category>) => void) =>
+  const updatePicked = (change: (cats: Set<string>, tags: Set<string>) => void) =>
     setParams(
       () => {
         const prev = new URLSearchParams(window.location.search);
-        const cats = pickedIn(prev);
-        change(cats);
+        const cats: Set<string> = pickedIn(prev);
+        const tags: Set<string> = tagsIn(prev);
+        change(cats, tags);
         const next = new URLSearchParams(prev);
         // Kept in the page's order, so the address is the same whatever order they were clicked in.
-        const list = groups.map((g) => g.id).filter((id) => cats.has(id));
-        if (list.length) next.set('cat', list.join(','));
-        else next.delete('cat');
+        const put = (key: string, ids: string[], on: Set<string>) => {
+          const list = ids.filter((id) => on.has(id));
+          if (list.length) next.set(key, list.join(','));
+          else next.delete(key);
+        };
+        put('cat', groups.map((g) => g.id), cats);
+        put('tag', TAGS.map((t) => t.id), tags);
         return next;
       },
       { replace: true },
     );
-  /** A chip switches its category on or off; "All" switches every one off. */
-  const toggle = (c: Category) => updatePicked((cats) => void (cats.delete(c) || cats.add(c)));
-  const clearPicked = () => updatePicked((cats) => cats.clear());
+  /** A chip switches its filter on; only its × switches it off again. "All" switches every one off. */
+  const pick = (c: ChipId) => updatePicked((cats, tags) => void (isTag(c) ? tags : cats).add(c));
+  const unpick = (c: ChipId) => updatePicked((cats, tags) => void (isTag(c) ? tags : cats).delete(c));
+  const clearPicked = () =>
+    updatePicked((cats, tags) => {
+      cats.clear();
+      tags.clear();
+    });
 
+  // Categories pick whole groups; tags then keep only the tools with one of the picked tags.
+  const tagged = (t: Tool) => pickedTags.size === 0 || TAGS.some((tag) => pickedTags.has(tag.id) && tag.has(t));
   const shown = groups
     .filter((g) => picked.size === 0 || picked.has(g.id))
-    .map((g) => ({ ...g, tools: g.tools.filter((t) => matches(t, q)) }))
+    .map((g) => ({ ...g, tools: g.tools.filter((t) => tagged(t) && matches(t, q)) }))
     .filter((g) => g.tools.length > 0);
 
   // Enter opens the first match, so fetch its code while the user is still typing.
@@ -176,7 +201,12 @@ export default function Home() {
     return () => clearTimeout(t);
   }, [topMatch]);
 
-  const chips = [{ id: 'all' as const, label: 'All', count: tools.length }, ...groups.map((g) => ({ id: g.id, label: g.label, count: g.tools.length }))];
+  const chips: { id: ChipId | 'all'; label: string; count: number; tag?: true }[] = [
+    { id: 'all', label: 'All', count: tools.length },
+    ...groups.map((g) => ({ id: g.id, label: g.label, count: g.tools.length })),
+    // A tag with no tools right now (nothing new this week) has no chip.
+    ...TAGS.map((t) => ({ id: t.id, label: t.label, count: tools.filter(t.has).length, tag: true as const })).filter((c) => c.count > 0),
+  ];
   const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform);
 
   return (
@@ -245,17 +275,18 @@ export default function Home() {
       </section>
 
       <div className={`wrap home-main${searching ? ' searching' : ''}`}>
-        <div className="chips" role="group" aria-label="Show categories (pick one or more)">
-          {chips.map((c) => {
-            const on = c.id === 'all' ? picked.size === 0 : picked.has(c.id);
+        <div className="chips" role="group" aria-label="Show categories and tags (pick one or more)">
+          {chips.map((c, i) => {
+            const id = c.id;
+            const on = id === 'all' ? picked.size === 0 && pickedTags.size === 0 : isTag(id) ? pickedTags.has(id) : picked.has(id);
             return (
-              <span key={c.id} className="chip-wrap">
-                <button type="button" className="chip" aria-pressed={on} onClick={() => (c.id === 'all' ? clearPicked() : toggle(c.id))}>
+              <span key={id} className={`chip-wrap${c.tag && !chips[i - 1]?.tag ? ' chip-tags-start' : ''}`}>
+                <button type="button" className={`chip${c.tag ? ` chip-tag chip-${id}` : ''}`} aria-pressed={on} onClick={() => (id === 'all' ? clearPicked() : pick(id))}>
                   <span>{c.label}</span>
                   <span className="count">{c.count}</span>
                 </button>
-                {on && c.id !== 'all' && (
-                  <button type="button" className="chip-x" aria-label={`Stop showing only ${c.label}`} title="Unpick" onClick={() => toggle(c.id)}>
+                {on && id !== 'all' && (
+                  <button type="button" className="chip-x" aria-label={`Stop showing only ${c.label}`} title="Unpick" onClick={() => unpick(id)}>
                     ×
                   </button>
                 )}

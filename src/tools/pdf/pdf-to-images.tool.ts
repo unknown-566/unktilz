@@ -15,7 +15,6 @@ export default defineTool({
   category: 'pdf',
   order: 2,
   meta: '.pdf → .png / .jpg',
-  added: '2026-10-15',
   beta: true,
   description: 'Turn PDF pages into PNG or JPG pictures, all of them or only the pages you pick. Several pages download as one .zip.',
   keywords: ['pdf to jpg', 'pdf to png', 'pdf to image', 'pdf page', 'screenshot', 'convert'],

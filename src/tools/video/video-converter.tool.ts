@@ -11,7 +11,6 @@ export default defineTool({
   category: 'video',
   order: 1,
   meta: 'mp4 · webm · mov · gif',
-  added: '2026-10-15',
   description:
     'Convert videos to MP4, WebM, MOV, MKV or GIF, make them smaller, cut them shorter or remove the sound. Runs on your computer, on one CPU core: long or 4K videos take a while.',
   keywords: [
