@@ -3791,8 +3791,14 @@ textarea,
 .bgr-drop:hover {
   border-color: var(--accent);
 }
+.bgr-viewwrap {
+  position: relative;
+}
+/* A small picture sits in the middle; a big one scrolls (margin:auto, unlike centring, never cuts it off). */
 .bgr-viewport {
+  display: flex;
   overflow: auto;
+  height: max(240px, calc(100dvh - 260px));
   border-radius: 8px;
   border: 1px solid var(--line);
   overscroll-behavior: contain;
@@ -3807,6 +3813,10 @@ textarea,
 }
 .bgr-stage {
   position: relative;
+  flex: none;
+  margin: auto;
+  /* The brush outline is cut off at the picture edge instead of making the view scroll. */
+  overflow: hidden;
 }
 .bgr-canvas {
   display: block;
@@ -3816,13 +3826,123 @@ textarea,
 .bgr-tool-pick {
   cursor: crosshair;
 }
+.bgr-panning,
+.bgr-panning .bgr-canvas {
+  cursor: grabbing;
+}
 .bgr-brush {
   position: absolute;
+  box-sizing: border-box;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 1.5px solid #fff;
   box-shadow: 0 0 0 1px #000;
   pointer-events: none;
+}
+/* The fully painting middle of the brush (its hardness). */
+.bgr-brush-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.85);
+}
+/* The brush shown in the middle of the picture for a moment while its size changes. */
+.bgr-brush-preview {
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.15);
+}
+.bgr-brush-size {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 6px);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+/* Full screen: only the picture, filling the screen, with the painting tools floating in its corner. */
+.bgr-viewwrap.full {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  background: var(--bg);
+}
+/* (The sticky preview column is its own layer: lift it, or the site's side rail shows on top.) */
+.wb-side:has(.bgr-viewwrap.full) {
+  z-index: 99;
+}
+.bgr-viewwrap.full .bgr-viewport {
+  flex: 1;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+.bgr-float {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 310px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  box-shadow: var(--rail-shadow);
+  backdrop-filter: blur(6px);
+}
+.bgr-float .inline {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.bgr-float-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.bgr-float-row input {
+  width: 100%;
+  min-height: 24px;
+  accent-color: var(--accent);
+}
+.bgr-float-row .hint {
+  text-align: right;
+}
+.bgr-float-label {
+  color: var(--muted);
+}
+.bgr-float-gap {
+  flex: 1;
+}
+.bgr-float .inline,
+.bgr-float .seg {
+  gap: 6px;
+}
+.bgr-float .seg {
+  flex-wrap: nowrap;
+}
+.bgr-float .btn-sm,
+.bgr-float .seg button {
+  min-height: 28px;
+  min-width: 0;
+  padding: 0 8px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.bgr-float .check {
+  font-size: 12px;
 }
 .bgr-viewbar {
   margin-top: 10px;
@@ -3834,4 +3954,19 @@ textarea,
   height: 22px;
   border-radius: 6px;
   border: 1px solid var(--chip-line);
+}
+
+/* Downloader: picking subtitles */
+.dl-subs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.chip.dl-sub {
+  min-height: 34px;
+  padding: 0 12px;
+}
+.dl-subs .select {
+  max-width: 100%;
 }

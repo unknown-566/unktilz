@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Panel, Segmented, Toggle } from '../../../components/ui';
 import { Help } from '../../../components/Help';
 import { Workbench } from '../../../components/Workbench';
@@ -95,7 +95,8 @@ export default function BgRemover() {
     (r?: Rect) => {
       const L = layers.current;
       const c = canvas.current;
-      if (!img || !L || !c) return;
+      // (A stroke outside the picture changes nothing: an empty region.)
+      if (!img || !L || !c || (r && (r.x0 > r.x1 || r.y0 > r.y1))) return;
       if (!view.current || view.current.width !== img.w || view.current.height !== img.h) view.current = new ImageData(img.w, img.h);
       const d = view.current.data;
       const x0 = r ? Math.max(0, r.x0) : 0;
@@ -254,7 +255,11 @@ export default function BgRemover() {
   };
   const scale = () => (canvas.current ? canvas.current.getBoundingClientRect().width / (img?.w || 1) : 1);
   const stroke = useRef<{ rec: StrokeRecorder; last: { x: number; y: number }; dirty: Rect; raf: number } | null>(null);
-  const pan = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
+  /** A drag that moves the view; `buttons` is the mouse button holding it (as in PointerEvent.buttons). */
+  const pan = useRef<{ x: number; y: number; sl: number; st: number; buttons: number } | null>(null);
+  const [panning, setPanning] = useState(false);
+  /** When a right-button drag ended: the context menu that follows it is swallowed. */
+  const panEnded = useRef(0);
   const space = useRef(false);
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -299,25 +304,28 @@ export default function BgRemover() {
   /** Keeps getting the pointer while dragging outside the picture (never fatal if the browser refuses). */
   const capture = (e: React.PointerEvent) => {
     try {
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
       /* not an active pointer */
     }
   };
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!img || !layers.current) return;
+    if (!img || !layers.current || stroke.current || pan.current) return;
     const vp = viewport.current!;
-    if (e.button === 1 || space.current) {
+    // Right or middle button (or Space + left) drags the view around.
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && space.current)) {
       e.preventDefault();
-      pan.current = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop };
+      pan.current = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop, buttons: e.button === 0 ? 1 : e.button === 1 ? 4 : 2 };
+      setPanning(true);
       capture(e);
       return;
     }
     if (e.button !== 0) return;
     const p = toImage(e);
     if (tool === 'pick') {
-      const x = Math.min(img.w - 1, Math.max(0, Math.floor(p.x)));
-      const y = Math.min(img.h - 1, Math.max(0, Math.floor(p.y)));
+      if (p.x < 0 || p.y < 0 || p.x >= img.w || p.y >= img.h) return;
+      const x = Math.floor(p.x);
+      const y = Math.floor(p.y);
       const o = (y * img.w + x) * 4;
       change({ picks: [...snap.picks, { x, y, r: img.rgba[o], g: img.rgba[o + 1], b: img.rgba[o + 2] }] }, `pick${snap.picks.length}`);
       return;
@@ -328,6 +336,8 @@ export default function BgRemover() {
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (pan.current) {
+      // The button was let go somewhere the page didn't hear it.
+      if (!(e.buttons & pan.current.buttons)) return endDrag();
       const vp = viewport.current!;
       vp.scrollLeft = pan.current.sl - (e.clientX - pan.current.x);
       vp.scrollTop = pan.current.st - (e.clientY - pan.current.y);
@@ -335,15 +345,23 @@ export default function BgRemover() {
     }
     const r = canvas.current?.getBoundingClientRect();
     if (r) setCursor({ x: e.clientX - r.left, y: e.clientY - r.top });
-    if (stroke.current) dab(toImage(e));
+    if (stroke.current) {
+      if (!(e.buttons & 1)) return endDrag();
+      dab(toImage(e));
+    }
   };
-  const onPointerUp = () => {
-    pan.current = null;
+  /** Ends a brush stroke or a view drag (safe to call any number of times). */
+  const endDrag = () => {
+    if (pan.current) {
+      if (pan.current.buttons === 2) panEnded.current = Date.now();
+      pan.current = null;
+      setPanning(false);
+    }
     const s = stroke.current;
     if (!s) return;
+    stroke.current = null;
     cancelAnimationFrame(s.raf);
     paint(s.dirty);
-    stroke.current = null;
     const patches = s.rec.patches;
     if (patches.length) {
       setUndo((u) => [...u.slice(-99), { kind: 'stroke', patches }]);
@@ -351,19 +369,68 @@ export default function BgRemover() {
     }
     setVersion((v) => v + 1);
   };
-  const onWheel = (e: React.WheelEvent) => {
-    if (!e.ctrlKey) return;
-    // Ctrl + wheel: brush size (the page zoom is on the +/− buttons).
-    e.preventDefault();
-    setBrush((b) => ({ ...b, size: Math.min(500, Math.max(2, Math.round(b.size * (e.deltaY < 0 ? 1.15 : 1 / 1.15)))) }));
+  // A button let go outside the page (or the window losing focus mid-drag) still ends the drag,
+  // so the brush never keeps painting after the mouse is up.
+  const endRef = useRef(endDrag);
+  endRef.current = endDrag;
+  useEffect(() => {
+    const end = () => endRef.current();
+    const menu = (e: MouseEvent) => Date.now() - panEnded.current < 500 && e.preventDefault();
+    window.addEventListener('pointerup', end);
+    window.addEventListener('blur', end);
+    window.addEventListener('contextmenu', menu);
+    return () => {
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('blur', end);
+      window.removeEventListener('contextmenu', menu);
+    };
+  }, []);
+
+  // ---- zoom ----
+
+  /** Zooms keeping the picture point under (cx, cy) on screen where it is. */
+  const anchor = useRef<{ ix: number; iy: number; cx: number; cy: number } | null>(null);
+  const zoomRef = useRef(zoom);
+  const zoomAt = (k: number, cx: number, cy: number) => {
+    const c = canvas.current;
+    if (!c || !img) return;
+    const next = Math.min(16, Math.max(0.05, zoomRef.current * k));
+    if (next === zoomRef.current) return;
+    const r = c.getBoundingClientRect();
+    anchor.current = { ix: ((cx - r.left) * img.w) / r.width, iy: ((cy - r.top) * img.h) / r.height, cx, cy };
+    zoomRef.current = next;
+    setFit(false);
+    setZoom(next);
   };
-  // React's wheel listener is passive; Ctrl + wheel must not zoom the whole page.
+  const zoomCentre = (k: number) => {
+    const r = viewport.current?.getBoundingClientRect();
+    if (r) zoomAt(k, r.left + r.width / 2, r.top + r.height / 2);
+  };
+  useLayoutEffect(() => {
+    const a = anchor.current;
+    const c = canvas.current;
+    const vp = viewport.current;
+    anchor.current = null;
+    if (!a || !c || !vp || !img) return;
+    const r = c.getBoundingClientRect();
+    vp.scrollLeft += r.left + (a.ix * r.width) / img.w - a.cx;
+    vp.scrollTop += r.top + (a.iy * r.height) / img.h - a.cy;
+    // The brush outline follows the picture under the mouse.
+    setCursor((cur) => (cur ? { x: a.cx - c.getBoundingClientRect().left, y: a.cy - c.getBoundingClientRect().top } : cur));
+  }, [zoom, img]);
+  // Mouse wheel zooms, Ctrl + wheel sizes the brush. (React's own wheel listener can't stop the page scrolling.)
+  const wheelRef = useRef<(e: WheelEvent) => void>(() => {});
+  wheelRef.current = (e: WheelEvent) => {
+    e.preventDefault();
+    if (e.ctrlKey) setBrush((b) => ({ ...b, size: Math.min(500, Math.max(2, Math.round(b.size * (e.deltaY < 0 ? 1.15 : 1 / 1.15)))) }));
+    else if (e.deltaY) zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX, e.clientY);
+  };
   useEffect(() => {
     const vp = viewport.current;
     if (!vp) return;
-    const stop = (e: WheelEvent) => e.ctrlKey && e.preventDefault();
-    vp.addEventListener('wheel', stop, { passive: false });
-    return () => vp.removeEventListener('wheel', stop);
+    const onWheel = (e: WheelEvent) => wheelRef.current(e);
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    return () => vp.removeEventListener('wheel', onWheel);
   }, [img]);
 
   // ---- output ----
@@ -391,22 +458,63 @@ export default function BgRemover() {
 
   // ---- view ----
 
+  // Full screen: the picture covers the whole window with the painting tools over its corner; also asks
+  // the browser for real full screen (hides its bars). Esc leaves both.
+  const [full, setFull] = useState(false);
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setFull(false);
+    const onChange = () => !document.fullscreenElement && setFull(false);
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('fullscreenchange', onChange);
+    // The page behind doesn't scroll.
+    const html = document.documentElement;
+    const before = html.style.overflow;
+    html.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('fullscreenchange', onChange);
+      html.style.overflow = before;
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, [full]);
+  const toggleFull = () => {
+    // The picture is fitted to the new size of the view.
+    setFit(true);
+    if (full) setFull(false);
+    else {
+      setFull(true);
+      void document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+  };
+
   const fitZoom = () => {
     const vp = viewport.current;
     if (!vp || !img) return 1;
-    return Math.min(1, (vp.clientWidth - 2) / img.w, (Math.max(240, window.innerHeight - 260) - 2) / img.h);
+    return Math.min(1, (vp.clientWidth - 2) / img.w, (vp.clientHeight - 2) / img.h);
   };
   useEffect(() => {
     if (!img || !fit) return;
-    const apply = () => setZoom(fitZoom());
+    const apply = () => {
+      zoomRef.current = fitZoom();
+      setZoom(zoomRef.current);
+    };
     apply();
     window.addEventListener('resize', apply);
     return () => window.removeEventListener('resize', apply);
-  }, [img, fit]); // eslint-disable-line react-hooks/exhaustive-deps
-  const zoomBy = (k: number) => {
-    setFit(false);
-    setZoom((z) => Math.min(8, Math.max(0.05, z * k)));
-  };
+  }, [img, fit, full]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Changing the brush shows its size on the picture for a moment (when the mouse isn't over it).
+  const [sizeShown, setSizeShown] = useState(false);
+  const brushSeen = useRef(brush);
+  useEffect(() => {
+    if (brushSeen.current === brush) return;
+    brushSeen.current = brush;
+    setSizeShown(true);
+    const t = setTimeout(() => setSizeShown(false), 900);
+    return () => clearTimeout(t);
+  }, [brush]);
+  const ring = <span className="bgr-brush-core" style={{ width: `${Math.max(0, brush.hardness)}%`, height: `${Math.max(0, brush.hardness)}%` }} />;
 
   const removedShare = (() => {
     const L = layers.current;
@@ -424,14 +532,24 @@ export default function BgRemover() {
       actions={
         img ? (
           <span className="inline">
-            <button type="button" className="btn btn-sm" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out" title="Zoom out">
+            <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1 / 1.25)} aria-label="Zoom out" title="Zoom out (mouse wheel)">
               −
             </button>
             <button type="button" className="btn btn-sm" onClick={() => setFit(true)} title="Fit the whole picture">
               {Math.round(zoom * 100)} %
             </button>
-            <button type="button" className="btn btn-sm" onClick={() => zoomBy(1.25)} aria-label="Zoom in" title="Zoom in">
+            <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1.25)} aria-label="Zoom in" title="Zoom in (mouse wheel)">
               +
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              title={full ? 'Leave full screen (Esc)' : 'Full screen'}
+              aria-label={full ? 'Leave full screen' : 'Full screen'}
+              aria-pressed={full}
+              onClick={toggleFull}
+            >
+              {full ? '⤡' : '⤢'}
             </button>
           </span>
         ) : undefined
@@ -439,37 +557,111 @@ export default function BgRemover() {
     >
       {img ? (
         <>
-          <div
-            ref={viewport}
-            className={`bgr-viewport bgr-${backdrop}`}
-            style={{ background: BACKDROP[backdrop] || undefined, maxHeight: 'calc(100dvh - 260px)' }}
-            onWheel={onWheel}
-          >
-            <div className="bgr-stage" style={{ width: img.w * zoom, height: img.h * zoom }}>
-              <canvas
-                ref={(el) => {
-                  canvas.current = el;
-                  if (el && (el.width !== img.w || el.height !== img.h)) {
-                    el.width = img.w;
-                    el.height = img.h;
-                    paint();
-                  }
-                }}
-                className={`bgr-canvas bgr-tool-${tool}`}
-                style={{ width: img.w * zoom, height: img.h * zoom }}
-                role="img"
-                aria-label="The picture with the background removed. Paint on it with the brush, or click the background with the colour picker."
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-                onPointerLeave={() => setCursor(null)}
-                onContextMenu={(e) => e.preventDefault()}
-              />
-              {cursor && tool !== 'pick' && (
-                <span className="bgr-brush" style={{ left: cursor.x, top: cursor.y, width: brush.size, height: brush.size }} aria-hidden="true" />
-              )}
+          <div className={`bgr-viewwrap${full ? ' full' : ''}`}>
+            <div
+              ref={viewport}
+              className={`bgr-viewport${panning ? ' bgr-panning' : ''}`}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onLostPointerCapture={endDrag}
+              onPointerLeave={() => setCursor(null)}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <div className={`bgr-stage bgr-${backdrop}`} style={{ width: img.w * zoom, height: img.h * zoom, background: BACKDROP[backdrop] || undefined }}>
+                <canvas
+                  ref={(el) => {
+                    canvas.current = el;
+                    if (el && (el.width !== img.w || el.height !== img.h)) {
+                      el.width = img.w;
+                      el.height = img.h;
+                      paint();
+                    }
+                  }}
+                  className={`bgr-canvas bgr-tool-${tool}`}
+                  style={{ width: img.w * zoom, height: img.h * zoom }}
+                  role="img"
+                  aria-label="The picture with the background removed. Paint on it with the brush, or click the background with the colour picker."
+                />
+                {cursor && tool !== 'pick' && !panning && (
+                  <span className="bgr-brush" style={{ left: cursor.x, top: cursor.y, width: brush.size, height: brush.size }} aria-hidden="true">
+                    {ring}
+                  </span>
+                )}
+              </div>
             </div>
+            {sizeShown && !cursor && (
+              <span className="bgr-brush bgr-brush-preview" style={{ width: brush.size, height: brush.size }} aria-hidden="true">
+                {ring}
+                <span className="bgr-brush-size mono">{brush.size} px</span>
+              </span>
+            )}
+            {full && (
+              // Full screen: the painting tools float over the picture in its corner.
+              <div className="bgr-float" role="toolbar" aria-label="Painting tools">
+                <Segmented
+                  label="Tool"
+                  compact
+                  value={tool}
+                  onChange={setTool}
+                  options={[
+                    { value: 'erase', label: 'erase (E)' },
+                    { value: 'restore', label: 'restore (R)' },
+                    { value: 'pick', label: 'picker (P)' },
+                  ]}
+                />
+                <label className="bgr-float-row">
+                  <span className="bgr-float-label">size</span>
+                  <input type="range" min={2} max={300} value={Math.min(300, brush.size)} onChange={(e) => setBrush({ ...brush, size: Number(e.target.value) })} />
+                  <span className="hint mono">{brush.size} px</span>
+                </label>
+                <label className="bgr-float-row">
+                  <span className="bgr-float-label">hardness</span>
+                  <input type="range" min={0} max={100} value={brush.hardness} onChange={(e) => setBrush({ ...brush, hardness: Number(e.target.value) })} />
+                  <span className="hint mono">{brush.hardness} %</span>
+                </label>
+                <div className="inline">
+                  <button type="button" className="btn btn-sm" disabled={!undo.length} onClick={doUndo} title="Undo (Ctrl+Z)">
+                    undo
+                  </button>
+                  <button type="button" className="btn btn-sm" disabled={!redo.length} onClick={doRedo} title="Redo (Ctrl+Y)">
+                    redo
+                  </button>
+                  <span className="bgr-float-gap" />
+                  <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1 / 1.25)} aria-label="Zoom out" title="Zoom out (mouse wheel)">
+                    −
+                  </button>
+                  <button type="button" className="btn btn-sm" onClick={() => setFit(true)} title="Fit the whole picture">
+                    {Math.round(zoom * 100)} %
+                  </button>
+                  <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1.25)} aria-label="Zoom in" title="Zoom in (mouse wheel)">
+                    +
+                  </button>
+                  <button type="button" className="btn btn-sm" onClick={toggleFull} title="Leave full screen (Esc)" aria-label="Leave full screen">
+                    ⤡
+                  </button>
+                </div>
+                <div className="inline">
+                  <Segmented
+                    label="Background behind the picture"
+                    compact
+                    value={backdrop}
+                    onChange={setBackdrop}
+                    options={[
+                      { value: 'checker', label: 'checks' },
+                      { value: 'white', label: 'white' },
+                      { value: 'black', label: 'black' },
+                      { value: 'green', label: 'green' },
+                    ]}
+                  />
+                  <label className="check">
+                    <input type="checkbox" checked={showRemoved} onChange={(e) => setShowRemoved(e.target.checked)} />
+                    <span>show removed in red</span>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
           <div className="inline bgr-viewbar">
             <Segmented
@@ -519,9 +711,7 @@ export default function BgRemover() {
       {img && (
         <>
           <Panel title="1 · automatic (AI)">
-            <p className="note">
-              Finds the subject (people, animals, things) and removes the rest. Runs on your computer; the first time it downloads its model ({mb(MODEL.size)}).
-            </p>
+            <p className="note">Finds the subject (people, animals, things) and removes the rest. Runs on your computer; the first time it downloads its model ({mb(MODEL.size)}).</p>
             {snap.aiOn ? (
               <>
                 <div className="opt-row">
@@ -639,8 +829,8 @@ export default function BgRemover() {
               </button>
             </div>
             <p className="note">
-              Erase removes what's left of the background, restore brings back parts of the subject. Ctrl + mouse wheel or [ ] changes the brush size; hold Space (or the middle
-              button) and drag to move around a zoomed picture.
+              Erase removes what's left of the background, restore brings back parts of the subject. The mouse wheel zooms, Ctrl + wheel or [ ] changes the brush size; drag with the right (or middle)
+              button, or hold Space, to move around a zoomed picture.
             </p>
           </Panel>
 

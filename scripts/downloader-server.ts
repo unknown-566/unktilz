@@ -72,6 +72,8 @@ type Job = {
   parts: number;
   /** aria2c's open connections. */
   connections: number;
+  /** aria2c failed, so yt-dlp downloads by itself (one connection). */
+  fallback?: boolean;
   error?: string;
   log: string[];
   started: number;
@@ -233,7 +235,7 @@ export function downloader(): Plugin {
     const id = randomUUID();
     const dir = join(work, id);
     mkdirSync(dir, { recursive: true });
-    const args = [
+    const args = (aria: boolean) => [
       '--newline',
       '--no-colors',
       '--progress',
@@ -248,8 +250,10 @@ export function downloader(): Plugin {
       '--ffmpeg-location',
       existsSync(join(bin(), exe('ffmpeg'))) ? bin() : 'ffmpeg',
       // aria2c downloads in 16 pieces at once; without it (not installed) yt-dlp downloads by itself.
-      ...(existsSync(join(bin(), exe('aria2c')))
-        ? ['--downloader', program('aria2c'), '--downloader-args', 'aria2c:-x 16 -s 16 -k 1M --summary-interval=1 --console-log-level=warn']
+      // IPv6 is off: where the computer has an IPv6 address but no IPv6 route, aria2c fails at once
+      // with "network unreachable" (socket error 10051) instead of falling back to IPv4 like yt-dlp.
+      ...(aria
+        ? ['--downloader', program('aria2c'), '--downloader-args', 'aria2c:-x 16 -s 16 -k 1M --disable-ipv6=true --enable-color=false --summary-interval=1 --console-log-level=warn']
         : []),
       ...jsRuntime,
       ...(item ? ['--playlist-items', item] : ['--no-playlist']),
@@ -260,8 +264,6 @@ export function downloader(): Plugin {
     ];
     const job: Job = { id, dir, proc: null, status: 'running', phase: 'starting', done: 0, total: 0, speed: 0, eta: 0, part: 0, parts: 1, connections: 0, log: [], started: Date.now() };
     jobs.set(id, job);
-    const p = spawn(program('yt-dlp'), args, { cwd: dir, windowsHide: true });
-    job.proc = p;
     const onLine = (line: string) => {
       if (!line.trim()) return;
       const pr = parseAria2(line) ?? parseProgress(line);
@@ -282,31 +284,44 @@ export function downloader(): Plugin {
       const ph = phaseOf(line);
       if (ph) job.phase = ph;
     };
-    let buf = '';
-    const read = (d: Buffer) => {
-      buf += d.toString('utf8');
-      const lines = buf.split(/\r?\n|\r/);
-      buf = lines.pop() ?? '';
-      lines.forEach(onLine);
-    };
-    p.stdout.on('data', read);
-    p.stderr.on('data', read);
-    p.on('error', (e) => {
-      job.status = 'error';
-      job.error = `yt-dlp couldn't start: ${e.message}`;
-      job.finished = Date.now();
-    });
-    p.on('close', (code) => {
-      if (buf) onLine(buf);
-      job.proc = null;
-      job.finished = Date.now();
-      if (job.status === 'cancelled') return;
-      if (code === 0 && files(job).length) job.status = 'done';
-      else {
+    /** Runs yt-dlp; if aria2c fails anyway, the download is tried once more with yt-dlp's own downloader. */
+    const run = (aria: boolean) => {
+      let buf = '';
+      const p = spawn(program('yt-dlp'), args(aria), { cwd: dir, windowsHide: true });
+      job.proc = p;
+      const read = (d: Buffer) => {
+        buf += d.toString('utf8');
+        const lines = buf.split(/\r?\n|\r/);
+        buf = lines.pop() ?? '';
+        lines.forEach(onLine);
+      };
+      p.stdout.on('data', read);
+      p.stderr.on('data', read);
+      p.on('error', (e) => {
         job.status = 'error';
-        job.error = job.log.filter((l) => /^ERROR:/.test(l)).pop()?.replace(/^ERROR:\s*/, '') || job.log.slice(-1)[0] || `yt-dlp stopped (code ${code}).`;
-      }
-    });
+        job.error = `yt-dlp couldn't start: ${e.message}`;
+        job.finished = Date.now();
+      });
+      p.on('close', (code) => {
+        if (buf) onLine(buf);
+        job.proc = null;
+        if (job.status === 'cancelled') return;
+        if (code !== 0 && aria && job.log.some((l) => /aria2c exited with code/.test(l))) {
+          job.log.push("aria2c failed: trying again with yt-dlp's own downloader (one connection, slower)…");
+          // aria2c leaves a full-size, half-filled file behind that yt-dlp would take as already downloaded.
+          for (const n of readdirSync(dir)) rmSync(join(dir, n), { recursive: true, force: true });
+          Object.assign(job, { phase: 'starting' as Phase, done: 0, total: 0, speed: 0, eta: 0, part: 0, connections: 0, fallback: true });
+          return run(false);
+        }
+        job.finished = Date.now();
+        if (code === 0 && files(job).length) job.status = 'done';
+        else {
+          job.status = 'error';
+          job.error = job.log.filter((l) => /^ERROR:/.test(l)).pop()?.replace(/^ERROR:\s*/, '') || job.log.slice(-1)[0] || `yt-dlp stopped (code ${code}).`;
+        }
+      });
+    };
+    run(existsSync(join(bin(), exe('aria2c'))));
     return job;
   }
 
@@ -401,6 +416,7 @@ export function downloader(): Plugin {
     part: j.part,
     parts: j.parts,
     connections: j.connections,
+    fallback: !!j.fallback,
     error: j.error,
     files: j.status === 'done' ? files(j).map((name) => ({ name, size: statSync(join(j.dir, name)).size })) : [],
   });

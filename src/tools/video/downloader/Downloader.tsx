@@ -5,7 +5,7 @@ import { SavedPanel } from '../../../components/SavedPanel';
 import { savedWhen, useAutosave, useSaved } from '../../../lib/saved';
 import { useQueue } from '../../../queue/store';
 import { formatBytes } from '../../../queue/download';
-import { DEFAULT_OPTIONS, checkExtra, isWebUrl, type DlFormat, type DlInfo, type DlOptions, type Phase } from './args';
+import { DEFAULT_OPTIONS, checkExtra, fitQuality, heightsOf, isWebUrl, type DlFormat, type DlInfo, type DlOptions, type Phase, type Quality } from './args';
 import { NoServerError, download, getInfo, getStatus, install, liveDownloads, subscribeLive, updateYtdlp, type Status } from './api';
 
 /** Playlists longer than this start with nothing picked. */
@@ -121,6 +121,66 @@ function Setup({ status, refresh }: { status: Status; refresh: () => void }) {
   );
 }
 
+/**
+ * The subtitles a video has, to pick: the ones people made, the site's automatic one in the spoken
+ * language, and (in a list) its machine translations. Picked ones go into the video file.
+ */
+function SubtitlePicker({ info, value, onChange }: { info: DlInfo; value: string; onChange: (subs: string, autoSubs: boolean) => void }) {
+  const picked = value.split(/[\s,]+/).filter(Boolean);
+  const made = new Set(info.subtitles.map((s) => s.code));
+  const spoken = info.autoCaptions.filter((s) => s.code.endsWith('-orig'));
+  const others = info.autoCaptions.filter((s) => !s.code.endsWith('-orig') && !made.has(s.code));
+  const known = new Set([...made, ...info.autoCaptions.map((s) => s.code)]);
+  // Automatic ones are only fetched when asked for.
+  const update = (codes: string[]) => onChange(codes.join(','), codes.some((c) => !made.has(c)));
+  const toggle = (code: string) => update(picked.includes(code) ? picked.filter((c) => c !== code) : [...picked, code]);
+  const chip = (code: string, label: string, title: string) => (
+    <button key={code} type="button" className="chip dl-sub" aria-pressed={picked.includes(code)} onClick={() => toggle(code)} title={title}>
+      {label}
+    </button>
+  );
+  const pickedOthers = others.filter((s) => picked.includes(s.code));
+  return (
+    <div className="dl-subs">
+      <span style={{ display: 'flex', alignItems: 'center' }}>
+        <span className="opt-label">Subtitles</span>
+        <Help label="subtitles" text="Pick the languages you want; below, choose whether they go into the video or come as .srt / .vtt files. Automatic ones are made by the site from the speech (or machine-translated), so they can have mistakes." />
+      </span>
+      {!info.subtitles.length && !info.autoCaptions.length ? (
+        <p className="note">This video has no subtitles.</p>
+      ) : (
+        <>
+          {info.subtitles.length + spoken.length + pickedOthers.length > 0 && (
+            <div className="chips-row" role="group" aria-label="Subtitles this video has">
+              {info.subtitles.map((s) => chip(s.code, s.name, `${s.code} · made by people`))}
+              {spoken.map((s) => chip(s.code, `${s.name.replace(/\s*\(original\)$/i, '')} · automatic`, `${s.code} · made automatically from the speech`))}
+              {pickedOthers.map((s) => chip(s.code, `${s.name} · translated`, `${s.code} · machine-translated`))}
+            </div>
+          )}
+          {others.length > 0 && (
+            <select className="select" value="" onChange={(e) => e.target.value && toggle(e.target.value)} aria-label="Add automatic subtitles in another language">
+              <option value="">
+                {spoken.length ? `+ automatic, translated to… (${others.length} languages)` : `+ automatic subtitles… (${others.length} languages)`}
+              </option>
+              {others.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {picked.includes(s.code) ? '✓ ' : ''}
+                  {s.name} ({s.code})
+                </option>
+              ))}
+            </select>
+          )}
+        </>
+      )}
+      {picked.some((c) => !known.has(c)) && (
+        <div className="chips-row" role="group" aria-label="Picked languages this video doesn't have">
+          {picked.filter((c) => !known.has(c)).map((c) => chip(c, `${c} · not on this video`, 'Click to remove'))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Downloader() {
   const [status, setStatus] = useState<Status | null>(null);
   const [noServer, setNoServer] = useState('');
@@ -150,6 +210,10 @@ export default function Downloader() {
 
   const ready = !!status && !!status.versions.ytdlp && !!status.versions.ffmpeg && !status.install.running;
   const extra = checkExtra(o.extra);
+  // A single video offers only the heights it really has; the saved choice becomes the nearest one it has.
+  const heights = info && !info.playlist ? heightsOf(info.formats) : [];
+  const quality = fitQuality(o.quality, heights);
+  const qualities: Quality[] = heights.length ? ['best', ...heights.map((h) => `${h}` as Quality)] : ['best', '2160', '1440', '1080', '720', '480', '360'];
 
   const lookUp = async (link = url) => {
     const u = link.trim();
@@ -189,7 +253,7 @@ export default function Downloader() {
   /** Each download (or each picked playlist item) becomes its own job in the queue. */
   const start = () => {
     if (!info || 'error' in extra) return;
-    const opts = { ...o };
+    const opts = { ...o, quality };
     const items = info.playlist ? info.entries.map((e, n) => ({ e, n })).filter(({ n }) => picked.has(n)) : [null];
     for (const it of items) {
       const title = it ? it.e.title : info.title;
@@ -328,9 +392,9 @@ export default function Downloader() {
               </span>
               <Segmented
                 labelledBy="dl-q"
-                value={o.quality}
-                onChange={(quality) => set({ quality })}
-                options={(['best', '2160', '1440', '1080', '720', '480', '360'] as const).map((q) => ({ value: q, label: q === 'best' ? 'best' : `${q}p` }))}
+                value={quality}
+                onChange={(q) => set({ quality: q })}
+                options={qualities.map((q) => ({ value: q, label: q === 'best' ? 'best' : `${q}p` }))}
               />
             </div>
             <div className="opt-row">
@@ -354,23 +418,70 @@ export default function Downloader() {
                 ]}
               />
             </div>
-            <div className="fields">
-              <TextField
-                label="Subtitles"
-                value={o.subs}
-                onChange={(subs) => set({ subs })}
-                placeholder="e.g. en,cs (empty = none)"
-                mono
-                help={`Language codes, separated by commas; the subtitles go into the video file.${info?.subtitles.length ? ` This video has: ${info.subtitles.slice(0, 20).join(', ')}` : ''}`}
-              />
-            </div>
+            {info && !info.playlist ? (
+              <SubtitlePicker info={info} value={o.subs} onChange={(subs, autoSubs) => set({ subs, autoSubs })} />
+            ) : (
+              <>
+                <div className="fields">
+                  <TextField
+                    label="Subtitles"
+                    value={o.subs}
+                    onChange={(subs) => set({ subs })}
+                    placeholder="e.g. en,cs (empty = none)"
+                    mono
+                    help="Language codes, separated by commas. Press “Get info” on a video to pick from the subtitles it has."
+                  />
+                </div>
+                {o.subs.trim() && (
+                  <div className="opt-row">
+                    <span className="opt-label" id="dl-auto">
+                      Also automatic subtitles
+                    </span>
+                    <Toggle labelledBy="dl-auto" checked={o.autoSubs} onChange={(autoSubs) => set({ autoSubs })} />
+                  </div>
+                )}
+              </>
+            )}
             {o.subs.trim() && (
-              <div className="opt-row">
-                <span className="opt-label" id="dl-auto">
-                  Also automatic subtitles
-                </span>
-                <Toggle labelledBy="dl-auto" checked={o.autoSubs} onChange={(autoSubs) => set({ autoSubs })} />
-              </div>
+              <>
+                <div className="opt-row">
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="opt-label" id="dl-subs-mode">
+                      Subtitles go
+                    </span>
+                    <Help label="subtitles go" text="In the video: the player can turn them on. As files: separate .srt / .vtt files next to the video (for editors, or players that want a file). Both: in the video and as files." />
+                  </span>
+                  <Segmented
+                    labelledBy="dl-subs-mode"
+                    value={o.subsMode}
+                    onChange={(subsMode) => set({ subsMode })}
+                    options={[
+                      { value: 'embed', label: 'in the video' },
+                      { value: 'file', label: 'as files' },
+                      { value: 'both', label: 'both' },
+                    ]}
+                  />
+                </div>
+                {o.subsMode !== 'embed' && (
+                  <div className="opt-row">
+                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className="opt-label" id="dl-subs-fmt">
+                        Subtitle files
+                      </span>
+                      <Help label="subtitle files" text="SRT works almost everywhere (players, video editors). VTT is the web's format and keeps a little more styling." />
+                    </span>
+                    <Segmented
+                      labelledBy="dl-subs-fmt"
+                      value={o.subsFormat}
+                      onChange={(subsFormat) => set({ subsFormat })}
+                      options={[
+                        { value: 'srt', label: '.srt' },
+                        { value: 'vtt', label: '.vtt' },
+                      ]}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </>
         ) : (
@@ -491,6 +602,7 @@ export default function Downloader() {
                   {j.phase === 'downloading' && j.connections ? ` · ${j.connections} connections` : ''}
                   {j.phase === 'downloading' && j.eta ? ` · ${time(j.eta)} left` : ''}
                 </span>
+                {j.fallback && <span className="note">aria2c couldn't download this one, so yt-dlp does it by itself (one connection, slower).</span>}
               </li>
             ))}
           </ul>

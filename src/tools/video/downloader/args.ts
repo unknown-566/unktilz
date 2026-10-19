@@ -5,7 +5,11 @@
  */
 
 export type Mode = 'video' | 'audio';
-export type Quality = 'best' | '2160' | '1440' | '1080' | '720' | '480' | '360';
+/** "best", or the most height wanted in pixels (e.g. "1080"). */
+export type Quality = 'best' | `${number}`;
+/** Subtitles go into the video, come as their own files next to it, or both. */
+export type SubsMode = 'embed' | 'file' | 'both';
+export type SubsFormat = 'srt' | 'vtt';
 export type Container = 'mp4' | 'mkv' | 'webm';
 export type AudioFormat = 'mp3' | 'm4a' | 'opus' | 'best';
 
@@ -20,6 +24,9 @@ export type DlOptions = {
   subs: string;
   /** Also the subtitles a site makes automatically (YouTube's auto captions). */
   autoSubs: boolean;
+  subsMode: SubsMode;
+  /** The files' format when they come as files. */
+  subsFormat: SubsFormat;
   /** Cut out sponsored parts (SponsorBlock, YouTube only). */
   sponsorBlock: boolean;
   /** An exact format (yt-dlp format ids, e.g. "137+140"); empty = from the settings above. */
@@ -36,6 +43,8 @@ export const DEFAULT_OPTIONS: DlOptions = {
   embedMeta: true,
   subs: '',
   autoSubs: false,
+  subsMode: 'embed',
+  subsFormat: 'srt',
   sponsorBlock: false,
   format: '',
   extra: '',
@@ -51,7 +60,8 @@ export function optionArgs(o: DlOptions): string[] {
     args.push('--audio-quality', '0');
     if (o.embedMeta) args.push('--embed-thumbnail', '--embed-metadata');
   } else {
-    const lim = o.quality === 'best' ? '' : `[height<=${o.quality}]`;
+    // (The options come from the page: anything odd falls back to the defaults.)
+    const lim = /^\d{2,4}$/.test(o.quality) ? `[height<=${o.quality}]` : '';
     args.push('-f', o.format || `bv*${lim}+ba/b${lim}`);
     // MP4 should play everywhere: prefer H.264 video and AAC sound (YouTube has H.264 up to 1080p).
     if (o.container === 'mp4' && !o.format) args.push('-S', 'vcodec:h264,res,acodec:m4a');
@@ -59,13 +69,35 @@ export function optionArgs(o: DlOptions): string[] {
     if (o.container === 'mp4') args.push('--remux-video', 'mp4');
     const langs = o.subs.split(/[\s,]+/).filter(Boolean);
     if (langs.length) {
-      args.push('--write-subs', '--sub-langs', langs.join(','), '--embed-subs');
+      args.push('--write-subs', '--sub-langs', langs.join(','));
       if (o.autoSubs) args.push('--write-auto-subs');
+      const mode = o.subsMode === 'file' || o.subsMode === 'both' ? o.subsMode : 'embed';
+      if (mode !== 'embed') args.push('--convert-subs', o.subsFormat === 'vtt' ? 'vtt' : 'srt');
+      if (mode !== 'file') args.push('--embed-subs');
+      // With --write-subs yt-dlp keeps the files after putting them into the video; only wanted for "both".
+      if (mode === 'embed') args.push('--compat-options', 'no-keep-subs');
     }
     args.push('--embed-metadata');
   }
   if (o.sponsorBlock) args.push('--sponsorblock-remove', 'sponsor');
   return args;
+}
+
+/** The picture heights a video has (from "info"), highest first. */
+export function heightsOf(formats: { height?: number; vcodec?: string }[]): number[] {
+  const set = new Set(formats.filter((f) => f.height && f.vcodec !== 'none').map((f) => f.height!));
+  return [...set].sort((a, b) => b - a);
+}
+
+/**
+ * The quality to really ask for on a video with these heights: the wanted height, or the highest
+ * below it, or the lowest there is when all are higher (instead of a "format not available" error).
+ */
+export function fitQuality(q: Quality, heights: number[]): Quality {
+  if (q === 'best' || !heights.length) return q;
+  const want = Number(q);
+  const below = heights.filter((h) => h <= want);
+  return `${below.length ? below[0] : heights[heights.length - 1]}`;
 }
 
 /** Splits typed arguments like a command line: spaces separate, quotes group. */
@@ -142,6 +174,8 @@ export function phaseOf(line: string): Phase | null {
 // ---- what the page gets from "info" ----
 
 export type DlFormat = { id: string; ext: string; height?: number; fps?: number; vcodec?: string; acodec?: string; size?: number; tbr?: number; note?: string };
+/** A subtitle language a video has: its code (what yt-dlp asks for) and its name. */
+export type DlSub = { code: string; name: string };
 export type DlEntry = { id: string; title: string; url: string; duration?: number };
 export type DlInfo = {
   title: string;
@@ -154,12 +188,25 @@ export type DlInfo = {
   playlist: boolean;
   entries: DlEntry[];
   formats: DlFormat[];
-  subtitles: string[];
+  /** Subtitles people made. */
+  subtitles: DlSub[];
+  /** Subtitles the site made automatically (YouTube: the spoken language first, then machine translations). */
+  autoCaptions: DlSub[];
 };
 
 type Raw = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+
+/** The languages of yt-dlp's "subtitles" / "automatic_captions" (a map of code → list of files). */
+function subsOf(v: unknown): DlSub[] {
+  if (!v || typeof v !== 'object') return [];
+  const list = Object.entries(v as Record<string, unknown>)
+    .filter(([code]) => code !== 'live_chat')
+    .map(([code, files]) => ({ code, name: (Array.isArray(files) ? str((files[0] as Raw | undefined)?.name) : undefined) ?? code }));
+  // YouTube marks the spoken language "-orig": that one first.
+  return [...list.filter((x) => x.code.endsWith('-orig')), ...list.filter((x) => !x.code.endsWith('-orig'))];
+}
 
 /** yt-dlp's (huge) JSON, cut down to what the page shows. */
 export function trimInfo(j: Raw, asked: string): DlInfo {
@@ -197,7 +244,8 @@ export function trimInfo(j: Raw, asked: string): DlInfo {
     playlist,
     entries,
     formats,
-    subtitles: Object.keys((j.subtitles as Raw) ?? {}).filter((k) => k !== 'live_chat'),
+    subtitles: subsOf(j.subtitles),
+    autoCaptions: subsOf(j.automatic_captions),
   };
 }
 

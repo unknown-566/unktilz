@@ -47,6 +47,8 @@ export type JobState = {
   part: number;
   parts: number;
   connections: number;
+  /** aria2c failed; yt-dlp downloads by itself (slower). */
+  fallback: boolean;
   error?: string;
   files: { name: string; size: number }[];
 };

@@ -2,6 +2,32 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.18.0] - 2026-10-19
+
+- Background remover: the brush no longer keeps painting after you let go outside the picture
+- Background remover: zoom with the mouse wheel, move around with the right mouse button, full screen
+- Background remover: changing the brush size shows how big it is
+- Downloader: pick the subtitles from the ones the video has
+- Downloader: subtitles can also come as their own .srt / .vtt files
+- Downloader: the quality only offers what the video really has
+- Downloader: fixed "aria2c exited with code 1"
+
+### Added
+- Background remover: the mouse wheel zooms in and out around the mouse (up to 1600 %; Ctrl + wheel still changes the brush size). Drag with the right mouse button (or the middle one, or Space + left) to move around a zoomed picture.
+- Background remover: full screen button next to the zoom. Only the picture fills the screen, with the painting tools (erase / restore / colour picker, brush size and hardness, undo, zoom, background) floating over its corner. Esc leaves.
+- Background remover: changing the brush size (slider, Ctrl + wheel or [ ]) shows the brush on the picture for a moment with its size in px; the dashed inner ring shows its hardness.
+- Downloader: after "Get info", the subtitles are picked from the ones the video really has, by name: the ones people made, the automatic one in the spoken language, and machine translations to 150+ languages in a list.
+- Downloader: subtitles go into the video, come as separate .srt or .vtt files next to it, or both.
+
+### Changed
+- Downloader: after "Get info", the quality only offers the heights the video has (an old 240p video offers 240p and 144p, not 4K). A saved choice the video doesn't have becomes the nearest one below it.
+- Background remover: a small picture sits in the middle of the view, and the view keeps the same height while zooming.
+
+### Fixed
+- Background remover: after dragging the brush out of the picture and letting go there, it kept painting when the mouse came back without any button held.
+- Downloader: with subtitles put into the video, their loose .vtt files came along too.
+- Downloader: on some internet connections every download failed with "aria2c exited with code 1" (aria2c tried IPv6, which the connection doesn't have). aria2c now uses IPv4 only, and if it fails anyway the download is tried again with yt-dlp's own downloader (slower, says so).
+
 ## [1.17.0] - 2026-10-19
 
 - New tool: Background remover (AI, by colour, or by hand with a brush)
