@@ -8,6 +8,7 @@ import { isName } from '../../../lib/mc/uuid';
 import { useDoc, type SkinDoc } from './doc';
 import { decodeSkin, loadPlayer, type Loaded } from './load';
 import type { Settings, ToolId } from './paint';
+import { plural, t } from '../../../lib/i18n-core';
 
 export function Row({ id, label, help, children }: { id: string; label: string; help?: string; children: ReactNode }) {
   return (
@@ -50,12 +51,12 @@ export function OpenSkin({ slot, onLoaded, onCancel }: { slot: string; onLoaded:
   };
 
   return (
-    <section className="panel sk-open" aria-label={`Open a skin in slot ${slot}`}>
+    <section className="panel sk-open" aria-label={t('Open a skin in slot {slot}', { slot })}>
       <div className="opt-row">
-        <h2 className="panel-title">// open a skin in slot {slot}</h2>
+        <h2 className="panel-title">{t('// open a skin in slot {slot}', { slot })}</h2>
         {onCancel && (
           <button type="button" className="btn btn-sm" onClick={onCancel}>
-            cancel
+            {t('cancel')}
           </button>
         )}
       </div>
@@ -78,30 +79,30 @@ export function OpenSkin({ slot, onLoaded, onCancel }: { slot: string; onLoaded:
           <span className="accent">
             <UploadIcon />
           </span>
-          <div className="drop-title">Drop a skin .png here</div>
+          <div className="drop-title">{t('Drop a skin .png here')}</div>
           <button type="button" className="btn btn-primary" onClick={() => input.current?.click()} disabled={busy}>
-            Choose a file
+            {t('Choose a file')}
           </button>
           <input ref={input} type="file" accept="image/png,image/*" hidden onChange={(e) => file(e.target.files?.[0])} />
         </div>
         <div className="sk-open-side">
           <form onSubmit={player} className="field">
-            <label htmlFor={nameId}>…or a player’s current skin</label>
+            <label htmlFor={nameId}>{t('…or a player’s current skin')}</label>
             <div className="inline">
-              <input id={nameId} className="input mono" value={name} onChange={(e) => setName(e.target.value)} placeholder="jeb_" spellCheck={false} autoComplete="off" />
+              <input id={nameId} className="input mono" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('jeb_')} spellCheck={false} autoComplete="off" />
               <button type="submit" className="btn" disabled={busy || !isName(name)}>
-                {busy ? 'loading…' : 'load'}
+                {busy ? t('loading…') : t('load')}
               </button>
             </div>
           </form>
           <div className="field">
-            <span className="field-label">…or start from scratch</span>
+            <span className="field-label">{t('…or start from scratch')}</span>
             <div className="seg">
               <button type="button" className="btn" disabled={busy} onClick={() => onLoaded({ name: 'my_skin', pixels: blankSkin('classic'), model: 'classic' })}>
-                blank figure
+                {t('blank figure')}
               </button>
               <button type="button" className="btn" disabled={busy} onClick={() => onLoaded({ name: 'my_skin', pixels: blankSkin('slim'), model: 'slim' })}>
-                blank, slim arms
+                {t('blank, slim arms')}
               </button>
             </div>
           </div>
@@ -117,12 +118,12 @@ export function OpenSkin({ slot, onLoaded, onCancel }: { slot: string; onLoaded:
 }
 
 const TOOLS: { id: ToolId; label: string; key: string; help: string }[] = [
-  { id: 'pencil', label: 'Pencil', key: 'B', help: 'Paints pixels in the chosen color. Drag to draw.' },
-  { id: 'eraser', label: 'Eraser', key: 'E', help: 'Makes outer-layer pixels see-through. The base layer can’t be erased (the game would show black), paint over it instead.' },
-  { id: 'fill', label: 'Fill', key: 'G', help: 'Fills a patch of one color. It stays on the side of the box you click, so it never runs onto the next face.' },
-  { id: 'shade', label: 'Shade', key: 'S', help: 'Makes pixels a bit lighter or darker each time you go over them. Great for shadows and folds. Hold Shift for the opposite.' },
-  { id: 'picker', label: 'Picker', key: 'I', help: 'Click a pixel to use its color. You can also Alt + click with any tool.' },
-  { id: 'select', label: 'Select', key: 'M', help: 'Drag a box on the flat texture, then Ctrl+C. Switch to the other skin and Ctrl+V, drag it into place and press Enter.' },
+  { id: 'pencil', label: t('Pencil'), key: 'B', help: t('Paints pixels in the chosen color. Drag to draw.') },
+  { id: 'eraser', label: t('Eraser'), key: 'E', help: t('Makes outer-layer pixels see-through. The base layer can’t be erased (the game would show black), paint over it instead.') },
+  { id: 'fill', label: t('Fill'), key: 'G', help: t('Fills a patch of one color. It stays on the side of the box you click, so it never runs onto the next face.') },
+  { id: 'shade', label: t('Shade'), key: 'S', help: t('Makes pixels a bit lighter or darker each time you go over them. Great for shadows and folds. Hold Shift for the opposite.') },
+  { id: 'picker', label: t('Picker'), key: 'I', help: t('Click a pixel to use its color. You can also Alt + click with any tool.') },
+  { id: 'select', label: t('Select'), key: 'M', help: t('Drag a box on the flat texture, then Ctrl+C. Switch to the other skin and Ctrl+V, drag it into place and press Enter.') },
 ];
 
 const ICON_PATHS: Record<ToolId, ReactNode> = {
@@ -210,27 +211,27 @@ export function Toolbox({
       </div>
     );
   return (
-    <section className="panel sk-tools" aria-label="Tools">
-      <h2 className="panel-title">// tools</h2>
-      <div className="sk-toolgrid" role="group" aria-label="Tool">
-        {TOOLS.map((t) => (
-          <button key={t.id} type="button" className="sk-tool" aria-pressed={settings.tool === t.id} title={`${t.label} (${t.key})`} onClick={() => set({ tool: t.id })}>
-            <ToolIcon tool={t.id} />
-            <span>{t.label}</span>
+    <section className="panel sk-tools" aria-label={t('Tools')}>
+      <h2 className="panel-title">{t('// tools')}</h2>
+      <div className="sk-toolgrid" role="group" aria-label={t('Tool')}>
+        {TOOLS.map((tt) => (
+          <button key={tt.id} type="button" className="sk-tool" aria-pressed={settings.tool === tt.id} title={`${tt.label} (${tt.key})`} onClick={() => set({ tool: tt.id })}>
+            <ToolIcon tool={tt.id} />
+            <span>{tt.label}</span>
           </button>
         ))}
       </div>
       {(() => {
-        const t = TOOLS.find((x) => x.id === settings.tool)!;
+        const tt = TOOLS.find((x) => x.id === settings.tool)!;
         return (
           <p className="note sk-toolhelp">
-            <b>{t.label}</b> <kbd className="sk-kbd">{t.key}</kbd> {t.help}
+            <b>{tt.label}</b> <kbd className="sk-kbd">{tt.key}</kbd> {tt.help}
           </p>
         );
       })()}
 
       {(settings.tool === 'pencil' || settings.tool === 'eraser' || settings.tool === 'shade') && (
-        <Row id="sk-size" label="Brush size" help="How many pixels wide the brush is. Keys [ and ].">
+        <Row id="sk-size" label={t('Brush size')} help={t('How many pixels wide the brush is. Keys [ and ].')}>
           <Segmented
             labelledBy="sk-size"
             compact
@@ -241,26 +242,26 @@ export function Toolbox({
         </Row>
       )}
       {settings.tool === 'shade' && (
-        <Row id="sk-shade" label="Shade">
+        <Row id="sk-shade" label={t('Shade')}>
           <Segmented
             labelledBy="sk-shade"
             value={settings.shadeDir > 0 ? 'light' : 'dark'}
             onChange={(v) => set({ shadeDir: v === 'light' ? 1 : -1 })}
             options={[
-              { value: 'dark', label: 'darker' },
-              { value: 'light', label: 'lighter' },
+              { value: 'dark', label: t('darker') },
+              { value: 'light', label: t('lighter') },
             ]}
           />
         </Row>
       )}
 
       <div className="field">
-        <label htmlFor={colorId}>Color</label>
+        <label htmlFor={colorId}>{t('Color')}</label>
         <div className="inline sk-color">
           <input id={colorId} type="color" value={settings.color} onChange={(e) => set({ color: e.target.value })} />
           <input
             className="input mono"
-            aria-label="Color as hex"
+            aria-label={t('Color as hex')}
             value={hex}
             maxLength={7}
             spellCheck={false}
@@ -272,8 +273,8 @@ export function Toolbox({
           />
         </div>
       </div>
-      {swatches(recent, 'Recent')}
-      {swatches(used, 'In this skin')}
+      {swatches(recent, t('Recent'))}
+      {swatches(used, t('In this skin'))}
     </section>
   );
 }
@@ -310,30 +311,30 @@ export function PartTransfer({
   const slot = (i: number) => `${i ? 'B' : 'A'} (${names[i]})`;
 
   return (
-    <section className="panel" aria-label="Copy parts between skins">
+    <section className="panel" aria-label={t('Copy parts between skins')}>
       <div className="opt-row">
-        <h2 className="panel-title">// copy parts</h2>
+        <h2 className="panel-title">{t('// copy parts')}</h2>
         <Help
-          label="Copy parts"
-          text="Takes whole parts from one skin and puts them on the other, e.g. a hat or a jacket. Base is the part itself, outer is the layer on top (hat, jacket, sleeves, pants). Slim and classic arms are resized to fit. You can undo it."
+          label={t('Copy parts')}
+          text={t('Takes whole parts from one skin and puts them on the other, e.g. a hat or a jacket. Base is the part itself, outer is the layer on top (hat, jacket, sleeves, pants). Slim and classic arms are resized to fit. You can undo it.')}
         />
       </div>
       {!ready ? (
-        <p className="note">Open a second skin (tab B) to copy parts between the two.</p>
+        <p className="note">{t('Open a second skin (tab B) to copy parts between the two.')}</p>
       ) : (
         <>
           <div className="opt-row">
             <span className="mono sk-dir">
               {slot(from)} → {slot(to)}
             </span>
-            <button type="button" className="btn btn-sm" onClick={() => setToActive(!toActive)} aria-label="Swap direction">
-              ⇄ swap
+            <button type="button" className="btn btn-sm" onClick={() => setToActive(!toActive)} aria-label={t('Swap direction')}>
+              {t('⇄ swap')}
             </button>
           </div>
           <div className="sk-parts" onMouseLeave={() => onHighlight([])}>
             <span />
-            <span className="mono muted">base</span>
-            <span className="mono muted">outer</span>
+            <span className="mono muted">{t('base')}</span>
+            <span className="mono muted">{t('outer')}</span>
             {PARTS.map((part) => (
               <div key={part} className="sk-part-row" onMouseEnter={() => onHighlight([{ part, layer: 'base' }, { part, layer: 'overlay' }])}>
                 <span>{PART_LABEL[part][0]}</span>
@@ -348,17 +349,19 @@ export function PartTransfer({
           </div>
           <div className="seg" style={{ marginTop: 10 }}>
             <button type="button" className="btn btn-sm" onClick={() => preset(() => true)}>
-              everything
+              {t('everything')}
             </button>
             <button type="button" className="btn btn-sm" onClick={() => preset((i) => i.layer === 'overlay')}>
-              outer layer only
+              {t('outer layer only')}
             </button>
             <button type="button" className="btn btn-sm" onClick={() => preset(() => false)}>
-              none
+              {t('none')}
             </button>
           </div>
           <button type="button" className="btn btn-primary sk-wide" disabled={!items.length} onClick={() => onTransfer(items, from, to)}>
-            Copy {items.length || ''} {items.length === 1 ? 'part' : 'parts'} to {to ? 'B' : 'A'}
+            {items.length
+              ? plural(items.length, ['Copy {n} part to {slot}', 'Copy {n} parts to {slot}'], ['Přenést {n} část do {slot}', 'Přenést {n} části do {slot}', 'Přenést {n} částí do {slot}'], { slot: to ? 'B' : 'A' })
+              : t('Copy parts to {slot}', { slot: to ? 'B' : 'A' })}
           </button>
         </>
       )}
@@ -380,10 +383,10 @@ export function HistoryPanel({ doc }: { doc: SkinDoc }) {
     else if (top + cur.offsetHeight > ol.scrollTop + ol.clientHeight) ol.scrollTop = top + cur.offsetHeight - ol.clientHeight;
   }, [doc.index, doc.steps.length]);
   return (
-    <section className="panel" aria-label="History">
+    <section className="panel" aria-label={t('History')}>
       <div className="opt-row">
-        <h2 className="panel-title">// history</h2>
-        <Help label="History" text="Every change is a step. Click a step to go back to how the skin looked then; Ctrl+Z / Ctrl+Y step back and forward. Steps after the current one are kept until you change something new." />
+        <h2 className="panel-title">{t('// history')}</h2>
+        <Help label={t('History')} text={t('Every change is a step. Click a step to go back to how the skin looked then; Ctrl+Z / Ctrl+Y step back and forward. Steps after the current one are kept until you change something new.')} />
       </div>
       <ol className="sk-history" ref={list}>
         {doc.steps.map((s, i) => (

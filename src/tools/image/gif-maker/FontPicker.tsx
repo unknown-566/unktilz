@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FONT_CATS, FONT_LIST, drawWeights, fontCss, fontInfo, type FontCat, type FontInfo } from './fontList';
 import { loadFont, loadPreviewFont, previewName } from './fontLoad';
+import { t, tn } from '../../../lib/i18n';
 
 const PAGE = 80;
 type Filter = 'all' | 'offline' | FontCat;
@@ -34,7 +35,7 @@ function FontRow({ font, selected, onPick }: { font: FontInfo; selected: boolean
       </span>
       <span className="gm-font-tags mono">
         {font.source !== 'google' && <span className="gm-font-tag">{font.source}</span>}
-        {!font.czech && <span className="gm-font-tag warn" title="Letters like č, ř, ž show in a plain font">no Czech letters</span>}
+        {!font.czech && <span className="gm-font-tag warn" title={t('Letters like č, ř, ž show in a plain font')}>{t('no Czech letters')}</span>}
       </span>
     </button>
   );
@@ -90,13 +91,13 @@ export function FontPicker({ value, onChange }: { value: string; onChange: (fami
       </button>
       {status.font === value && status.error ? (
         <p className="note give-warn">
-          This font couldn’t be loaded ({status.error}), so the text uses a plain font for now.{' '}
+          {t('This font couldn’t be loaded ({reason}), so the text uses a plain font for now.', { reason: status.error })}{' '}
           <button type="button" className="btn btn-sm" onClick={() => setAttempt(attempt + 1)}>
-            try again
+            {t('try again')}
           </button>
         </p>
       ) : (
-        info?.source === 'google' && !status.ready && <p className="note mono">loading the font…</p>
+        info?.source === 'google' && !status.ready && <p className="note mono">{t('loading the font…')}</p>
       )}
       {open && (
         <div className="gm-font-panel">
@@ -104,16 +105,16 @@ export function FontPicker({ value, onChange }: { value: string; onChange: (fami
             ref={search}
             className="input"
             type="search"
-            placeholder={`search ${FONT_LIST.length} fonts…`}
-            aria-label="Search fonts"
+            placeholder={t('search {length} fonts…', { length: FONT_LIST.length })}
+            aria-label={t('Search fonts')}
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
               setShown(PAGE);
             }}
           />
-          <div className="chips-row" role="group" aria-label="Font kinds">
-            {([['all', 'All'], ['offline', 'Offline'], ...FONT_CATS.map((c) => [c.value, c.label])] as [Filter, string][]).map(([v, label]) => (
+          <div className="chips-row" role="group" aria-label={t('Font kinds')}>
+            {([['all', t('All')], ['offline', t('Offline')], ...FONT_CATS.map((c) => [c.value, c.label])] as [Filter, string][]).map(([v, label]) => (
               <button
                 key={v}
                 type="button"
@@ -128,23 +129,25 @@ export function FontPicker({ value, onChange }: { value: string; onChange: (fami
               </button>
             ))}
           </div>
-          <div className="gm-font-list" role="listbox" aria-label="Fonts">
+          <div className="gm-font-list" role="listbox" aria-label={t('Fonts')}>
             {list.slice(0, shown).map((f) => (
               <FontRow key={f.family} font={f} selected={f.family === value} onPick={() => pick(f.family)} />
             ))}
-            {!list.length && <p className="note">No font called “{q}”.</p>}
+            {!list.length && <p className="note">{t('No font called “{q}”.', { q })}</p>}
             {list.length > shown && (
               <button type="button" className="btn btn-sm gm-font-more" onClick={() => setShown(shown + PAGE)}>
-                show more ({list.length - shown})
+                {t('show more ({n})', { n: list.length - shown })}
               </button>
             )}
           </div>
           <p className="note">
-            “Offline” fonts come with the site and work without the internet. The others are from{' '}
-            <a href="https://fonts.google.com" target="_blank" rel="noreferrer">
-              Google Fonts
-            </a>{' '}
-            (free to use) and load when you pick one.
+            {tn('“Offline” fonts come with the site and work without the internet. The others are from {google} (free to use) and load when you pick one.', {
+              google: (
+                <a href="https://fonts.google.com" target="_blank" rel="noreferrer">
+                  Google Fonts
+                </a>
+              ),
+            })}
           </p>
         </div>
       )}

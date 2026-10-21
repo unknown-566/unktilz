@@ -1,14 +1,15 @@
 import { defineTool, lazyTool } from '../../registry/types';
+import { t } from '../../lib/i18n-core';
 
 export default defineTool({
   slug: 'advanced-server-list',
-  name: 'AdvancedServerList profile generator',
+  name: t('AdvancedServerList profile generator'),
   category: 'minecraft',
   online: 'partly',
   order: 7,
-  meta: 'ASL · profile.yml',
+  meta: t('ASL · profile.yml'),
   description:
-    'Build a profile for the AdvancedServerList plugin: MOTD, player count, hover text, favicon and conditions, with a live server-list preview.',
+    t('Build a profile for the AdvancedServerList plugin: MOTD, player count, hover text, favicon and conditions, with a live server-list preview.'),
   keywords: ['advancedserverlist', 'asl', 'motd', 'server list', 'minimessage', 'player count', 'hover', 'favicon', 'profile', 'paper', 'velocity'],
   layout: 'workbench',
   component: lazyTool(() => import('./AdvancedServerList')),

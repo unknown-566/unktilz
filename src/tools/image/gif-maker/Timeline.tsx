@@ -1,5 +1,6 @@
 import { useEffect, useRef, type PointerEvent } from 'react';
 import { MAX_SECONDS } from './compose';
+import { fmtNum, t } from '../../../lib/i18n-core';
 
 const MIN = 0.2;
 const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
@@ -29,14 +30,14 @@ export function Timeline({
     const id = window.setInterval(() => {
       const el = head.current;
       if (!el) return;
-      const t = now();
-      el.style.display = t < 0 ? 'none' : '';
-      el.style.left = `${Math.min(100, (t / duration) * 100)}%`;
+      const tt = now();
+      el.style.display = tt < 0 ? 'none' : '';
+      el.style.left = `${Math.min(100, (tt / duration) * 100)}%`;
     }, 100);
     return () => clearInterval(id);
   }, [now, duration]);
   const drag = useRef<{ what: 'start' | 'end' | 'both'; x0: number; s0: number; e0: number } | null>(null);
-  const pct = (t: number) => `${(t / duration) * 100}%`;
+  const pct = (tt: number) => `${(tt / duration) * 100}%`;
 
   const set = (s: number, e: number, what: 'start' | 'end' | 'both') => {
     const len = Math.min(MAX_SECONDS, duration);
@@ -76,30 +77,30 @@ export function Timeline({
   const jump = (ev: PointerEvent) => {
     const el = bar.current;
     if (!el || drag.current) return;
-    const t = ((ev.clientX - el.getBoundingClientRect().left) / el.clientWidth) * duration;
-    if (Math.abs(t - start) < Math.abs(t - end)) set(t, end, 'start');
-    else set(start, t, 'end');
+    const tt = ((ev.clientX - el.getBoundingClientRect().left) / el.clientWidth) * duration;
+    if (Math.abs(tt - start) < Math.abs(tt - end)) set(tt, end, 'start');
+    else set(start, tt, 'end');
   };
 
   return (
     <div className="gm-timeline">
       <div ref={bar} className="gm-strip" onPointerDown={jump} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <div className="gm-thumbs" aria-hidden="true">
-          {thumbs.map((t, i) => (
-            <img key={i} src={t} alt="" draggable={false} />
+          {thumbs.map((tt, i) => (
+            <img key={i} src={tt} alt="" draggable={false} />
           ))}
         </div>
         {now && <div ref={head} className="gm-now" aria-hidden="true" />}
         <div className="gm-shade" style={{ left: 0, width: pct(start) }} />
         <div className="gm-shade" style={{ left: pct(end), right: 0 }} />
-        <div className="gm-range" style={{ left: pct(start), width: pct(end - start) }} onPointerDown={down('both')} title="Drag to move the whole clip" />
+        <div className="gm-range" style={{ left: pct(start), width: pct(end - start) }} onPointerDown={down('both')} title={t('Drag to move the whole clip')} />
         <div
           className="gm-handle"
           style={{ left: pct(start) }}
           onPointerDown={down('start')}
           role="slider"
           tabIndex={0}
-          aria-label="Start"
+          aria-label={t('Start')}
           aria-valuemin={0}
           aria-valuemax={duration}
           aria-valuenow={start}
@@ -118,7 +119,7 @@ export function Timeline({
           onPointerDown={down('end')}
           role="slider"
           tabIndex={0}
-          aria-label="End"
+          aria-label={t('End')}
           aria-valuemin={0}
           aria-valuemax={duration}
           aria-valuenow={end}
@@ -134,15 +135,15 @@ export function Timeline({
       </div>
       <div className="gm-times mono">
         <label>
-          start
+          {t('start')}
           <input className="input mono gm-time" type="number" min={0} max={duration} step={0.1} value={start} onChange={(e) => set(Number(e.target.value) || 0, end, 'start')} />
         </label>
         <span className="muted">
-          {(end - start).toFixed(1)} s of {fmt(duration)}
-          {duration > MAX_SECONDS && ` · max ${MAX_SECONDS} s`}
+          {t('{len} s of {all}', { len: fmtNum(end - start, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), all: fmt(duration) })}
+          {duration > MAX_SECONDS && ` · ${t('at most {max} s', { max: MAX_SECONDS })}`}
         </span>
         <label>
-          end
+          {t('end')}
           <input className="input mono gm-time" type="number" min={0} max={duration} step={0.1} value={end} onChange={(e) => set(start, Number(e.target.value) || 0, 'end')} />
         </label>
       </div>

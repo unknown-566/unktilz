@@ -1526,6 +1526,8 @@ textarea,
   gap: 2px;
   border-bottom: 1px solid var(--line);
   overflow-x: auto;
+  /* Only sideways: the active tab's underline overlapping the line below made it scroll up and down by 1px. */
+  overflow-y: hidden;
   scrollbar-width: thin;
 }
 .tab {
@@ -2381,16 +2383,24 @@ textarea,
   cursor: default;
   opacity: 0.6;
 }
+/* The tags sit at the right of the meta's line while the meta keeps room for a few words (a long
+   one wraps onto even lines); when there isn't that much room, the tags move to the next line. */
 .card-foot {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 6px 8px;
   min-width: 0;
 }
 .card-foot .card-meta {
-  white-space: nowrap;
+  flex: 1 1 11em;
+  min-width: 0;
+  text-wrap: balance;
+}
+.card-foot .card-tags {
+  flex: 0 1 auto;
+  max-width: 100%;
 }
 /* Tools that need the internet; everything else runs locally. */
 .net-tag {
@@ -3969,4 +3979,538 @@ textarea,
 }
 .dl-subs .select {
   max-width: 100%;
+}
+
+/* PDF page grids (Organize, Split) */
+.pg-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.pg-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 36px 18px;
+  border: 1px dashed var(--chip-line);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+.pg-drop:hover,
+.pg-drop.over {
+  border-color: var(--accent);
+}
+.pg-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.pg-bar-gap {
+  flex: 1;
+}
+.pg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  user-select: none;
+}
+.pg-grid.is-dragging {
+  cursor: grabbing;
+}
+.pg-slot {
+  position: relative;
+  min-width: 0;
+}
+.pg-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 120ms ease, opacity 120ms ease;
+}
+.pg-card:hover {
+  border-color: var(--chip-line);
+}
+.pg-card.selected {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  /* (Also shows on Split's coloured parts.) */
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+.pg-card.dragging {
+  opacity: 0.35;
+}
+/* Where dragged pages will land. */
+.pg-card.drop-before::before,
+.pg-card.drop-after::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.pg-card.drop-before::before {
+  left: -10px;
+}
+.pg-card.drop-after::after {
+  right: -10px;
+}
+.pg-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pg-paper {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.pg-paper img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+}
+.pg-paper.blank {
+  outline: 1px dashed #999;
+  outline-offset: -6px;
+}
+.pg-wait {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #eee 25%, #f7f7f7 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: pg-wait 1.2s linear infinite;
+}
+@keyframes pg-wait {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pg-wait {
+    animation: none;
+  }
+}
+.pg-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.pg-card:hover .pg-actions,
+.pg-card:focus-within .pg-actions {
+  opacity: 1;
+}
+.pg-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--chip-line);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1;
+}
+.pg-icon:hover {
+  border-color: var(--accent);
+}
+.pg-caption {
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-ghost {
+  position: fixed;
+  z-index: 50;
+  width: 70px;
+  pointer-events: none;
+  border-radius: 6px;
+  overflow: visible;
+  box-shadow: var(--rail-shadow);
+}
+.pg-ghost img,
+.pg-ghost-blank {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+  background: #fff;
+}
+.pg-ghost-blank {
+  aspect-ratio: 0.71;
+}
+.pg-ghost b {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 22px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  text-align: center;
+}
+.pg-save {
+  align-items: flex-end;
+}
+/* Split: scissors in the gap after a page, and the list of parts */
+.pg-cut {
+  position: absolute;
+  top: 38%;
+  right: -19px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--chip-line);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.55;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+.pg-slot:hover .pg-cut,
+.pg-cut:hover,
+.pg-cut:focus-visible {
+  opacity: 1;
+}
+.pg-cut.on {
+  opacity: 1;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.pg-every {
+  align-items: center;
+  gap: 6px;
+}
+.pg-every .input-num {
+  width: 70px;
+  min-height: 36px;
+}
+.pg-parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pg-parts li {
+  display: grid;
+  grid-template-columns: 10px auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.pg-parts li.off {
+  opacity: 0.5;
+}
+.pg-parts .input {
+  min-height: 38px;
+}
+.pg-tone {
+  width: 10px;
+  height: 28px;
+  border-radius: 3px;
+}
+
+/* Images to PDF */
+.sc-drop.small {
+  padding: 14px;
+  flex-direction: row;
+  justify-content: center;
+}
+.sc-photos {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+.sc-photos li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sc-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.sc-photos li.on .sc-thumb {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.sc-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sc-thumb b {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 12px;
+}
+.sc-thumb-btns {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.sc-thumb-btns .pg-icon {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+.sc-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sc-step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sc-step-head {
+  align-items: center;
+  gap: 8px;
+}
+.sc-editor {
+  position: relative;
+  max-width: 100%;
+  margin: 0 auto;
+  user-select: none;
+  touch-action: none;
+}
+.sc-editor img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+}
+.sc-editor svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sc-shade {
+  fill: rgba(0, 0, 0, 0.55);
+}
+.sc-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+.sc-handle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px #000, 0 2px 6px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  touch-action: none;
+}
+.sc-handle.on {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+.sc-page {
+  position: relative;
+  width: min(100%, 420px);
+  aspect-ratio: 0.707;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.sc-page img {
+  position: absolute;
+  display: block;
+}
+/* The margins, as a faint frame (not in the PDF). */
+.sc-margin {
+  position: absolute;
+  border: 1px dashed rgba(0, 120, 255, 0.45);
+  pointer-events: none;
+}
+
+/* ---- QR code maker ---- */
+.qr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qr-area {
+  min-height: 96px;
+}
+.qr-payload {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.qr-picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+.qr-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border: 1px solid var(--chip-line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 12px;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.qr-pick:hover {
+  border-color: var(--accent);
+}
+.qr-pick[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.qr-pick img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+.qr-colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.qr-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.qr-check {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+.qr-inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-family: var(--mono);
+}
+.qr-drop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px dashed var(--chip-line);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--muted);
+}
+.qr-drop:hover,
+.qr-drop:focus-within {
+  border-color: var(--accent);
+}
+.qr-drop img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+.qr-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.qr-stage {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.qr-stage.checker {
+  background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0 / 16px 16px;
+}
+.qr-stage img {
+  display: block;
+  width: min(100%, 420px, calc(100dvh - 380px));
+  min-width: 200px;
+  height: auto;
+}
+.qr-status {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+.qr-status.ok {
+  color: var(--accent-text);
+}
+.qr-status.bad {
+  color: var(--danger);
+}
+.qr-example {
+  text-align: center;
 }

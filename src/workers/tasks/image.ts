@@ -1,5 +1,6 @@
 import type { Report, TaskOutput } from '../compute.worker';
 import { decodeHeic, decodeTiff, encodeBmp, encodeIco, isHeic, isTiff } from './imageCodecs';
+import { t } from '../../lib/i18n-core';
 
 export type ImageFormat = 'keep' | 'png' | 'jpeg' | 'webp' | 'avif' | 'bmp' | 'ico';
 
@@ -28,20 +29,20 @@ const EXT: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', '
 
 /** Reads any image this site supports. Canvas decoding already turns phone photos upright (EXIF). */
 export async function decode(file: Blob): Promise<ImageBitmap> {
-  const name = (file as File).name ?? 'this image';
+  const name = (file as File).name ?? t('this image');
   if (file instanceof File && isHeic(file)) return decodeHeic(file);
   if (file instanceof File && isTiff(file)) return decodeTiff(file);
   try {
     return await createImageBitmap(file);
   } catch {
-    throw new Error(`This browser can't read ${name}.`);
+    throw new Error(t('This browser can\'t read {name}.', { name }));
   }
 }
 
 /** "Same format": what to save a file as when the format isn't changed. */
 function sameFormat(file: File): string {
-  const t = file.type.replace('jpg', 'jpeg');
-  if (['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/bmp'].includes(t)) return t;
+  const tt = file.type.replace('jpg', 'jpeg');
+  if (['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/bmp'].includes(tt)) return tt;
   if (/\.bmp$/i.test(file.name)) return 'image/bmp';
   // Photos (HEIC, TIFF) become JPG; GIF, ICO and SVG become PNG so transparency stays.
   return isHeic(file) || isTiff(file) ? 'image/jpeg' : 'image/png';
@@ -135,7 +136,7 @@ export async function processImage(p: ImagePayload, report: Report): Promise<Tas
   else if (mime === 'image/bmp') blob = encodeBmp(canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
   else {
     blob = await canvas.convertToBlob({ type: mime, quality: Math.min(1, Math.max(0.01, p.quality / 100)) });
-    if (blob.type !== mime) throw new Error(`This browser can't save ${EXT[mime]?.toUpperCase() ?? mime} images. Pick another format.`);
+    if (blob.type !== mime) throw new Error(t('This browser can’t save {format} images. Pick another format.', { format: EXT[mime]?.toUpperCase() ?? mime }));
   }
   const base = p.file.name.replace(/\.[^.]+$/, '') || 'image';
   const suffix = p.resize ? `-${w}x${h}` : '';

@@ -1,15 +1,16 @@
 import { MC_COLORS, MC_FORMATS, styleAtEnd, styleCodes } from '../../lib/mc/text';
+import { t } from '../../lib/i18n-core';
 
 /** Buttons that apply & codes to the selected text (or insert them at the cursor). */
 export function CodePalette({ onInsert }: { onInsert: (code: string) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div className="seg compact" role="group" aria-label="Insert color">
+      <div className="seg compact" role="group" aria-label={t('Insert color')}>
         {MC_COLORS.map((c) => (
           <button
             key={c.code}
             type="button"
-            aria-label={`Insert ${c.label} (&${c.code})`}
+            aria-label={t('Insert {label} (&{code})', { label: c.label, code: c.code })}
             title={`${c.label} · &${c.code}`}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onInsert(`&${c.code}`)}
@@ -19,14 +20,14 @@ export function CodePalette({ onInsert }: { onInsert: (code: string) => void }) 
           </button>
         ))}
       </div>
-      <div className="seg" role="group" aria-label="Insert format">
+      <div className="seg" role="group" aria-label={t('Insert format')}>
         {MC_FORMATS.map((f) => (
           <button key={f.code} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onInsert(`&${f.code}`)} title={`&${f.code}`}>
             {f.label.toLowerCase()}
           </button>
         ))}
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => onInsert('&r')} title="&r">
-          reset
+          {t('reset')}
         </button>
       </div>
     </div>

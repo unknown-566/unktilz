@@ -1,4 +1,5 @@
 import type { Output } from './blobs';
+import { t } from '../lib/i18n-core';
 
 /**
  * Jobs that a tool page makes from things it has in memory (the GIF maker's video frames,
@@ -23,4 +24,4 @@ export function dropTask(id: string) {
   t?.release?.();
 }
 
-export const TASK_GONE = 'The page was closed while this was being made. Make it again.';
+export const TASK_GONE = t('The page was closed while this was being made. Make it again.');

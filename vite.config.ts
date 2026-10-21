@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin, type ProxyOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import pkg from './package.json';
@@ -43,8 +45,31 @@ const cacheAssets = (): Plugin => ({
   },
 });
 
+/**
+ * Images to PDF's text recognition (src/tools/pdf/scan/ocr.ts) reads its language files from
+ * /ocr/<code>.traineddata.gz: Tesseract asks for them by name in one folder, so they can't take
+ * hashed asset names. They come from the @tesseract.js-data packages, served in development and
+ * copied into the build.
+ */
+const OCR_LANGS = ['eng', 'ces', 'slk', 'deu', 'pol', 'spa', 'fra'];
+const ocrFile = (code: string) => fileURLToPath(new URL(`./node_modules/@tesseract.js-data/${code}/4.0.0_best_int/${code}.traineddata.gz`, import.meta.url));
+const ocrData = (): Plugin => ({
+  name: 'ocr-language-files',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      const m = (req as { url?: string }).url?.match(/^\/ocr\/([a-z]+)\.traineddata\.gz$/);
+      if (!m || !OCR_LANGS.includes(m[1])) return next();
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.end(readFileSync(ocrFile(m[1])));
+    });
+  },
+  generateBundle() {
+    for (const code of OCR_LANGS) this.emitFile({ type: 'asset', fileName: `ocr/${code}.traineddata.gz`, source: readFileSync(ocrFile(code)) });
+  },
+});
+
 export default defineConfig({
-  plugins: [react(), cacheAssets(), downloader()],
+  plugins: [react(), cacheAssets(), downloader(), ocrData()],
   // bin/ holds the downloader's programs (written while they install): nothing there is site code.
   server: { proxy, watch: { ignored: ['**/bin/**', '**/dist/**'] } },
   preview: { proxy },

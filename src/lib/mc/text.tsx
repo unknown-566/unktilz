@@ -1,3 +1,4 @@
+// i18n-ignore-file: Minecraft chat colour and format names: they stay as the game names them (see src/i18n/cs/app.ts).
 import type { CSSProperties } from 'react';
 
 export const MC_COLORS = [

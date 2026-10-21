@@ -1,7 +1,10 @@
 /// <reference lib="webworker" />
 import type { ImagePayload, PreviewPayload, PreviewResult } from './tasks/image';
+import type { CompressImagesPayload } from './tasks/pdfImages';
 import type { MapExportPayload, MapGridPayload, MapGridResult } from './tasks/mapArt';
-import type { ImagesToPdfPayload, JpgsToPdfPayload, MergePdfPayload, OrganizePdfPayload, ScanPreviewPayload } from './tasks/pdf';
+import type { BuildPdfPayload, JpgsToPdfPayload, MergePdfPayload } from './tasks/pdf';
+import type { PagesToPdfPayload, PreparePagePayload, PreparedPage, ScanDetectPayload, ScanDetectResult } from './tasks/scanPdf';
+import { applyLang, type Lang } from '../lib/i18n-core';
 
 export type TaskOutput = { name: string; blob: Blob }[];
 export type Report = (progress: number) => void;
@@ -10,10 +13,12 @@ type Tasks = {
   image: [ImagePayload, TaskOutput];
   'image-preview': [PreviewPayload, PreviewResult];
   'merge-pdf': [MergePdfPayload, TaskOutput];
-  'images-to-pdf': [ImagesToPdfPayload, TaskOutput];
-  'organize-pdf': [OrganizePdfPayload, TaskOutput];
+  'build-pdf': [BuildPdfPayload, TaskOutput];
   'jpgs-to-pdf': [JpgsToPdfPayload, Blob];
-  'scan-preview': [ScanPreviewPayload, Blob];
+  'compress-pdf-images': [CompressImagesPayload, TaskOutput];
+  'scan-detect': [ScanDetectPayload, ScanDetectResult];
+  'prepare-page': [PreparePagePayload, PreparedPage];
+  'pages-to-pdf': [PagesToPdfPayload, TaskOutput];
   'map-grid': [MapGridPayload, MapGridResult];
   'map-export': [MapExportPayload, TaskOutput];
 };
@@ -30,18 +35,20 @@ const tasks: Record<TaskName, () => Promise<Handler>> = {
   image: () => import('./tasks/image').then((m) => m.processImage as Handler),
   'image-preview': () => import('./tasks/image').then((m) => m.previewImage as Handler),
   'merge-pdf': () => import('./tasks/pdf').then((m) => m.mergePdf as Handler),
-  'images-to-pdf': () => import('./tasks/pdf').then((m) => m.imagesToPdf as Handler),
-  'organize-pdf': () => import('./tasks/pdf').then((m) => m.organizePdf as Handler),
+  'build-pdf': () => import('./tasks/pdf').then((m) => m.buildPdf as Handler),
   'jpgs-to-pdf': () => import('./tasks/pdf').then((m) => m.jpgsToPdf as Handler),
-  'scan-preview': () => import('./tasks/pdf').then((m) => m.scanPreview as Handler),
+  'compress-pdf-images': () => import('./tasks/pdfImages').then((m) => m.compressPdfImages as Handler),
+  'scan-detect': () => import('./tasks/scanPdf').then((m) => m.scanDetect as Handler),
+  'prepare-page': () => import('./tasks/scanPdf').then((m) => m.preparePage as Handler),
+  'pages-to-pdf': () => import('./tasks/scanPdf').then((m) => m.pagesToPdf as Handler),
   'map-grid': () => import('./tasks/mapArt').then((m) => m.mapGrid as Handler),
   'map-export': () => import('./tasks/mapArt').then((m) => m.mapExport as Handler),
 };
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
-ctx.onmessage = async (e: MessageEvent<{ id: number; task: TaskName; payload: never }>) => {
-  const { id, task, payload } = e.data;
+ctx.onmessage = async (e: MessageEvent<{ id: number; task: TaskName; payload: never; lang: Lang }>) => {
+  const { id, task, payload, lang } = e.data;
   let last = 0;
   const report: Report = (value) => {
     const now = performance.now();
@@ -50,6 +57,8 @@ ctx.onmessage = async (e: MessageEvent<{ id: number; task: TaskName; payload: ne
     ctx.postMessage({ id, type: 'progress', value });
   };
   try {
+    // The page's language, so the messages of a failing task come in it.
+    await applyLang(lang).catch(() => {});
     const handler = await tasks[task]();
     const result = await handler(payload, report);
     ctx.postMessage({ id, type: 'done', result });

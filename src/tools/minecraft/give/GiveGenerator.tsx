@@ -12,6 +12,7 @@ import { ATTRIBUTES, BLOCKS, DYE_COLORS, ENCHANTS, FIREWORK_SHAPES, ITEMS, ITEM_
 import { EffectList, MobEditor } from './MobEditor';
 import { Combo, MultiPick } from './Pickers';
 import { Tooltip } from './Tooltip';
+import { t } from '../../../lib/i18n-core';
 
 type Tab = 'item' | 'text' | 'enchants' | 'attributes' | 'special' | 'spawns' | 'adventure';
 /** Where the item in progress was kept before it moved to src/lib/saved.ts. */
@@ -19,11 +20,11 @@ const OLD_STORE = 'unktilz-give';
 /** Since 1.20.5 enchantment levels in item components go from 1 to 255; the game rejects more. */
 const MAX_LEVEL = 255;
 const TARGETS = [
-  { value: '@p', label: '@p · nearest player' },
-  { value: '@s', label: '@s · yourself' },
-  { value: '@a', label: '@a · every player' },
-  { value: '@r', label: '@r · random player' },
-  { value: 'name', label: 'a specific player…' },
+  { value: '@p', label: t('@p · nearest player') },
+  { value: '@s', label: t('@s · yourself') },
+  { value: '@a', label: t('@a · every player') },
+  { value: '@r', label: t('@r · random player') },
+  { value: 'name', label: t('a specific player…') },
 ];
 const ITEM_OPTIONS = ITEMS.map((i) => ({ id: i.id, name: i.name }));
 const BLOCK_OPTIONS = BLOCKS.map((b) => ({ id: b.id, name: b.name }));
@@ -32,7 +33,7 @@ const ENCH_OPTIONS = ENCHANTS.map((e) => ({ id: e.id, name: e.name }));
 /** Ready-made starting points for people who don't know what's possible. */
 const PRESETS: { label: string; make: () => ItemSpec }[] = [
   {
-    label: 'OP sword',
+    label: t('OP sword'),
     make: () => ({
       ...emptySpec(),
       item: 'netherite_sword',
@@ -49,20 +50,20 @@ const PRESETS: { label: string; make: () => ItemSpec }[] = [
     }),
   },
   {
-    label: 'Speed potion',
+    label: t('Speed potion'),
     make: () => ({ ...emptySpec(), item: 'potion', name: '<aqua>Zoom Juice', potionColor: '#55ffff', effects: [{ id: 'speed', level: 3, seconds: 300, particles: true, icon: true }] }),
   },
-  { label: 'Player head', make: () => ({ ...emptySpec(), item: 'player_head', head: 'Notch' }) },
+  { label: t('Player head'), make: () => ({ ...emptySpec(), item: 'player_head', head: 'Notch' }) },
   {
-    label: 'Firework',
+    label: t('Firework'),
     make: () => ({ ...emptySpec(), item: 'firework_rocket', count: 16, flight: 2, explosions: [{ shape: 'star', colors: ['#FED83D', '#F9801D'], fades: ['#B02E26'], trail: true, twinkle: true }] }),
   },
   {
-    label: 'Signed book',
+    label: t('Signed book'),
     make: () => ({ ...emptySpec(), item: 'written_book', bookTitle: 'Server rules', bookAuthor: 'Admin', bookPages: ['<bold>Welcome!</bold>\nBe nice and have fun.', '<red>No griefing.'] }),
   },
   {
-    label: 'Boss zombie',
+    label: t('Boss zombie'),
     make: () => ({
       ...emptySpec(),
       item: 'zombie_spawn_egg',
@@ -86,7 +87,7 @@ const PRESETS: { label: string; make: () => ItemSpec }[] = [
     }),
   },
   {
-    label: 'Giant stick',
+    label: t('Giant stick'),
     make: () => ({ ...emptySpec(), item: 'stick', name: 'Growth Stick', attributes: [{ type: 'scale', slot: 'hand', amount: 1, op: 'add_multiplied_base' }] }),
   },
 ];
@@ -125,13 +126,13 @@ function Row({ id, label: text, help, children }: { id: string; label: string; h
 }
 
 const HIDE_LABELS: { key: HideKey; label: string }[] = [
-  { key: 'enchantments', label: 'enchantments' },
-  { key: 'attributes', label: 'attributes' },
-  { key: 'unbreakable', label: 'unbreakable' },
-  { key: 'adventure', label: 'can place / break' },
-  { key: 'dye', label: 'dye color' },
-  { key: 'trim', label: 'armor trim' },
-  { key: 'other', label: 'potion / book / firework info' },
+  { key: 'enchantments', label: t('enchantments') },
+  { key: 'attributes', label: t('attributes') },
+  { key: 'unbreakable', label: t('unbreakable') },
+  { key: 'adventure', label: t('can place / break') },
+  { key: 'dye', label: t('dye color') },
+  { key: 'trim', label: t('armor trim') },
+  { key: 'other', label: t('potion / book / firework info') },
 ];
 
 export default function GiveGenerator() {
@@ -144,7 +145,7 @@ export default function GiveGenerator() {
   /** Replaces the whole item (preset, saved item, start over) and keeps the target picker in step. */
   const setSpec = (next: ItemSpec) => {
     setSpecRaw(next);
-    setTargetMode(TARGETS.some((t) => t.value === next.target) ? next.target : 'name');
+    setTargetMode(TARGETS.some((tt) => tt.value === next.target) ? next.target : 'name');
   };
   const draft = useMemo<Draft>(() => ({ spec, version }), [spec, version]);
   useAutosave<Draft>(
@@ -176,20 +177,20 @@ export default function GiveGenerator() {
   const kinds = itemKinds(spec.item);
   const info = ITEM_BY_ID.get(spec.item);
   // One extra tab for whatever this item has of its own; leather armor gets color and trim.
-  const special = [kinds.potion && 'Potion', kinds.dye && 'Color', kinds.trim && 'Trim', kinds.head && 'Head', kinds.book && 'Book', (kinds.firework || kinds.star) && 'Firework']
+  const special = [kinds.potion && t('tab|Potion'), kinds.dye && t('tab|Color'), kinds.trim && t('tab|Trim'), kinds.head && t('tab|Head'), kinds.book && t('tab|Book'), (kinds.firework || kinds.star) && t('tab|Firework')]
     .filter(Boolean)
     .join(' & ');
   const result = useMemo(() => buildGive(spec, version), [spec, version]);
   const len = result.command.length;
 
   const tabs: TabDef<Tab>[] = [
-    { id: 'item', label: 'Item' },
-    { id: 'text', label: 'Name & lore', dot: !!spec.name.trim() || spec.lore.some((l) => l.trim()) },
-    { id: 'enchants', label: 'Enchants', dot: spec.enchants.length > 0 },
-    { id: 'attributes', label: 'Attributes', dot: spec.attributes.length > 0 },
+    { id: 'item', label: t('Item') },
+    { id: 'text', label: t('Name & lore'), dot: !!spec.name.trim() || spec.lore.some((l) => l.trim()) },
+    { id: 'enchants', label: t('Enchants'), dot: spec.enchants.length > 0 },
+    { id: 'attributes', label: t('Attributes'), dot: spec.attributes.length > 0 },
     ...(special ? [{ id: 'special' as Tab, label: special }] : []),
-    ...(kinds.spawnEgg ? [{ id: 'spawns' as Tab, label: 'Spawns', dot: !plainMob(spec) }] : []),
-    { id: 'adventure', label: 'Adventure', dot: spec.canBreak.length + spec.canPlaceOn.length > 0 },
+    ...(kinds.spawnEgg ? [{ id: 'spawns' as Tab, label: t('Spawns'), dot: !plainMob(spec) }] : []),
+    { id: 'adventure', label: t('Adventure'), dot: spec.canBreak.length + spec.canPlaceOn.length > 0 },
   ];
   useEffect(() => {
     if ((tab === 'special' && !special) || (tab === 'spawns' && !kinds.spawnEgg)) setTab('item');
@@ -237,19 +238,19 @@ export default function GiveGenerator() {
     <>
       <div className="field">
         <span style={{ display: 'flex', alignItems: 'center' }}>
-          <span className="field-label">Item</span>
-          <Help label="Item" text="Type part of the name (English) or the id. You can also type any id that isn't in the list, e.g. one from a newer version or a mod." />
+          <span className="field-label">{t('Item')}</span>
+          <Help label={t('Item')} text={t('Type part of the name (English) or the id. You can also type any id that isn\'t in the list, e.g. one from a newer version or a mod.')} />
         </span>
-        <Combo label="Item" options={ITEM_OPTIONS} value={spec.item} onPick={pickItem} placeholder="search items…" allowCustom />
+        <Combo label={t('Item')} options={ITEM_OPTIONS} value={spec.item} onPick={pickItem} placeholder={t('search items…')} allowCustom />
       </div>
       <div className="fields">
         <div className="field">
-          <label htmlFor="give-count">How many</label>
+          <label htmlFor="give-count">{t('How many')}</label>
           <input id="give-count" className="input mono" type="number" min={1} max={99} value={spec.count} onChange={(e) => set({ count: Number(e.target.value) || 1 })} />
-          {info && spec.count > info.stack && !spec.maxStack && <span className="note">This item stacks to {info.stack}; the rest are handed out as more stacks.</span>}
+          {info && spec.count > info.stack && !spec.maxStack && <span className="note">{t('This item stacks to {n}; the rest are handed out as more stacks.', { n: info.stack })}</span>}
         </div>
         <div className="field">
-          <label htmlFor="give-target">Who gets it</label>
+          <label htmlFor="give-target">{t('Who gets it')}</label>
           <select
             id="give-target"
             className="select"
@@ -260,70 +261,70 @@ export default function GiveGenerator() {
               else set({ target: '' });
             }}
           >
-            {TARGETS.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {TARGETS.map((tt) => (
+              <option key={tt.value} value={tt.value}>
+                {tt.label}
               </option>
             ))}
           </select>
-          {targetMode === 'name' && <input className="input mono" aria-label="Player name" placeholder="Steve" value={spec.target} onChange={(e) => set({ target: e.target.value })} />}
+          {targetMode === 'name' && <input className="input mono" aria-label={t('Player name')} placeholder={t('Steve')} value={spec.target} onChange={(e) => set({ target: e.target.value })} />}
         </div>
       </div>
       <hr className="divider" />
-      <Row id="g-unb" label="Unbreakable" help="Never loses durability.">
+      <Row id="g-unb" label={t('Unbreakable')} help={t('Never loses durability.')}>
         <Toggle labelledBy="g-unb" checked={spec.unbreakable} onChange={(v) => set({ unbreakable: v })} />
       </Row>
-      <Row id="g-rar" label="Rarity" help="Changes the color of the item's name: white, yellow, aqua or pink. Enchanted items already show aqua.">
+      <Row id="g-rar" label={t('Rarity')} help={t('Changes the color of the item\'s name: white, yellow, aqua or pink. Enchanted items already show aqua.')}>
         <Segmented
           labelledBy="g-rar"
           value={spec.rarity || 'default'}
           onChange={(v) => set({ rarity: v === 'default' ? '' : (v as ItemSpec['rarity']) })}
           options={[
-            { value: 'default', label: 'default' },
-            { value: 'uncommon', label: 'uncommon' },
-            { value: 'rare', label: 'rare' },
-            { value: 'epic', label: 'epic' },
+            { value: 'default', label: t('default') },
+            { value: 'uncommon', label: t('uncommon') },
+            { value: 'rare', label: t('rare') },
+            { value: 'epic', label: t('epic') },
           ]}
         />
       </Row>
-      <Row id="g-glint" label="Enchant shine" help="The purple glint. Force it on (even without enchantments) or off (even with them).">
+      <Row id="g-glint" label={t('Enchant shine')} help={t('The purple glint. Force it on (even without enchantments) or off (even with them).')}>
         <Segmented
           labelledBy="g-glint"
           value={spec.glint || 'default'}
           onChange={(v) => set({ glint: v === 'default' ? '' : (v as 'on' | 'off') })}
           options={[
-            { value: 'default', label: 'default' },
-            { value: 'on', label: 'always' },
-            { value: 'off', label: 'never' },
+            { value: 'default', label: t('default') },
+            { value: 'on', label: t('always') },
+            { value: 'off', label: t('never') },
           ]}
         />
       </Row>
       <div className="fields">
-        <NumField label="Damage (used up)" value={spec.damage} onChange={(v) => set({ damage: v })} placeholder={info?.durability ? `0 – ${info.durability}` : 'none'} help="How much durability is already used. 0 is brand new." />
-        <NumField label="Max durability" value={spec.maxDamage} onChange={(v) => set({ maxDamage: v })} placeholder={info?.durability ? String(info.durability) : 'none'} help="Changes how many uses the item has." />
-        <NumField label="Max stack size" value={spec.maxStack} onChange={(v) => set({ maxStack: v })} placeholder={info ? String(info.stack) : '64'} help="1 – 99. Lets e.g. potions or swords stack. Items with durability can't stack." />
-        <NumField label="Custom model data" value={spec.modelData} onChange={(v) => set({ modelData: v })} placeholder="none" help="A number a resource pack can use to give this item its own texture." />
+        <NumField label={t('Damage (used up)')} value={spec.damage} onChange={(v) => set({ damage: v })} placeholder={info?.durability ? `0 – ${info.durability}` : t('none')} help={t('How much durability is already used. 0 is brand new.')} />
+        <NumField label={t('Max durability')} value={spec.maxDamage} onChange={(v) => set({ maxDamage: v })} placeholder={info?.durability ? String(info.durability) : t('none')} help={t('Changes how many uses the item has.')} />
+        <NumField label={t('Max stack size')} value={spec.maxStack} onChange={(v) => set({ maxStack: v })} placeholder={info ? String(info.stack) : '64'} help={t('1 – 99. Lets e.g. potions or swords stack. Items with durability can\'t stack.')} />
+        <NumField label={t('Custom model data')} value={spec.modelData} onChange={(v) => set({ modelData: v })} placeholder={t('none')} help={t('A number a resource pack can use to give this item its own texture.')} />
       </div>
       {atLeast(version, '1.21.2') && (
         <div className="field">
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <label htmlFor="g-model" className="field-label">
-              Looks like (item model)
+              {t('Looks like (item model)')}
             </label>
-            <Help label="Item model" text="Makes the item look like another one, e.g. a stick that looks like a diamond sword. Also used by resource packs (namespace:name)." />
+            <Help label={t('Item model')} text={t('Makes the item look like another one, e.g. a stick that looks like a diamond sword. Also used by resource packs (namespace:name).')} />
           </span>
-          <input id="g-model" className="input mono" value={spec.itemModel} placeholder="e.g. minecraft:diamond_sword" onChange={(e) => set({ itemModel: e.target.value })} />
+          <input id="g-model" className="input mono" value={spec.itemModel} placeholder={t('e.g. minecraft:diamond_sword')} onChange={(e) => set({ itemModel: e.target.value })} />
         </div>
       )}
       <hr className="divider" />
-      <Row id="g-hideall" label="Hide the whole tooltip" help="Nothing shows when hovering the item, not even its name.">
+      <Row id="g-hideall" label={t('Hide the whole tooltip')} help={t('Nothing shows when hovering the item, not even its name.')}>
         <Toggle labelledBy="g-hideall" checked={spec.hideTooltip} onChange={(v) => set({ hideTooltip: v })} />
       </Row>
       {!spec.hideTooltip && (
         <div className="field">
           <span style={{ display: 'flex', alignItems: 'center' }}>
-            <span className="field-label">Hide from the tooltip</span>
-            <Help label="Hide from the tooltip" text="The item still has these, they just aren't listed when hovering it." />
+            <span className="field-label">{t('Hide from the tooltip')}</span>
+            <Help label={t('Hide from the tooltip')} text={t('The item still has these, they just aren\'t listed when hovering it.')} />
           </span>
           <div className="check-grid">
             {HIDE_LABELS.map((h) => (
@@ -340,60 +341,60 @@ export default function GiveGenerator() {
 
   const textTab = (
     <>
-      <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint="Click into the name or a lore line, then pick a color or style. Select some words first to change only those." />
+      <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint={t('Click into the name or a lore line, then pick a color or style. Select some words first to change only those.')} />
       <div className="field">
         <span style={{ display: 'flex', alignItems: 'center' }}>
           <label htmlFor="g-name" className="field-label">
-            Name
+            {t('Name')}
           </label>
-          <Help label="Name" text="Leave empty to keep the normal name. Supports the formatting above (MiniMessage tags like <red> or <gradient:…>)." />
+          <Help label={t('Name')} text={t('Leave empty to keep the normal name. Supports the formatting above (MiniMessage tags like <red> or <gradient:…>).')} />
         </span>
-        <input id="g-name" ref={reg('name')} className="input mono" value={spec.name} placeholder="e.g. <gold>Lucky Pickaxe" onFocus={() => setActive('name')} onChange={(e) => set({ name: e.target.value })} spellCheck={false} />
+        <input id="g-name" ref={reg('name')} className="input mono" value={spec.name} placeholder={t('e.g. <gold>Lucky Pickaxe')} onFocus={() => setActive('name')} onChange={(e) => set({ name: e.target.value })} spellCheck={false} />
       </div>
-      <Row id="g-nk" label="Name type" help="Custom name: like renaming in an anvil (players can rename it again). Item name: the item's own name, can't be changed in an anvil and is never italic.">
+      <Row id="g-nk" label={t('Name type')} help={t('Custom name: like renaming in an anvil (players can rename it again). Item name: the item\'s own name, can\'t be changed in an anvil and is never italic.')}>
         <Segmented
           labelledBy="g-nk"
           value={spec.nameKind}
           onChange={(v) => set({ nameKind: v })}
           options={[
-            { value: 'custom', label: 'custom name' },
-            { value: 'item', label: 'item name' },
+            { value: 'custom', label: t('custom name') },
+            { value: 'item', label: t('item name') },
           ]}
         />
       </Row>
       {spec.nameKind === 'custom' && (
-        <Row id="g-ni" label="Italic name" help="Renamed items are italic in game unless told otherwise. Off gives a normal-looking name.">
+        <Row id="g-ni" label={t('Italic name')} help={t('Renamed items are italic in game unless told otherwise. Off gives a normal-looking name.')}>
           <Toggle labelledBy="g-ni" checked={spec.nameItalic} onChange={(v) => set({ nameItalic: v })} />
         </Row>
       )}
       <hr className="divider" />
       <div className="field">
         <span style={{ display: 'flex', alignItems: 'center' }}>
-          <span className="field-label">Lore (description lines)</span>
-          <Help label="Lore" text="Extra lines under the name. Default color is purple, italic." />
+          <span className="field-label">{t('Lore (description lines)')}</span>
+          <Help label={t('Lore')} text={t('Extra lines under the name. Default color is purple, italic.')} />
         </span>
         {spec.lore.map((l, i) => (
           <div key={i} className="inline">
             <input
               ref={reg(`lore:${i}`)}
               className="input mono"
-              aria-label={`Lore line ${i + 1}`}
+              aria-label={t('Lore line {n}', { n: i + 1 })}
               value={l}
               onFocus={() => setActive(`lore:${i}`)}
               onChange={(e) => set({ lore: spec.lore.map((x, j) => (j === i ? e.target.value : x)) })}
               spellCheck={false}
             />
-            <button type="button" className="btn btn-sm" aria-label={`Remove line ${i + 1}`} onClick={() => set({ lore: spec.lore.filter((_, j) => j !== i) })}>
+            <button type="button" className="btn btn-sm" aria-label={t('Remove line {n}', { n: i + 1 })} onClick={() => set({ lore: spec.lore.filter((_, j) => j !== i) })}>
               ×
             </button>
           </div>
         ))}
         <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => set({ lore: [...spec.lore, ''] })}>
-          + add line
+          {t('+ add line')}
         </button>
       </div>
       {spec.lore.length > 0 && (
-        <Row id="g-li" label="Italic lore">
+        <Row id="g-li" label={t('Italic lore')}>
           <Toggle labelledBy="g-li" checked={spec.loreItalic} onChange={(v) => set({ loreItalic: v })} />
         </Row>
       )}
@@ -405,27 +406,27 @@ export default function GiveGenerator() {
     <>
       <div className="field">
         <span style={{ display: 'flex', alignItems: 'center' }}>
-          <span className="field-label">Add an enchantment</span>
-          <Help label="Enchantments" text="Any enchantment at any level from 1 to 255 (the most the game accepts since 1.20.5), even ones that normally can’t go on this item (marked with !). On an enchanted book they’re stored for the anvil." />
+          <span className="field-label">{t('Add an enchantment')}</span>
+          <Help label={t('Enchantments')} text={t('Any enchantment at any level from 1 to 255 (the most the game accepts since 1.20.5), even ones that normally can’t go on this item (marked with !). On an enchanted book they’re stored for the anvil.')} />
         </span>
-        <Combo label="Add an enchantment" options={ENCH_OPTIONS} onPick={(id) => !spec.enchants.some((e) => e.id === id) && set({ enchants: [...spec.enchants, { id, level: ENCHANTS.find((e) => e.id === id)?.max ?? 1 }] })} placeholder="search enchantments…" allowCustom clearOnPick />
+        <Combo label={t('Add an enchantment')} options={ENCH_OPTIONS} onPick={(id) => !spec.enchants.some((e) => e.id === id) && set({ enchants: [...spec.enchants, { id, level: ENCHANTS.find((e) => e.id === id)?.max ?? 1 }] })} placeholder={t('search enchantments…')} allowCustom clearOnPick />
         <div className="seg">
           <button type="button" className="btn btn-sm" disabled={!fits.length} onClick={() => set({ enchants: fits.filter((e) => !e.curse).map((e) => ({ id: e.id, level: e.max })) })}>
-            all that fit · normal max
+            {t('all that fit · normal max')}
           </button>
           <button type="button" className="btn btn-sm" disabled={!fits.length} onClick={() => set({ enchants: fits.filter((e) => !e.curse).map((e) => ({ id: e.id, level: MAX_LEVEL })) })}>
-            all that fit · {MAX_LEVEL}
+            {t('all that fit · {max}', { max: MAX_LEVEL })}
           </button>
           <button type="button" className="btn btn-sm" disabled={!spec.enchants.length} onClick={() => set({ enchants: spec.enchants.map((e) => ({ ...e, level: MAX_LEVEL })) })}>
-            set all to {MAX_LEVEL}
+            {t('set all to {max}', { max: MAX_LEVEL })}
           </button>
           <button type="button" className="btn btn-sm" disabled={!spec.enchants.length} onClick={() => set({ enchants: [] })}>
-            clear
+            {t('clear')}
           </button>
         </div>
       </div>
       {spec.enchants.length === 0 ? (
-        <p className="note">No enchantments yet. Tip: “Enchant shine → always” on the Item tab adds the glint without any.</p>
+        <p className="note">{t('No enchantments yet. Tip: “Enchant shine → always” on the Item tab adds the glint without any.')}</p>
       ) : (
         <ul className="give-list">
           {spec.enchants.map((e, i) => {
@@ -436,7 +437,7 @@ export default function GiveGenerator() {
                 <span className="give-list-name">
                   {en?.name ?? e.id}
                   {!ok && (
-                    <span className="warn-tag" title="Doesn't normally go on this item; it still works through the command.">
+                    <span className="warn-tag" title={t('Doesn\'t normally go on this item; it still works through the command.')}>
                       !
                     </span>
                   )}
@@ -446,24 +447,24 @@ export default function GiveGenerator() {
                   type="number"
                   min={1}
                   max={255}
-                  aria-label={`${en?.name ?? e.id} level`}
+                  aria-label={t('{name} level', { name: en?.name ?? e.id })}
                   value={e.level}
                   onChange={(ev) => set({ enchants: spec.enchants.map((x, j) => (j === i ? { ...x, level: Math.max(1, Math.min(255, Number(ev.target.value) || 1)) } : x)) })}
                 />
-                <span className="seg compact give-lvl" role="group" aria-label={`${en?.name ?? e.id} quick level`}>
+                <span className="seg compact give-lvl" role="group" aria-label={t('{name} quick level', { name: en?.name ?? e.id })}>
                   {[...new Set([en?.max ?? 1, MAX_LEVEL])].map((lv) => (
                     <button
                       key={lv}
                       type="button"
                       aria-pressed={e.level === lv}
-                      title={lv === MAX_LEVEL ? 'The highest level the game accepts' : 'The highest level you can normally get'}
+                      title={lv === MAX_LEVEL ? t('The highest level the game accepts') : t('The highest level you can normally get')}
                       onClick={() => set({ enchants: spec.enchants.map((x, j) => (j === i ? { ...x, level: lv } : x)) })}
                     >
                       {lv}
                     </button>
                   ))}
                 </span>
-                <button type="button" className="btn btn-sm" aria-label={`Remove ${en?.name ?? e.id}`} onClick={() => set({ enchants: spec.enchants.filter((_, j) => j !== i) })}>
+                <button type="button" className="btn btn-sm" aria-label={t('Remove {name}', { name: en?.name ?? e.id })} onClick={() => set({ enchants: spec.enchants.filter((_, j) => j !== i) })}>
                   ×
                 </button>
               </li>
@@ -478,39 +479,39 @@ export default function GiveGenerator() {
   const attrTab = (
     <>
       <p className="note">
-        Attributes change stats while the item is held or worn: damage, speed, health, size… Adding any replaces the item’s normal ones (e.g. a sword’s attack damage), so add those back if you want them.
+        {t('Attributes change stats while the item is held or worn: damage, speed, health, size… Adding any replaces the item’s normal ones (e.g. a sword’s attack damage), so add those back if you want them.')}
       </p>
       {spec.attributes.map((a, i) => (
         <div key={i} className="give-attr">
-          <select className="select" aria-label="Attribute" value={a.type} onChange={(e) => setAttr(i, { type: e.target.value })}>
+          <select className="select" aria-label={t('Attribute')} value={a.type} onChange={(e) => setAttr(i, { type: e.target.value })}>
             {ATTRIBUTES.map((x) => (
               <option key={x.id} value={x.id}>
                 {x.label}
               </option>
             ))}
           </select>
-          <select className="select" aria-label="Slot" value={a.slot} onChange={(e) => setAttr(i, { slot: e.target.value })}>
+          <select className="select" aria-label={t('Slot')} value={a.slot} onChange={(e) => setAttr(i, { slot: e.target.value })}>
             {SLOTS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
               </option>
             ))}
           </select>
-          <input className="input mono give-num" type="number" step="any" aria-label="Amount" value={a.amount} onChange={(e) => setAttr(i, { amount: Number(e.target.value) })} />
-          <select className="select" aria-label="How it applies" value={a.op} onChange={(e) => setAttr(i, { op: e.target.value as Attr['op'] })}>
-            <option value="add_value">+ amount</option>
-            <option value="add_multiplied_base">+ amount × base</option>
-            <option value="add_multiplied_total">× (1 + amount)</option>
+          <input className="input mono give-num" type="number" step="any" aria-label={t('Amount')} value={a.amount} onChange={(e) => setAttr(i, { amount: Number(e.target.value) })} />
+          <select className="select" aria-label={t('How it applies')} value={a.op} onChange={(e) => setAttr(i, { op: e.target.value as Attr['op'] })}>
+            <option value="add_value">{t('+ amount')}</option>
+            <option value="add_multiplied_base">{t('+ amount × base')}</option>
+            <option value="add_multiplied_total">{t('× (1 + amount)')}</option>
           </select>
-          <button type="button" className="btn btn-sm" aria-label="Remove attribute" onClick={() => set({ attributes: spec.attributes.filter((_, j) => j !== i) })}>
+          <button type="button" className="btn btn-sm" aria-label={t('Remove attribute')} onClick={() => set({ attributes: spec.attributes.filter((_, j) => j !== i) })}>
             ×
           </button>
         </div>
       ))}
       <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => set({ attributes: [...spec.attributes, { type: 'attack_damage', slot: 'mainhand', amount: 5, op: 'add_value' }] })}>
-        + add attribute
+        {t('+ add attribute')}
       </button>
-      <p className="note">“+ amount” adds the number. “× base” adds that share of the base value (1 = +100%). “× (1 + amount)” multiplies the final value.</p>
+      <p className="note">{t('“+ amount” adds the number. “× base” adds that share of the base value (1 = +100%). “× (1 + amount)” multiplies the final value.')}</p>
     </>
   );
 
@@ -518,12 +519,12 @@ export default function GiveGenerator() {
     <>
       {kinds.potion && <PotionEditor spec={spec} set={set} />}
       {kinds.dye && (
-        <Row id="g-dye" label="Leather color">
+        <Row id="g-dye" label={t('Leather color')}>
           <span className="inline">
             <input type="color" className="give-color" aria-labelledby="g-dye" value={spec.dye || '#a06540'} onChange={(e) => set({ dye: e.target.value })} />
             {spec.dye && (
               <button type="button" className="btn btn-sm" onClick={() => set({ dye: '' })}>
-                default
+                {t('default')}
               </button>
             )}
           </span>
@@ -531,9 +532,9 @@ export default function GiveGenerator() {
       )}
       {kinds.head && (
         <div className="field">
-          <label htmlFor="g-head">Whose head</label>
+          <label htmlFor="g-head">{t('Whose head')}</label>
           <div className="inline">
-            <input id="g-head" className="input mono" value={spec.head} placeholder="player name, e.g. Notch" onChange={(e) => set({ head: e.target.value })} />
+            <input id="g-head" className="input mono" value={spec.head} placeholder={t('player name, e.g. Notch')} onChange={(e) => set({ head: e.target.value })} />
             {/^[A-Za-z0-9_]{1,16}$/.test(spec.head.trim()) && <img src={`https://mc-heads.net/head/${spec.head.trim()}/48`} width={48} height={48} alt="" style={{ imageRendering: 'pixelated' }} />}
           </div>
         </div>
@@ -543,29 +544,29 @@ export default function GiveGenerator() {
         <>
           <div className="fields">
             <div className="field">
-              <label htmlFor="g-bt">Title</label>
-              <input id="g-bt" className="input" maxLength={32} value={spec.bookTitle} placeholder="Book" onChange={(e) => set({ bookTitle: e.target.value })} />
+              <label htmlFor="g-bt">{t('Title')}</label>
+              <input id="g-bt" className="input" maxLength={32} value={spec.bookTitle} placeholder={t('Book')} onChange={(e) => set({ bookTitle: e.target.value })} />
             </div>
             <div className="field">
-              <label htmlFor="g-ba">Author</label>
+              <label htmlFor="g-ba">{t('Author')}</label>
               <input id="g-ba" className="input" value={spec.bookAuthor} placeholder="unktilz" onChange={(e) => set({ bookAuthor: e.target.value })} />
             </div>
           </div>
-          <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint="Click into a page, then pick a color or style." />
+          <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint={t('Click into a page, then pick a color or style.')} />
           {spec.bookPages.map((p, i) => (
             <div key={i} className="field">
               <span className="opt-row">
-                <span className="field-label">Page {i + 1}</span>
+                <span className="field-label">{t('Page {n}', { n: i + 1 })}</span>
                 {spec.bookPages.length > 1 && (
                   <button type="button" className="btn btn-sm" onClick={() => set({ bookPages: spec.bookPages.filter((_, j) => j !== i) })}>
-                    remove
+                    {t('remove')}
                   </button>
                 )}
               </span>
               <textarea
                 ref={reg(`page:${i}`)}
                 className="textarea mono"
-                aria-label={`Page ${i + 1}`}
+                aria-label={t('Page {n}', { n: i + 1 })}
                 value={p}
                 onFocus={() => setActive(`page:${i}`)}
                 onChange={(e) => set({ bookPages: spec.bookPages.map((x, j) => (j === i ? e.target.value : x)) })}
@@ -573,7 +574,7 @@ export default function GiveGenerator() {
             </div>
           ))}
           <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => set({ bookPages: [...spec.bookPages, ''] })}>
-            + add page
+            {t('+ add page')}
           </button>
         </>
       )}
@@ -588,15 +589,15 @@ export default function GiveGenerator() {
       onChange={setMob}
       nameInput={
         <>
-          <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint="Click into the mob's name, then pick a color or style." />
+          <MiniToolbar onWrap={wrap} onInsert={insert} placeholders={[]} hint={t('Click into the mob\'s name, then pick a color or style.')} />
           <div className="field">
             <span style={{ display: 'flex', alignItems: 'center' }}>
               <label htmlFor="g-mobname" className="field-label">
-                Mob name
+                {t('Mob name')}
               </label>
-              <Help label="Mob name" text="The name above the mob's head. Leave empty for no name. The egg's own name is on the Name & lore tab." />
+              <Help label={t('Mob name')} text={t('The name above the mob\'s head. Leave empty for no name. The egg\'s own name is on the Name & lore tab.')} />
             </span>
-            <input id="g-mobname" ref={reg('mob')} className="input mono" value={mob.name} placeholder="e.g. <red>Boss" onFocus={() => setActive('mob')} onChange={(e) => setMob({ name: e.target.value })} spellCheck={false} />
+            <input id="g-mobname" ref={reg('mob')} className="input mono" value={mob.name} placeholder={t('e.g. <red>Boss')} onFocus={() => setActive('mob')} onChange={(e) => setMob({ name: e.target.value })} spellCheck={false} />
           </div>
         </>
       }
@@ -605,20 +606,20 @@ export default function GiveGenerator() {
 
   const adventureTab = (
     <>
-      <p className="note">For Adventure mode, where players can only place or break what an item allows.</p>
-      <MultiPick label="Can be placed on" options={BLOCK_OPTIONS} values={spec.canPlaceOn} onChange={(v) => set({ canPlaceOn: v })} />
-      <MultiPick label="Can break" options={BLOCK_OPTIONS} values={spec.canBreak} onChange={(v) => set({ canBreak: v })} />
+      <p className="note">{t('For Adventure mode, where players can only place or break what an item allows.')}</p>
+      <MultiPick label={t('Can be placed on')} options={BLOCK_OPTIONS} values={spec.canPlaceOn} onChange={(v) => set({ canPlaceOn: v })} />
+      <MultiPick label={t('Can break')} options={BLOCK_OPTIONS} values={spec.canBreak} onChange={(v) => set({ canBreak: v })} />
     </>
   );
 
   const preview = (
-    <Panel title="preview">
+    <Panel title={t('preview')}>
       <Tooltip spec={spec} version={version} />
       {kinds.spawnEgg && (
         <p className="note give-spawns">
-          Spawns: {MOB_BY_ID.get(mob.entity)?.name ?? label(mob.entity)}
+          {t('Spawns: {mob}', { mob: MOB_BY_ID.get(mob.entity)?.name ?? label(mob.entity) })}
           {mob.name.trim() ? ` “${plainText(mob.name).trim()}”` : ''}
-          {mob.maxHealth.trim() ? ` · ${mob.maxHealth} health` : ''}
+          {mob.maxHealth.trim() ? ` · ${t('{hp} health', { hp: mob.maxHealth })}` : ''}
         </p>
       )}
     </Panel>
@@ -627,17 +628,17 @@ export default function GiveGenerator() {
   const ok = len <= 256;
   const output = (
     <Panel
-      title="command"
+      title={t('command')}
       actions={
         <span className="inline">
-          <CopyButton text={result.command} label="copy" />
-          <CopyButton text={result.command.slice(1)} label="copy for command block" />
+          <CopyButton text={result.command} label={t('copy')} />
+          <CopyButton text={result.command.slice(1)} label={t('copy for command block')} />
         </span>
       }
     >
       <pre className="give-cmd mono">{result.command}</pre>
       <p className={`note mono ${ok ? '' : 'give-warn'}`}>
-        {len} / 256 characters · {ok ? 'fits in chat' : 'too long for chat: paste it into a command block instead'}
+        {t('{n} / 256 characters', { n: len })} · {ok ? t('fits in chat') : t('too long for chat: paste it into a command block instead')}
       </p>
       {result.notes.map((n) => (
         <p key={n} className="note give-warn">
@@ -645,7 +646,7 @@ export default function GiveGenerator() {
         </p>
       ))}
       <div className="field">
-        <label htmlFor="g-ver">Minecraft version</label>
+        <label htmlFor="g-ver">{t('Minecraft version')}</label>
         <select id="g-ver" className="select" value={version} onChange={(e) => setVersion(e.target.value as GiveVersion)}>
           {GIVE_VERSIONS.map((v) => (
             <option key={v.id} value={v.id}>
@@ -653,31 +654,31 @@ export default function GiveGenerator() {
             </option>
           ))}
         </select>
-        <span className="note">The command format changed in 1.20.5 and again in 1.21.5. Older than 1.20.5 isn’t supported.</span>
+        <span className="note">{t('The command format changed in 1.20.5 and again in 1.21.5. Older than 1.20.5 isn’t supported.')}</span>
       </div>
-      <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => replaceWith({ ...emptySpec(), target: spec.target }, 'Started over')}>
-        start over
+      <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => replaceWith({ ...emptySpec(), target: spec.target }, t('Started over'))}>
+        {t('start over')}
       </button>
     </Panel>
   );
 
   return (
     <Workbench preview={preview} output={output}>
-      <section className="panel" aria-label="Presets">
+      <section className="panel" aria-label={t('Presets')}>
         <div className="opt-row">
-          <h2 className="panel-title">// start from</h2>
+          <h2 className="panel-title">{t('// start from')}</h2>
         </div>
         <div className="seg">
           {PRESETS.map((p) => (
-            <button key={p.label} type="button" className="btn btn-sm" onClick={() => replaceWith({ ...p.make(), target: spec.target }, `Loaded the “${p.label}” preset`)}>
+            <button key={p.label} type="button" className="btn btn-sm" onClick={() => replaceWith({ ...p.make(), target: spec.target }, t('Loaded the “{preset}” preset', { preset: p.label }))}>
               {p.label}
             </button>
           ))}
         </div>
         {undo && <UndoBar text={undo.text} onUndo={() => setSpec(undo.prev)} onClose={() => setUndo(null)} />}
       </section>
-      <section className="panel give-editor" aria-label="Item editor">
-        <Tabs tabs={tabs} value={tab} onChange={setTab} label="Item settings" idPrefix="give" />
+      <section className="panel give-editor" aria-label={t('Item editor')}>
+        <Tabs tabs={tabs} value={tab} onChange={setTab} label={t('Item settings')} idPrefix="give" />
         <TabPanel idPrefix="give" id={tab}>
           {tab === 'item' && itemTab}
           {tab === 'text' && textTab}
@@ -690,8 +691,8 @@ export default function GiveGenerator() {
       </section>
       <SavedPanel<ItemSpec>
         slug="give-generator"
-        title="my items"
-        help="Keep items you made and load them again later. Saved in this browser; Backup (bottom of the page) copies them to another computer."
+        title={t('my items')}
+        help={t('Keep items you made and load them again later. Saved in this browser; Backup (bottom of the page) copies them to another computer.')}
         suggestName={() => plainText(spec.name).trim() || info?.name || spec.item}
         getData={() => spec}
         onLoad={(d) => setSpec(fix(d))}
@@ -700,7 +701,7 @@ export default function GiveGenerator() {
             i.data.mob && itemKinds(i.data.item).spawnEgg ? ` · spawns ${MOB_BY_ID.get(i.data.mob.entity)?.name ?? i.data.mob.entity}` : ''
           }`
         }
-        emptyText="No saved items yet. Build one and press save."
+        emptyText={t('No saved items yet. Build one and press save.')}
       />
     </Workbench>
   );
@@ -730,12 +731,12 @@ function PotionEditor({ spec, set }: EditorProps) {
         <div className="field">
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <label htmlFor="g-pb" className="field-label">
-              Potion type
+              {t('Potion type')}
             </label>
-            <Help label="Potion type" text="A normal brewable potion. Leave on “none” and add your own effects below for anything else." />
+            <Help label={t('Potion type')} text={t('A normal brewable potion. Leave on “none” and add your own effects below for anything else.')} />
           </span>
           <select id="g-pb" className="select" value={spec.potionBase} onChange={(e) => set({ potionBase: e.target.value })}>
-            <option value="">none</option>
+            <option value="">{t('none')}</option>
             {POTIONS.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
@@ -744,20 +745,20 @@ function PotionEditor({ spec, set }: EditorProps) {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="g-pc">Color</label>
+          <label htmlFor="g-pc">{t('Color')}</label>
           <span className="inline">
             <input id="g-pc" type="color" className="give-color" value={spec.potionColor || '#385dc6'} onChange={(e) => set({ potionColor: e.target.value })} />
             {spec.potionColor && (
               <button type="button" className="btn btn-sm" onClick={() => set({ potionColor: '' })}>
-                from effects
+                {t('from effects')}
               </button>
             )}
           </span>
         </div>
       </div>
-      <span className="field-label">Custom effects</span>
+      <span className="field-label">{t('Custom effects')}</span>
       <EffectList effects={spec.effects} onChange={(effects) => set({ effects })} />
-      <p className="note">Seconds −1 lasts forever. Level 1 is the normal strength (Speed I).</p>
+      <p className="note">{t('Seconds −1 lasts forever. Level 1 is the normal strength (Speed I).')}</p>
     </>
   );
 }
@@ -766,9 +767,9 @@ function TrimEditor({ spec, set }: EditorProps) {
   return (
     <div className="fields">
       <div className="field">
-        <label htmlFor="g-tp">Trim pattern</label>
+        <label htmlFor="g-tp">{t('Trim pattern')}</label>
         <select id="g-tp" className="select" value={spec.trimPattern} onChange={(e) => set({ trimPattern: e.target.value })}>
-          <option value="">no trim</option>
+          <option value="">{t('no trim')}</option>
           {TRIM_PATTERNS.map((p) => (
             <option key={p} value={p}>
               {label(p)}
@@ -777,7 +778,7 @@ function TrimEditor({ spec, set }: EditorProps) {
         </select>
       </div>
       <div className="field">
-        <label htmlFor="g-tm">Material</label>
+        <label htmlFor="g-tm">{t('Material')}</label>
         <select id="g-tm" className="select" value={spec.trimMaterial} disabled={!spec.trimPattern} onChange={(e) => set({ trimMaterial: e.target.value })}>
           {TRIM_MATERIALS.map((m) => (
             <option key={m.id} value={m.id}>
@@ -821,29 +822,29 @@ function FireworkEditor({ spec, set, star }: EditorProps & { star: boolean }) {
   return (
     <>
       {!star && (
-        <Row id="g-fl" label="Flight duration" help="How high it flies: 1, 2 or 3 like gunpowder in crafting. 0 explodes right away.">
+        <Row id="g-fl" label={t('Flight duration')} help={t('How high it flies: 1, 2 or 3 like gunpowder in crafting. 0 explodes right away.')}>
           <Segmented labelledBy="g-fl" compact value={String(spec.flight)} onChange={(v) => set({ flight: Number(v) })} options={['0', '1', '2', '3'].map((v) => ({ value: v, label: v }))} />
         </Row>
       )}
       {list.map((e, i) => (
         <div key={i} className="give-box">
           <div className="opt-row">
-            <span className="field-label">{star ? 'Explosion' : `Explosion ${i + 1}`}</span>
+            <span className="field-label">{star ? t('Explosion') : t('Explosion {n}', { n: i + 1 })}</span>
             <button type="button" className="btn btn-sm" onClick={() => set({ explosions: spec.explosions.filter((_, j) => j !== i) })}>
-              remove
+              {t('remove')}
             </button>
           </div>
-          <Segmented label="Shape" value={e.shape} onChange={(v) => setExp(i, { shape: v })} options={FIREWORK_SHAPES} />
-          <ColorList label="Colors" colors={e.colors} onChange={(c) => setExp(i, { colors: c })} />
-          <ColorList label="Fade to" colors={e.fades} onChange={(c) => setExp(i, { fades: c })} />
+          <Segmented label={t('Shape')} value={e.shape} onChange={(v) => setExp(i, { shape: v })} options={FIREWORK_SHAPES} />
+          <ColorList label={t('Colors')} colors={e.colors} onChange={(c) => setExp(i, { colors: c })} />
+          <ColorList label={t('Fade to')} colors={e.fades} onChange={(c) => setExp(i, { fades: c })} />
           <div className="inline">
             <label className="check">
               <input type="checkbox" checked={e.trail} onChange={(ev) => setExp(i, { trail: ev.target.checked })} />
-              trail
+              {t('trail')}
             </label>
             <label className="check">
               <input type="checkbox" checked={e.twinkle} onChange={(ev) => setExp(i, { twinkle: ev.target.checked })} />
-              twinkle
+              {t('twinkle')}
             </label>
           </div>
         </div>
@@ -855,7 +856,7 @@ function FireworkEditor({ spec, set, star }: EditorProps & { star: boolean }) {
           style={{ alignSelf: 'flex-start' }}
           onClick={() => set({ explosions: [...spec.explosions, { shape: 'large_ball', colors: ['#B02E26'], fades: [], trail: false, twinkle: false }] })}
         >
-          + add explosion
+          {t('+ add explosion')}
         </button>
       )}
     </>

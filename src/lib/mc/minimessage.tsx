@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { MC_COLORS, MC_FORMATS, segStyle, type Style } from './text';
+import { t } from '../i18n-core';
 
 // MiniMessage renderer for previews. Covers the standard tags
 // (https://docs.papermc.io/adventure/minimessage/format/): colors, hex, decorations and their
@@ -162,23 +163,23 @@ function parse(input: string): Node[] {
     if (last?.type === 'text') last.text += text;
     else list.push({ type: 'text', text });
   };
-  for (const t of scan(input)) {
-    if (t.type === 'text' || !t.valid) {
-      pushText(t.type === 'text' ? t.text : t.raw);
+  for (const tt of scan(input)) {
+    if (tt.type === 'text' || !tt.valid) {
+      pushText(tt.type === 'text' ? tt.text : tt.raw);
       continue;
     }
-    if (t.name === 'reset') {
+    if (tt.name === 'reset') {
       stack.length = 0;
       continue;
     }
-    if (t.closing) {
-      const at = stack.map((s) => s.name).lastIndexOf(t.name);
+    if (tt.closing) {
+      const at = stack.map((s) => s.name).lastIndexOf(tt.name);
       if (at >= 0) stack.length = at;
       continue;
     }
-    const node: Tag = { type: 'tag', name: t.name, args: t.negated ? ['false', ...t.args] : t.args, children: [], raw: t.raw };
+    const node: Tag = { type: 'tag', name: tt.name, args: tt.negated ? ['false', ...tt.args] : tt.args, children: [], raw: tt.raw };
     here().push(node);
-    if (!SELF_CLOSING.has(t.name) && !t.selfClose) stack.push(node);
+    if (!SELF_CLOSING.has(tt.name) && !tt.selfClose) stack.push(node);
   }
   return root;
 }
@@ -188,10 +189,10 @@ export type MStyle = Style & { shadow?: string | null; font?: string; title?: st
 type Ch = { ch: string; style: MStyle; img?: string; keybind?: string; head?: string };
 
 const hex2 = (n: number) => Math.round(Math.min(255, Math.max(0, n))).toString(16).padStart(2, '0');
-const mix = (a: string, b: string, t: number) => {
+const mix = (a: string, b: string, tt: number) => {
   const pa = parseInt(a.slice(1), 16);
   const pb = parseInt(b.slice(1), 16);
-  const ch = (s: number) => ((pa >> s) & 255) + (((pb >> s) & 255) - ((pa >> s) & 255)) * t;
+  const ch = (s: number) => ((pa >> s) & 255) + (((pb >> s) & 255) - ((pa >> s) & 255)) * tt;
   return `#${hex2(ch(16))}${hex2(ch(8))}${hex2(ch(0))}`.toUpperCase();
 };
 const hsv = (h: number) => {
@@ -209,9 +210,9 @@ const hsv = (h: number) => {
   return `#${hex2(r * 255)}${hex2(g * 255)}${hex2(b * 255)}`.toUpperCase();
 };
 /** Color at position t (0..1) along a list of stops. */
-const along = (stops: string[], t: number) => {
+const along = (stops: string[], tt: number) => {
   if (stops.length === 1) return stops[0];
-  const x = Math.min(1, Math.max(0, t)) * (stops.length - 1);
+  const x = Math.min(1, Math.max(0, tt)) * (stops.length - 1);
   const k = Math.min(stops.length - 2, Math.floor(x));
   return mix(stops[k], stops[k + 1], x - k);
 };
@@ -309,10 +310,10 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
         walk(n.children, { ...style, title: `click: ${a[0] ?? ''} ${a.slice(1).join(':')}`.trim() }, out);
         break;
       case 'hover':
-        walk(n.children, { ...style, title: `hover: ${a.slice(1).join(':').replace(/<[^>]*>/g, '')}` }, out);
+        walk(n.children, { ...style, title: t('hover: {text}', { text: a.slice(1).join(':').replace(/<[^>]*>/g, '') }) }, out);
         break;
       case 'insert':
-        walk(n.children, { ...style, title: `shift-click inserts: ${a.join(':')}` }, out);
+        walk(n.children, { ...style, title: t('shift-click inserts: {text}', { text: a.join(':') }) }, out);
         break;
       case 'center':
         walk(n.children, style, out);
@@ -322,9 +323,9 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
         const { stops, phase } = stopsAndPhase(a);
         const colors = stops.length >= 2 ? stops : stops.length === 1 ? [stops[0], '#FFFFFF'] : ['#FFFFFF', '#000000'];
         recolor(out, start, (i, len) => {
-          let t = len <= 1 ? 0 : i / (len - 1);
-          if (phase) t = (((t + phase) % 1) + 1) % 1;
-          return along(colors, t);
+          let tt = len <= 1 ? 0 : i / (len - 1);
+          if (phase) tt = (((tt + phase) % 1) + 1) % 1;
+          return along(colors, tt);
         });
         break;
       }
@@ -472,22 +473,22 @@ export type Lint = { raw: string; message: string };
 export function lintMiniMessage(input: string): Lint[] {
   const out: Lint[] = [];
   const open: string[] = [];
-  for (const t of scan(input)) {
-    if (t.type === 'text') continue;
-    if (!t.valid) {
+  for (const tok of scan(input)) {
+    if (tok.type === 'text') continue;
+    if (!tok.valid) {
       // "<3" or "<- back" are just text, not attempts at a tag.
-      if (!/^<\/?[a-z]/i.test(t.raw)) continue;
-      const guess = TAG_NAMES.map((n) => [n, distance(t.name, n)] as const).sort((a, b) => a[1] - b[1])[0];
-      const hint = guess && guess[1] <= 2 ? ` Did you mean <${t.closing ? '/' : ''}${guess[0]}>?` : '';
-      out.push({ raw: t.raw, message: `${t.raw} isn’t a MiniMessage tag, so it shows up as text.${hint}` });
+      if (!/^<\/?[a-z]/i.test(tok.raw)) continue;
+      const guess = TAG_NAMES.map((n) => [n, distance(tok.name, n)] as const).sort((a, b) => a[1] - b[1])[0];
+      const hint = guess && guess[1] <= 2 ? ` ${t('Did you mean {tag}?', { tag: `<${tok.closing ? '/' : ''}${guess[0]}>` })}` : '';
+      out.push({ raw: tok.raw, message: t('{raw} isn’t a MiniMessage tag, so it shows up as text.{hint}', { raw: tok.raw, hint }) });
       continue;
     }
-    if (t.name === 'reset') open.length = 0;
-    else if (t.closing) {
-      const at = open.lastIndexOf(t.name);
-      if (at < 0) out.push({ raw: t.raw, message: `${t.raw} closes a tag that was never opened, so it does nothing.` });
+    if (tok.name === 'reset') open.length = 0;
+    else if (tok.closing) {
+      const at = open.lastIndexOf(tok.name);
+      if (at < 0) out.push({ raw: tok.raw, message: t('{raw} closes a tag that was never opened, so it does nothing.', { raw: tok.raw }) });
       else open.length = at;
-    } else if (!SELF_CLOSING.has(t.name) && !t.selfClose) open.push(t.name);
+    } else if (!SELF_CLOSING.has(tok.name) && !tok.selfClose) open.push(tok.name);
   }
   return out;
 }
@@ -495,9 +496,9 @@ export function lintMiniMessage(input: string): Lint[] {
 /** Removes formatting tags but keeps the text, placeholders, alignment and content tags (head, key…). */
 export function stripFormatting(input: string): string {
   return scan(input)
-    .map((t) => {
-      if (t.type === 'text') return t.text.replace(/</g, '\\<');
-      if (!t.valid || t.name === 'center' || SELF_CLOSING.has(t.name)) return t.raw;
+    .map((tt) => {
+      if (tt.type === 'text') return tt.text.replace(/</g, '\\<');
+      if (!tt.valid || tt.name === 'center' || SELF_CLOSING.has(tt.name)) return tt.raw;
       return '';
     })
     .join('');

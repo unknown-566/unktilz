@@ -4,6 +4,7 @@ import { allSaved, mergeSaved, type SavedItem } from '../lib/saved';
 import { saveBlob } from '../queue/download';
 import { loadSaved as loadSkinEditor, save as saveSkinEditor } from '../tools/minecraft/skin-editor/load';
 import { getTool } from '../registry';
+import { plural, t } from '../lib/i18n-core';
 
 type Backup = {
   format: 'unktilz-backup';
@@ -52,7 +53,7 @@ export default function Backup() {
     setSummary(rows);
   };
   useEffect(() => {
-    document.title = 'Backup · unktilz';
+    document.title = t('Backup · unktilz');
     refresh();
   }, []);
 
@@ -63,7 +64,7 @@ export default function Backup() {
       for (const k of localKeys()) local[k] = localStorage.getItem(k) ?? '';
       const backup: Backup = { format: 'unktilz-backup', created: new Date().toISOString(), saved: await allSaved(), skinEditor: await loadSkinEditor(), local };
       saveBlob(new Blob([JSON.stringify(backup, replacer)], { type: 'application/json' }), `unktilz-backup-${new Date().toISOString().slice(0, 10)}.json`);
-      setStatus('Backup downloaded.');
+      setStatus(t('Backup downloaded.'));
     } finally {
       setBusy(false);
     }
@@ -85,10 +86,14 @@ export default function Backup() {
           localStorage.setItem(k, v);
           n++;
         }
-      setStatus(n ? `Restored ${n} thing${n > 1 ? 's' : ''} from the backup. Nothing you already had was removed.` : 'Everything in that backup was already here.');
+      setStatus(
+        n
+          ? plural(n, ['Restored {n} thing from the backup. Nothing you already had was removed.', 'Restored {n} things from the backup. Nothing you already had was removed.'], ['Ze zálohy je obnovená {n} věc. Nic z toho, co už jste měli, se nesmazalo.', 'Ze zálohy jsou obnovené {n} věci. Nic z toho, co už jste měli, se nesmazalo.', 'Ze zálohy je obnoveno {n} věcí. Nic z toho, co už jste měli, se nesmazalo.'])
+          : t('Everything in that backup was already here.'),
+      );
       refresh();
     } catch {
-      setStatus('That file isn’t an unktilz backup.');
+      setStatus(t('That file isn’t an unktilz backup.'));
     } finally {
       setBusy(false);
       if (file.current) file.current.value = '';
@@ -97,26 +102,26 @@ export default function Backup() {
 
   return (
     <div className="wrap tool-wrap">
-      <nav aria-label="Breadcrumb" className="crumbs">
-        <GoLink to="/">tools</GoLink>
+      <nav aria-label={t('Breadcrumb')} className="crumbs">
+        <GoLink to="/">{t('tools')}</GoLink>
         <span aria-hidden="true">/</span>
-        <span aria-current="page">backup</span>
+        <span aria-current="page">{t('backup')}</span>
       </nav>
       <div className="tool-head">
         <div className="title-row">
-          <h1>Backup</h1>
+          <h1>{t('Backup')}</h1>
         </div>
         <p className="tool-desc">
-          Everything you save in the tools lives in this browser. Download a backup to keep it safe or to move it to another computer, then load it there.
+          {t('Everything you save in the tools lives in this browser. Download a backup to keep it safe or to move it to another computer, then load it there.')}
         </p>
       </div>
-      <section className="panel" aria-label="Backup">
+      <section className="panel" aria-label={t('Backup')}>
         <div className="seg">
           <button type="button" className="btn btn-primary" onClick={download} disabled={busy}>
-            Download backup
+            {t('Download backup')}
           </button>
           <button type="button" className="btn" onClick={() => file.current?.click()} disabled={busy}>
-            Load a backup…
+            {t('Load a backup…')}
           </button>
           <input ref={file} type="file" accept=".json,application/json" hidden onChange={(e) => restore(e.target.files?.[0])} />
         </div>
@@ -125,12 +130,12 @@ export default function Backup() {
             {status}
           </p>
         )}
-        <p className="note">Loading a backup adds what’s in it: saved items are merged, and work in progress is only filled in where you have none.</p>
+        <p className="note">{t('Loading a backup adds what’s in it: saved items are merged, and work in progress is only filled in where you have none.')}</p>
       </section>
-      <section className="panel" aria-label="What's saved">
-        <h2 className="panel-title">// saved in this browser</h2>
+      <section className="panel" aria-label={t('What\'s saved')}>
+        <h2 className="panel-title">{t('// saved in this browser')}</h2>
         {summary.length === 0 ? (
-          <p className="note">Nothing saved yet.</p>
+          <p className="note">{t('Nothing saved yet.')}</p>
         ) : (
           <ul className="backup-list">
             {summary.map((r) => (
@@ -141,7 +146,7 @@ export default function Backup() {
             ))}
           </ul>
         )}
-        <p className="note">Saved data belongs to the address in the address bar (e.g. localhost:5173). start.bat always uses 5173, so it stays the same after updates.</p>
+        <p className="note">{t('Saved data belongs to the address in the address bar (e.g. localhost:5173). start.bat always uses 5173, so it stays the same after updates.')}</p>
       </section>
     </div>
   );

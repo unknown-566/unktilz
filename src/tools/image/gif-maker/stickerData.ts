@@ -1,5 +1,6 @@
 import notoData from '../../../lib/noto-emoji.json';
 import { stickerKey, type StickerAnim, type StickerRef } from './compose';
+import { t } from '../../../lib/i18n-core';
 
 // ---------- Google Noto animated emoji (artwork CC BY 4.0) ----------
 
@@ -102,13 +103,13 @@ export function loadSticker(ref: StickerRef, mine: (id: string) => MySticker | u
         try {
           res = await fetch(notoUrl(ref.code));
         } catch {
-          throw new Error('Animated emoji need the internet, and it looks like there isn’t any.');
+          throw new Error(t('Animated emoji need the internet, and it looks like there isn’t any.'));
         }
-        if (!res.ok) throw new Error(`This emoji couldn’t be loaded (HTTP ${res.status}).`);
+        if (!res.ok) throw new Error(t('This emoji couldn’t be loaded (HTTP {status}).', { status: res.status }));
         return decodeSticker(await res.blob(), 'image/webp');
       }
       const s = mine(ref.id);
-      if (!s) throw new Error('This sticker isn’t in “my stickers” any more.');
+      if (!s) throw new Error(t('This sticker isn’t in “my stickers” any more.'));
       return decodeSticker(new Blob([s.bytes as BlobPart], { type: s.mime }), s.mime);
     })();
     // A failed load can be tried again later (e.g. once the internet is back).

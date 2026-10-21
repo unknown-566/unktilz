@@ -13,12 +13,13 @@ import { SavedPanel } from '../../../components/SavedPanel';
 import type { ViewName } from './scene';
 import { TextureView, type Float } from './TextureView';
 import { Viewport3D } from './Viewport3D';
+import { plural, t, tn } from '../../../lib/i18n';
 
 const SLOT = ['A', 'B'];
 const NO_PARTS = new Set<PartId>();
 const TOOL_KEYS: Record<string, ToolId> = { b: 'pencil', e: 'eraser', g: 'fill', s: 'shade', i: 'picker', m: 'select' };
 // "Right" and "left" are the player's own sides.
-const FACE_LABEL = { top: 'top', bottom: 'bottom', front: 'front', back: 'back', right: 'right side', left: 'left side' } as const;
+const FACE_LABEL = { top: t('face|top'), bottom: t('face|bottom'), front: t('face|front'), back: t('face|back'), right: t('face|right side'), left: t('face|left side') };
 
 type Item = { part: PartId; layer: Layer };
 type SavedSkin = { name: string; model: Model; pixels: Uint8Array };
@@ -66,7 +67,7 @@ function PartPicker({
   onOverlay: (v: boolean) => void;
 }) {
   return (
-    <div className="sk-picker" role="group" aria-label="Show parts">
+    <div className="sk-picker" role="group" aria-label={t('Show parts')}>
       <div className="sk-figure">
         {PICKER.map(({ part, area }) => {
           const name = PART_LABEL[part][0].toLowerCase();
@@ -77,8 +78,8 @@ function PartPicker({
               type="button"
               style={{ gridArea: area }}
               aria-pressed={on}
-              aria-label={`${on ? 'Hide' : 'Show'} ${name}`}
-              title={`${on ? 'Hide' : 'Show'} ${name}`}
+              aria-label={on ? t('Hide {name}', { name }) : t('Show {name}', { name })}
+              title={on ? t('Hide {name}', { name }) : t('Show {name}', { name })}
               onClick={() => onToggle(part)}
             />
           );
@@ -89,10 +90,10 @@ function PartPicker({
         className="sk-picker-outer"
         aria-pressed={showOverlay}
         disabled={overlayLocked}
-        title={overlayLocked ? 'Shown while you paint the outer layer' : showOverlay ? 'Hide the outer layer (hat, jacket…)' : 'Show the outer layer (hat, jacket…)'}
+        title={overlayLocked ? t('Shown while you paint the outer layer') : showOverlay ? t('Hide the outer layer (hat, jacket…)') : t('Show the outer layer (hat, jacket…)')}
         onClick={() => onOverlay(!showOverlay)}
       >
-        outer
+        {t('outer')}
       </button>
     </div>
   );
@@ -128,8 +129,8 @@ export default function SkinEditor() {
   const say = useCallback((m: string) => setMessage(m), []);
   useEffect(() => {
     if (!message) return;
-    const t = setTimeout(() => setMessage(''), 9000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setMessage(''), 9000);
+    return () => clearTimeout(timer);
   }, [message]);
 
   // ---- open / restore ----
@@ -154,7 +155,7 @@ export default function SkinEditor() {
     let alive = true;
     loadSaved().then(async (saved) => {
       if (!alive) return;
-      const docs = (saved?.slots ?? [null, null]).map((s) => (s ? new SkinDoc(s.name, s.pixels, s.model, 'Restored from last visit') : null));
+      const docs = (saved?.slots ?? [null, null]).map((s) => (s ? new SkinDoc(s.name, s.pixels, s.model, t('Restored from last visit')) : null));
       slotsRef.current = docs;
       setSlots(docs);
       setActive(saved?.active && docs[saved.active] ? saved.active : 0);
@@ -183,14 +184,14 @@ export default function SkinEditor() {
   const v1 = slots[1]?.index + ':' + slots[1]?.steps.length + slots[1]?.name;
   useEffect(() => {
     if (!restored) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       save({
         slots: slots.map((d) => (d ? { name: d.name, model: d.steps[d.index].model, pixels: d.steps[d.index].pixels } : null)),
         active,
         recent,
       });
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [restored, slots, active, recent, v0, v1]);
 
   // Colors you paint with go to "recent".
@@ -216,7 +217,7 @@ export default function SkinEditor() {
   );
   const dropFloat = useCallback(() => {
     if (!doc || !float) return;
-    doc.commit(`Pasted ${float.w}×${float.h}`);
+    doc.commit(t('Pasted {w}×{h}', { w: float.w, h: float.h }));
     setFloat(null);
   }, [doc, float]);
   const cancelFloat = useCallback(() => {
@@ -237,7 +238,11 @@ export default function SkinEditor() {
   const copy = () => {
     if (!doc || !selection) return false;
     setClip({ ...copyRect(doc.pixels, selection), x: selection.x, y: selection.y, from: SLOT[active] });
-    say(`Copied ${selection.w}×${selection.h} pixels.${other ? ` Switch to ${SLOT[1 - active]} and press Ctrl+V to paste.` : ' Press Ctrl+V to paste.'}`);
+    say(
+      other
+        ? t('Copied {w}×{h} pixels. Switch to {slot} and press Ctrl+V to paste.', { w: selection.w, h: selection.h, slot: SLOT[1 - active] })
+        : t('Copied {w}×{h} pixels. Press Ctrl+V to paste.', { w: selection.w, h: selection.h }),
+    );
     return true;
   };
   const paste = () => {
@@ -246,7 +251,7 @@ export default function SkinEditor() {
     set({ tool: 'select' });
     setSelection(null);
     placeFloat({ w: clip.w, h: clip.h, data: clip.data, x: clip.x, y: clip.y });
-    say('Drag the pasted pixels into place (or use the arrow keys), then press Enter. Esc cancels.');
+    say(t('Drag the pasted pixels into place (or use the arrow keys), then press Enter. Esc cancels.'));
     return true;
   };
 
@@ -258,16 +263,16 @@ export default function SkinEditor() {
     dropFloat();
     for (const i of items) copyPart(src.steps[src.index].pixels, src.steps[src.index].model, dst.pixels, dst.model, i.part, i.layer);
     const names = items.map((i) => PART_LABEL[i.part][i.layer === 'base' ? 0 : 1].toLowerCase());
-    dst.commit(`Copied ${names.length > 3 ? `${names.length} parts` : names.join(', ')} from ${SLOT[from]}`);
+    dst.commit(t('Copied {parts} from {slot}', { parts: names.length > 3 ? plural(names.length, ['{n} part', '{n} parts'], ['{n} část', '{n} části', '{n} částí']) : names.join(', '), slot: SLOT[from] }));
     if (to !== active) switchTo(to);
-    say(`Copied to ${SLOT[to]}. Ctrl+Z undoes it.`);
+    say(t('Copied to {slot}. Ctrl+Z undoes it.', { slot: SLOT[to] }));
   };
 
   const setModel = (m: Model) => {
     if (!doc || doc.model === m) return;
     dropFloat();
     doc.model = m;
-    doc.commit(m === 'slim' ? 'Arms: slim' : 'Arms: classic');
+    doc.commit(m === 'slim' ? t('Arms: slim') : t('Arms: classic'));
   };
   const convertModel = () => {
     if (!doc) return;
@@ -275,7 +280,7 @@ export default function SkinEditor() {
     const to: Model = doc.model === 'slim' ? 'classic' : 'slim';
     doc.pixels.set(convertArms(doc.pixels, doc.model, to));
     doc.model = to;
-    doc.commit(`Resized arms to ${to}`);
+    doc.commit(to === 'slim' ? t('Resized arms to slim') : t('Resized arms to classic'));
   };
 
   const download = () => {
@@ -293,7 +298,7 @@ export default function SkinEditor() {
 
   const close = (i: number) => {
     const d = slots[i];
-    if (d?.dirty && !window.confirm(`Close ${SLOT[i]} (${d.name})? Changes you haven’t downloaded are lost.`)) return;
+    if (d?.dirty && !window.confirm(t('Close {v1} ({name})? Changes you haven’t downloaded are lost.', { v1: SLOT[i], name: d.name }))) return;
     if (i === active) {
       setFloat(null);
       setSelection(null);
@@ -304,19 +309,19 @@ export default function SkinEditor() {
   const undo = () => (float ? cancelFloat() : doc?.undo());
   const redo = () => !float && doc?.redo();
 
-  const setTool = (t: ToolId) => {
-    if (t !== 'select') {
+  const setTool = (tt: ToolId) => {
+    if (tt !== 'select') {
       dropFloat();
       setSelection(null);
     }
-    set({ tool: t });
+    set({ tool: tt });
   };
 
   // ---- keyboard ----
   const keys = useRef<(e: KeyboardEvent) => void>(undefined);
   keys.current = (e) => {
-    const t = e.target instanceof Element ? e.target : null;
-    if (t?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    const tt = e.target instanceof Element ? e.target : null;
+    if (tt?.closest('input, textarea, select, [contenteditable="true"]')) return;
     const mod = e.ctrlKey || e.metaKey;
     const k = e.key.toLowerCase();
     let done = true;
@@ -346,25 +351,25 @@ export default function SkinEditor() {
   const highlightParts = useMemo(() => [...new Set(highlight.map((h) => h.part))], [highlight]);
   const hoverInfo = useMemo(() => {
     if (!doc || !hoverPx) return '';
-    const t = texelAt(doc.model, hoverPx[0], hoverPx[1]);
-    if (!t) return `${hoverPx[0]}, ${hoverPx[1]} · not used by the game`;
-    const { part, layer, face } = t.region;
+    const tt = texelAt(doc.model, hoverPx[0], hoverPx[1]);
+    if (!tt) return t('{x}, {y} · not used by the game', { x: hoverPx[0], y: hoverPx[1] });
+    const { part, layer, face } = tt.region;
     return `${PART_LABEL[part][layer === 'base' ? 0 : 1]} · ${FACE_LABEL[face]} · ${hoverPx[0]}, ${hoverPx[1]}`;
   }, [doc, hoverPx]);
 
-  if (!restored) return <div className="panel muted mono">loading…</div>;
+  if (!restored) return <div className="panel muted mono">{t('loading…')}</div>;
 
   const tabs = (
     <div className="sk-top">
-      <div className="sk-tabs" role="group" aria-label="Open skins">
+      <div className="sk-tabs" role="group" aria-label={t('Open skins')}>
         {slots.map((d, i) => (
           <div key={i} className="sk-tab" data-active={i === active || undefined}>
             <button type="button" aria-pressed={i === active} onClick={() => switchTo(i)}>
-              <b>{SLOT[i]}</b> <span>{d ? d.name : 'empty'}</span>
-              {d?.dirty && <span className="tab-dot" aria-label="(not downloaded)"> ●</span>}
+              <b>{SLOT[i]}</b> <span>{d ? d.name : t('empty')}</span>
+              {d?.dirty && <span className="tab-dot" aria-label={t('(not downloaded)')}> ●</span>}
             </button>
             {d && (
-              <button type="button" className="sk-tab-x" aria-label={`Close ${SLOT[i]}`} onClick={() => close(i)}>
+              <button type="button" className="sk-tab-x" aria-label={t('Close {v1}', { v1: SLOT[i] })} onClick={() => close(i)}>
                 ×
               </button>
             )}
@@ -373,17 +378,17 @@ export default function SkinEditor() {
       </div>
       {doc && (
         <div className="sk-actions">
-          <button type="button" className="btn btn-sm" onClick={undo} disabled={!float && !doc.canUndo} title="Undo (Ctrl+Z)">
-            ↶ undo
+          <button type="button" className="btn btn-sm" onClick={undo} disabled={!float && !doc.canUndo} title={t('Undo (Ctrl+Z)')}>
+            {t('↶ undo')}
           </button>
-          <button type="button" className="btn btn-sm" onClick={redo} disabled={!!float || !doc.canRedo} title="Redo (Ctrl+Y)">
-            ↷ redo
+          <button type="button" className="btn btn-sm" onClick={redo} disabled={!!float || !doc.canRedo} title={t('Redo (Ctrl+Y)')}>
+            {t('↷ redo')}
           </button>
           <button type="button" className="btn btn-sm" onClick={() => setOpening(!opening)} aria-expanded={opening}>
-            open…
+            {t('open…')}
           </button>
           <button type="button" className="btn btn-sm btn-primary" onClick={download}>
-            download .png
+            {t('download .png')}
           </button>
         </div>
       )}
@@ -410,7 +415,7 @@ export default function SkinEditor() {
       <div className="sk-grid">
         <Toolbox settings={settings} set={(s) => (s.tool ? setTool(s.tool) : set(s))} recent={recent} used={used} />
 
-        <section className="panel sk-stage" aria-label="3D view">
+        <section className="panel sk-stage" aria-label={t('3D view')}>
           <div className="sk-3dwrap">
           <Viewport3D
             doc={doc}
@@ -426,7 +431,7 @@ export default function SkinEditor() {
             onPick={(c) => set({ color: c })}
             onMessage={say}
             view={view}
-            label={`${doc.name} in 3D. Drag on the model to paint, drag beside it to turn it.`}
+            label={t('{name} in 3D. Drag on the model to paint, drag beside it to turn it.', { name: doc.name })}
           />
           <PartPicker
             hidden={hidden}
@@ -442,16 +447,16 @@ export default function SkinEditor() {
           />
           </div>
           <div className="sk-status mono" aria-live="polite">
-            {message ? <span className="sk-msg">{message}</span> : <span className="muted">{hoverInfo || 'Drag on the figure to paint · drag beside it (or right-drag) to turn · scroll to zoom'}</span>}
+            {message ? <span className="sk-msg">{message}</span> : <span className="muted">{hoverInfo || t('Drag on the figure to paint · drag beside it (or right-drag) to turn · scroll to zoom')}</span>}
           </div>
-          <div className="seg sk-views" role="group" aria-label="Camera">
+          <div className="seg sk-views" role="group" aria-label={t('Camera')}>
             {(
               [
                 ['angle', '3/4'],
-                ['front', 'front'],
-                ['back', 'back'],
-                ['right', 'right side'],
-                ['left', 'left side'],
+                ['front', t('face|front')],
+                ['back', t('face|back')],
+                ['right', t('face|right side')],
+                ['left', t('face|left side')],
               ] as const
             ).map(([name, label]) => (
               <button key={name} type="button" onClick={() => setView({ name, n: (view?.n ?? 0) + 1 })}>
@@ -462,26 +467,26 @@ export default function SkinEditor() {
           <hr className="divider" />
           <Row
             id="sk-layer"
-            label="Paint on"
-            help="Every part has two layers. Base is the body itself. Outer sits on top of it (hat, jacket, sleeves, pants) and can have see-through pixels. While you paint the base, the outer layer fades so you can see under it."
+            label={t('Paint on')}
+            help={t('Every part has two layers. Base is the body itself. Outer sits on top of it (hat, jacket, sleeves, pants) and can have see-through pixels. While you paint the base, the outer layer fades so you can see under it.')}
           >
             <Segmented
               labelledBy="sk-layer"
               value={settings.layer}
               onChange={(v) => set({ layer: v })}
               options={[
-                { value: 'base', label: 'base' },
-                { value: 'overlay', label: 'outer layer' },
+                { value: 'base', label: t('base') },
+                { value: 'overlay', label: t('outer layer') },
               ]}
             />
           </Row>
-          <Row id="sk-mirror" label="Mirror left ↔ right" help="Whatever you paint on one side also appears on the other: right arm ↔ left arm, and across the head and body.">
+          <Row id="sk-mirror" label={t('Mirror left ↔ right')} help={t('Whatever you paint on one side also appears on the other: right arm ↔ left arm, and across the head and body.')}>
             <Toggle labelledBy="sk-mirror" checked={settings.mirror} onChange={(v) => set({ mirror: v })} />
           </Row>
           <Row
             id="sk-model"
-            label="Arms"
-            help="Classic (Steve) arms are 4 pixels wide, slim (Alex) arms 3. Pick what the skin was made for: if the arms look cut off or have a dark stripe, it's the other one. “resize arms” keeps how the arms look and changes the width."
+            label={t('Arms')}
+            help={t('Classic (Steve) arms are 4 pixels wide, slim (Alex) arms 3. Pick what the skin was made for: if the arms look cut off or have a dark stripe, it\'s the other one. “resize arms” keeps how the arms look and changes the width.')}
           >
             <span className="inline" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Segmented
@@ -489,22 +494,22 @@ export default function SkinEditor() {
                 value={doc.model}
                 onChange={setModel}
                 options={[
-                  { value: 'classic', label: 'classic' },
-                  { value: 'slim', label: 'slim' },
+                  { value: 'classic', label: t('arms|classic') },
+                  { value: 'slim', label: t('arms|slim') },
                 ]}
               />
               <button type="button" className="btn btn-sm" onClick={convertModel}>
-                resize arms to {doc.model === 'slim' ? 'classic' : 'slim'}
+                {doc.model === 'slim' ? t('resize arms to classic') : t('resize arms to slim')}
               </button>
             </span>
           </Row>
         </section>
 
         <div className="sk-side">
-          <section className="panel" aria-label="Flat texture">
+          <section className="panel" aria-label={t('Flat texture')}>
             <div className="opt-row">
-              <h2 className="panel-title">// texture</h2>
-              <Help label="Texture" text="The skin file itself, unfolded. You can paint here too. The darker hatched areas aren't used by the game. With Select (M) you can drag a box and copy it." />
+              <h2 className="panel-title">{t('// texture')}</h2>
+              <Help label={t('Texture')} text={t('The skin file itself, unfolded. You can paint here too. The darker hatched areas aren\'t used by the game. With Select (M) you can drag a box and copy it.')} />
             </div>
             <TextureView
               doc={doc}
@@ -526,19 +531,19 @@ export default function SkinEditor() {
                 {float ? (
                   <>
                     <button type="button" className="btn btn-sm btn-primary" onClick={dropFloat}>
-                      place (Enter)
+                      {t('place (Enter)')}
                     </button>
                     <button type="button" className="btn btn-sm" onClick={cancelFloat}>
-                      cancel (Esc)
+                      {t('cancel (Esc)')}
                     </button>
                   </>
                 ) : (
                   <>
                     <button type="button" className="btn btn-sm" onClick={copy} disabled={!selection}>
-                      copy (Ctrl+C)
+                      {t('copy (Ctrl+C)')}
                     </button>
                     <button type="button" className="btn btn-sm" onClick={paste} disabled={!clip}>
-                      paste{clip ? ` ${clip.w}×${clip.h} from ${clip.from}` : ''} (Ctrl+V)
+                      {clip ? t('paste {w}×{h} from {from} (Ctrl+V)', { w: clip.w, h: clip.h, from: clip.from }) : t('paste (Ctrl+V)')}
                     </button>
                   </>
                 )}
@@ -546,11 +551,11 @@ export default function SkinEditor() {
             )}
           </section>
 
-          <section className="panel" aria-label="Other skin">
+          <section className="panel" aria-label={t('Other skin')}>
             <div className="opt-row">
               <h2 className="panel-title">// {SLOT[1 - active]}{other ? ` · ${other.name}` : ''}</h2>
               <button type="button" className="btn btn-sm" onClick={() => switchTo(1 - active)}>
-                {other ? 'edit this one' : 'open a second skin'}
+                {other ? t('edit this one') : t('open a second skin')}
               </button>
             </div>
             {other ? (
@@ -562,10 +567,10 @@ export default function SkinEditor() {
                 hidden={NO_PARTS}
                 highlight={highlightParts}
                 onActivate={() => switchTo(1 - active)}
-                label={`${other.name}, the other open skin. Click to edit it.`}
+                label={t('{name}, the other open skin. Click to edit it.', { name: other.name })}
               />
             ) : (
-              <p className="note">Open a second skin to copy a hat, a jacket or anything else between the two.</p>
+              <p className="note">{t('Open a second skin to copy a hat, a jacket or anything else between the two.')}</p>
             )}
           </section>
 
@@ -579,10 +584,10 @@ export default function SkinEditor() {
           <HistoryPanel doc={doc} />
           <SavedPanel<SavedSkin>
             slug="skin-editor"
-            title="skin library"
-            help="Keep skins you made or like. Opening one puts it in the skin you're editing now (Ctrl+Z brings the old one back)."
-            saveLabel="save skin"
-            loadLabel="Open"
+            title={t('skin library')}
+            help={t('Keep skins you made or like. Opening one puts it in the skin you\'re editing now (Ctrl+Z brings the old one back).')}
+            saveLabel={t('save skin')}
+            loadLabel={t('Open')}
             undoable={false}
             suggestName={() => doc.name}
             getData={() => ({ name: doc.name, model: doc.steps[doc.index].model, pixels: new Uint8Array(doc.steps[doc.index].pixels) })}
@@ -590,21 +595,21 @@ export default function SkinEditor() {
             describe={(i) => (
               <span className="skin-lib-desc">
                 <SkinHead pixels={i.data.pixels} />
-                {i.data.model === 'slim' ? 'slim arms' : 'classic arms'}
+                {i.data.model === 'slim' ? t('slim arms') : t('classic arms')}
               </span>
             )}
-            emptyText="No saved skins yet."
+            emptyText={t('No saved skins yet.')}
           />
 
           <details className="panel sk-howto">
-            <summary className="mono muted">how to wear it in the game</summary>
+            <summary className="mono muted">{t('how to wear it in the game')}</summary>
             <ol className="steps">
-              <li>Download the .png.</li>
+              <li>{t('Download the .png.')}</li>
               <li>
-                Go to <span className="mono">minecraft.net</span> → Profile → Skin (or the Skins tab in the launcher).
+                {tn('Go to {site} → Profile → Skin (or the Skins tab in the launcher).', { site: <span className="mono">minecraft.net</span> })}
               </li>
               <li>
-                Upload it and pick the same arm width as here: <b>{doc.model === 'slim' ? 'Slim' : 'Classic'}</b>.
+                {tn('Upload it and pick the same arm width as here: {model}.', { model: <b>{doc.model === 'slim' ? t('Slim') : t('Classic')}</b> })}
               </li>
             </ol>
           </details>

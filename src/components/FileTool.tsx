@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { acceptsFile, defaultOpts, type Opts, type Tool } from '../registry';
 import type { OptionSchema } from '../registry/types';
-import { useQueue, type Job } from '../queue/store';
+import { statusText, useQueue, type Job } from '../queue/store';
 import { useStaging } from '../queue/staging';
 import { getOutputs } from '../queue/blobs';
 import { downloadJob, formatBytes } from '../queue/download';
@@ -11,6 +11,7 @@ import { Help } from './Help';
 import { ResultPreview } from './ResultPreview';
 import { prefersReducedMotion } from '../lib/theme';
 import { useLocation } from 'react-router-dom';
+import { plural, t } from '../lib/i18n-core';
 
 function OptionControl({ opt, value, set }: { opt: OptionSchema; value: Opts[string]; set: (v: Opts[string]) => void }) {
   const id = useId();
@@ -19,6 +20,25 @@ function OptionControl({ opt, value, set }: { opt: OptionSchema; value: Opts[str
     case 'choice':
       control = <Segmented labelledBy={id} value={String(value)} options={opt.choices} onChange={set} />;
       break;
+    case 'multi': {
+      const on = new Set(String(value).split(',').filter(Boolean));
+      control = (
+        <div className="seg" role="group" aria-labelledby={id}>
+          {opt.choices.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              aria-pressed={on.has(c.value)}
+              // (Kept in the choices' order, whatever order they were clicked in.)
+              onClick={() => set(opt.choices.filter((x) => (x.value === c.value ? !on.has(x.value) : on.has(x.value))).map((x) => x.value).join(','))}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      );
+      break;
+    }
     case 'toggle':
       control = <Toggle labelledBy={id} checked={Boolean(value)} onChange={set} />;
       break;
@@ -82,7 +102,7 @@ export function OptionsPanel({ tool, opts, setOpts }: { tool: Tool; opts: Opts; 
   const visible = (tool.options ?? []).filter((o) => !o.when || o.when(opts));
   if (!visible.length) return null;
   return (
-    <Panel title="options">
+    <Panel title={t('options')}>
       {visible.map((opt, i) => (
         <Fragment key={opt.key}>
           {i > 0 && <hr className="divider" />}
@@ -118,7 +138,7 @@ function ResultRow({ job }: { job: Job }) {
   const [err, setErr] = useState('');
   const pct = Math.round((job.status === 'done' ? 1 : job.progress) * 100);
   const size = job.outputs?.reduce((n, o) => n + o.size, 0);
-  const outName = job.outputs?.length === 1 ? job.outputs[0].name : job.outputs ? `${job.outputs.length} files` : job.file;
+  const outName = job.outputs?.length === 1 ? job.outputs[0].name : job.outputs ? plural(job.outputs.length, ['{n} file', '{n} files'], ['{n} soubor', '{n} soubory', '{n} souborů']) : job.file;
   return (
     <li className="result">
       {job.status === 'done' && <Thumb job={job} />}
@@ -128,13 +148,13 @@ function ResultRow({ job }: { job: Job }) {
             {job.status === 'done' ? outName : job.file}
           </span>
           <span className="job-status" data-status={job.status}>
-            {job.status === 'error' ? 'failed' : job.status}
+            {statusText(job.status)}
             {job.status === 'running' && ` ${pct}%`}
           </span>
         </div>
         {job.status === 'done' || job.status === 'error' ? (
           <span className="job-file" data-status={job.status === 'error' || err ? 'error' : undefined}>
-            {err || job.error || `${size !== undefined ? formatBytes(size) : ''} · from ${job.file}`}
+            {err || job.error || t('{size} · from {file}', { size: size !== undefined ? formatBytes(size) : '', file: job.file })}
           </span>
         ) : (
           <div className="job-progress">
@@ -145,10 +165,10 @@ function ResultRow({ job }: { job: Job }) {
       {job.status === 'done' && (
         <button type="button" className="btn btn-sm" onClick={() => downloadJob(job).catch((e: Error) => setErr(e.message))}>
           <DownloadIcon size={16} />
-          download
+          {t('download')}
         </button>
       )}
-      <button type="button" className="icon-btn" aria-label={`Remove ${job.file}`} onClick={() => remove(job.id)}>
+      <button type="button" className="icon-btn" aria-label={t('Remove {name}', { name: job.file })} onClick={() => remove(job.id)}>
         &times;
       </button>
     </li>
@@ -162,7 +182,7 @@ function StagedList({ tool, files, set }: { tool: Tool; files: File[]; set: (f: 
     set(next);
   };
   return (
-    <Panel title={`files · ${files.length}`} actions={<button type="button" className="rail-ghost" onClick={() => set([])}>clear</button>}>
+    <Panel title={t('files · {length}', { length: files.length })} actions={<button type="button" className="rail-ghost" onClick={() => set([])}>{t('clear')}</button>}>
       <ul className="results">
         {files.map((f, i) => (
           <li key={`${f.name}-${f.size}-${f.lastModified}-${i}`} className="result">
@@ -175,21 +195,21 @@ function StagedList({ tool, files, set }: { tool: Tool; files: File[]; set: (f: 
             </div>
             {tool.batch && files.length > 1 && (
               <>
-                <button type="button" className="icon-btn" aria-label={`Move ${f.name} up`} disabled={i === 0} onClick={() => move(i, -1)}>
+                <button type="button" className="icon-btn" aria-label={t('Move {name} up', { name: f.name })} disabled={i === 0} onClick={() => move(i, -1)}>
                   ↑
                 </button>
-                <button type="button" className="icon-btn" aria-label={`Move ${f.name} down`} disabled={i === files.length - 1} onClick={() => move(i, 1)}>
+                <button type="button" className="icon-btn" aria-label={t('Move {name} down', { name: f.name })} disabled={i === files.length - 1} onClick={() => move(i, 1)}>
                   ↓
                 </button>
               </>
             )}
-            <button type="button" className="icon-btn" aria-label={`Remove ${f.name}`} onClick={() => set(files.filter((_, j) => j !== i))}>
+            <button type="button" className="icon-btn" aria-label={t('Remove {name}', { name: f.name })} onClick={() => set(files.filter((_, j) => j !== i))}>
               &times;
             </button>
           </li>
         ))}
       </ul>
-      {tool.batch && files.length > 1 && <p className="note">Files are combined in this order.</p>}
+      {tool.batch && files.length > 1 && <p className="note">{t('Files are combined in this order.')}</p>}
     </Panel>
   );
 }
@@ -233,7 +253,11 @@ export function FileTool({ tool }: { tool: Tool }) {
     if (!files.length) return;
     const ok = files.filter((f) => acceptsFile(tool, f));
     const skipped = files.length - ok.length;
-    setError(skipped ? `${skipped} file${skipped > 1 ? 's' : ''} skipped: ${tool.name} takes ${tool.accepts?.join(' ')}.` : '');
+    setError(
+      skipped
+        ? plural(skipped, ['{n} file skipped: {tool} takes {exts}.', '{n} files skipped: {tool} takes {exts}.'], ['Přeskočen {n} soubor: {tool} bere jen {exts}.', 'Přeskočeny {n} soubory: {tool} bere jen {exts}.', 'Přeskočeno {n} souborů: {tool} bere jen {exts}.'], { tool: tool.name, exts: tool.accepts?.join(' ') ?? '' })
+        : '',
+    );
     if (ok.length) stage(tool.slug, ok);
   };
 
@@ -255,11 +279,8 @@ export function FileTool({ tool }: { tool: Tool }) {
     }, 60);
   };
 
-  const runLabel = !staged.length
-    ? 'Run'
-    : tool.batch
-      ? `Run · ${staged.length} file${staged.length > 1 ? 's' : ''} → 1 result`
-      : `Run · ${staged.length} file${staged.length > 1 ? 's' : ''}`;
+  const files = plural(staged.length, ['{n} file', '{n} files'], ['{n} soubor', '{n} soubory', '{n} souborů']);
+  const runLabel = !staged.length ? t('Run') : tool.batch ? t('Run · {files} → 1 result', { files }) : t('Run · {files}', { files });
 
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
@@ -268,7 +289,19 @@ export function FileTool({ tool }: { tool: Tool }) {
   };
 
   const exts = tool.accepts ?? [];
-  const what = exts.length <= 2 ? `${exts.join(' / ')} files` : tool.category === 'image' ? 'images' : 'files';
+  const kinds = exts.join(' / ');
+  const dropTitle =
+    exts.length <= 2
+      ? staged.length
+        ? t('Drop more {kinds} files here', { kinds })
+        : t('Drop {kinds} files here', { kinds })
+      : tool.category === 'image'
+        ? staged.length
+          ? t('Drop more images here')
+          : t('Drop images here')
+        : staged.length
+          ? t('Drop more files here')
+          : t('Drop files here');
 
   return (
     <>
@@ -286,13 +319,13 @@ export function FileTool({ tool }: { tool: Tool }) {
         <span className="accent">
           <UploadIcon />
         </span>
-        <div className="drop-title">{staged.length ? `Drop more ${what} here` : `Drop ${what} here`}</div>
+        <div className="drop-title">{dropTitle}</div>
         <button type="button" className={staged.length ? 'btn' : 'btn btn-primary'} onClick={() => input.current?.click()}>
-          {staged.length ? 'Add files' : 'Choose files'}
+          {staged.length ? t('Add files') : t('Choose files')}
         </button>
         <div className="drop-sub">
           {exts.join(' ')}
-          {tool.batch ? ' · all files become one job' : ''}
+          {tool.batch && ` · ${t('all files become one job')}`}
         </div>
         {error && (
           <p className="drop-error" role="alert">
@@ -323,12 +356,12 @@ export function FileTool({ tool }: { tool: Tool }) {
         <button type="button" className="btn btn-primary" onClick={run} disabled={!staged.length}>
           {runLabel}
         </button>
-        {!staged.length && <span className="note">Pick files first, then set the options.</span>}
+        {!staged.length && <span className="note">{t('Pick files first, then set the options.')}</span>}
       </div>
 
       {jobs.length > 0 && (
         <div ref={resultsRef} style={{ scrollMarginTop: 16 }}>
-        <Panel title="your files">
+        <Panel title={t('your files')}>
           <ul className="results" aria-live="polite">
             {jobs.map((j) => (
               <ResultRow key={j.id} job={j} />

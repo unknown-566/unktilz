@@ -20,6 +20,7 @@ import markerLatin from '@fontsource/permanent-marker/files/permanent-marker-lat
 import pressStartLatin from '@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2?url';
 import pressStartExt from '@fontsource/press-start-2p/files/press-start-2p-latin-ext-400-normal.woff2?url';
 import { drawWeights, fontInfo, googleCssUrl, parseFontCss, type FontFaceSource } from './fontList';
+import { t } from '../../../lib/i18n-core';
 
 // The letters each file covers (the same split Google Fonts and Fontsource use).
 const LATIN = 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
@@ -43,7 +44,7 @@ const OFFLINE_FILES: Record<string, FontFaceSource[]> = {
   'Press Start 2P': pair(400, pressStartLatin, pressStartExt),
 };
 
-const NO_INTERNET = 'needs the internet';
+const NO_INTERNET = t('needs the internet');
 
 async function googleFaces(family: string, weights: number[], text?: string) {
   if (!navigator.onLine) throw new Error(NO_INTERNET);
@@ -53,9 +54,9 @@ async function googleFaces(family: string, weights: number[], text?: string) {
   } catch {
     throw new Error(NO_INTERNET);
   }
-  if (!res.ok) throw new Error(`Google Fonts said HTTP ${res.status}`);
+  if (!res.ok) throw new Error(t('Google Fonts said HTTP {status}', { status: res.status }));
   const faces = parseFontCss(await res.text());
-  if (!faces.length) throw new Error('Google Fonts sent no font');
+  if (!faces.length) throw new Error(t('Google Fonts sent no font'));
   return faces;
 }
 
@@ -69,7 +70,7 @@ async function register(name: string, faces: FontFaceSource[], sample = 'AaŽž'
   // Only Latin (with accents) is waited for; other alphabets load by themselves when a text uses them.
   const weights = [...new Set(faces.map((f) => f.weight))];
   const loaded = (await Promise.all(weights.map((w) => document.fonts.load(`${w} 40px "${name}"`, sample)))).flat();
-  if (!loaded.length && !added.some((f) => f.status === 'loaded')) throw new Error('the font file didn’t load');
+  if (!loaded.length && !added.some((f) => f.status === 'loaded')) throw new Error(t('the font file didn’t load'));
 }
 
 const loading = new Map<string, Promise<void>>();

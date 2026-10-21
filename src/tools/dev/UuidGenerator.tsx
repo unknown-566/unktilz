@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CopyButton, NumberField, Panel, Segmented, Toggle, num } from '../../components/ui';
 import { Help } from '../../components/Help';
+import { plural, t } from '../../lib/i18n-core';
 
 type Version = 'v4' | 'v7';
 
@@ -44,47 +45,47 @@ export default function UuidGenerator() {
 
   return (
     <>
-      <section className="panel" aria-label="Settings">
+      <section className="panel" aria-label={t('Settings')}>
         <div className="opt-row">
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <span className="opt-label" id="uv">
-              Version
+              {t('Version')}
             </span>
-            <Help label="UUID version" text="v4 is completely random. v7 starts with the current time, so IDs sort in the order they were made, which keeps database indexes fast." />
+            <Help label={t('UUID version')} text={t('v4 is completely random. v7 starts with the current time, so IDs sort in the order they were made, which keeps database indexes fast.')} />
           </span>
           <Segmented
             labelledBy="uv"
             value={version}
             onChange={setVersion}
             options={[
-              { value: 'v4', label: 'v4 random' },
-              { value: 'v7', label: 'v7 time-ordered' },
+              { value: 'v4', label: t('v4 random') },
+              { value: 'v7', label: t('v7 time-ordered') },
             ]}
           />
         </div>
         <hr className="divider" />
         <div className="opt-row">
           <span className="opt-label" id="up">
-            Uppercase
+            {t('Uppercase')}
           </span>
           <Toggle labelledBy="up" checked={upper} onChange={setUpper} />
         </div>
         <hr className="divider" />
         <div className="opt-row">
           <span className="opt-label" id="dash">
-            Hyphens
+            {t('Hyphens')}
           </span>
           <Toggle labelledBy="dash" checked={dashes} onChange={setDashes} />
         </div>
         <hr className="divider" />
         <div className="inline">
-          <NumberField label="How many" value={count} onChange={setCount} min={1} max={500} />
+          <NumberField label={t('How many')} value={count} onChange={setCount} min={1} max={500} />
           <button type="button" className="btn btn-primary" onClick={generate}>
-            Generate
+            {t('Generate')}
           </button>
         </div>
       </section>
-      <Panel title={`${shown.length} uuid${shown.length > 1 ? 's' : ''}`} actions={<CopyButton text={shown.join('\n')} label="copy all" />}>
+      <Panel title={plural(shown.length, ['{n} uuid', '{n} uuids'], ['{n} uuid', '{n} uuid', '{n} uuid'])} actions={<CopyButton text={shown.join('\n')} label={t('copy all')} />}>
         <pre className="code" style={{ maxHeight: 420, overflow: 'auto', whiteSpace: 'pre', wordBreak: 'normal' }}>
           {shown.join('\n')}
         </pre>

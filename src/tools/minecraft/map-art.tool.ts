@@ -1,12 +1,13 @@
 import { defineTool, lazyTool } from '../../registry/types';
+import { t } from '../../lib/i18n-core';
 
 export default defineTool({
   slug: 'map-art',
-  name: 'Map art converter',
+  name: t('Map art converter'),
   category: 'minecraft',
   order: 16,
-  meta: 'image → .litematic',
-  description: 'Turn a picture into Minecraft map art: see it in map colors, get the block list, and download a .litematic or .nbt to build from.',
+  meta: t('image → .litematic'),
+  description: t('Turn a picture into Minecraft map art: see it in map colors, get the block list, and download a .litematic or .nbt to build from.'),
   keywords: ['map', 'map art', 'pixel art', 'schematic', 'litematic', 'litematica', 'nbt', 'structure', 'blocks', 'staircase'],
   layout: 'workbench',
   component: lazyTool(() => import('./MapArt')),

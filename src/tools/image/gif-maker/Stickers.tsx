@@ -3,8 +3,9 @@ import type { SavedItem } from '../../../lib/saved';
 import { Segmented } from '../../../components/ui';
 import type { StickerRef } from './compose';
 import { NOTO, NOTO_CATEGORIES, notoUrl, type MySticker } from './stickerData';
+import { t, tn, tx } from '../../../lib/i18n';
 
-const SHORT = ['Smileys', 'People', 'Animals', 'Food', 'Travel', 'Activities', 'Objects', 'Symbols', 'Flags'];
+const SHORT = [tx('Smileys'), tx('People'), tx('Animals'), tx('Food'), tx('Travel'), tx('Activities'), tx('Objects'), tx('Symbols'), tx('Flags')];
 const PAGE = 120;
 const ACCEPT = '.png,.gif,.webp,.apng,image/png,image/gif,image/webp';
 
@@ -28,7 +29,7 @@ function EmojiCell({ code, char, name, onPick }: { code: string; char: string; n
       type="button"
       className="gm-sticker-cell"
       title={name}
-      aria-label={`Add ${name}`}
+      aria-label={t('Add {name}', { name })}
       onClick={onPick}
       onPointerEnter={() => show(true)}
       onPointerLeave={() => show(false)}
@@ -79,11 +80,11 @@ export function StickerPicker({
   return (
     <>
       <Segmented
-        label="Stickers"
+        label={t('Stickers')}
         value={tab}
         options={[
-          { value: 'emoji', label: 'animated emoji' },
-          { value: 'mine', label: `my stickers${mine.length ? ` · ${mine.length}` : ''}` },
+          { value: 'emoji', label: t('animated emoji') },
+          { value: 'mine', label: mine.length ? t('my stickers · {n}', { n: mine.length }) : t('my stickers') },
         ]}
         onChange={setTab}
       />
@@ -92,21 +93,21 @@ export function StickerPicker({
           <input
             className="input"
             type="search"
-            placeholder="search: cat, fire, heart, laugh…"
-            aria-label="Search emoji"
+            placeholder={t('search: cat, fire, heart, laugh…')}
+            aria-label={t('Search emoji')}
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
               setShown(PAGE);
             }}
           />
-          <div className="chips-row" role="group" aria-label="Emoji groups">
+          <div className="chips-row" role="group" aria-label={t('Emoji groups')}>
             <button type="button" className="chip" aria-pressed={cat < 0} onClick={() => setCat(-1)}>
-              All
+              {t('All')}
             </button>
             {SHORT.slice(0, NOTO_CATEGORIES.length).map((label, i) => (
               <button key={label} type="button" className="chip" aria-pressed={cat === i} onClick={() => setCat(cat === i ? -1 : i)}>
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
@@ -117,23 +118,26 @@ export function StickerPicker({
               ))}
             </div>
           ) : (
-            <p className="note">No emoji for “{q}”.</p>
+            <p className="note">{t('No emoji for “{q}”.', { q })}</p>
           )}
           {list.length > shown && (
             <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setShown(shown + PAGE)}>
-              show more ({list.length - shown})
+              {t('show more ({n})', { n: list.length - shown })}
             </button>
           )}
           <p className="note">
-            Hover an emoji to see it move. Needs the internet. Artwork:{' '}
-            <a href="https://googlefonts.github.io/noto-emoji-animation/" target="_blank" rel="noreferrer">
-              Noto Emoji Animation
-            </a>{' '}
-            by Google,{' '}
-            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
-              CC BY 4.0
-            </a>
-            .
+            {tn('Hover an emoji to see it move. Needs the internet. Artwork: {noto} by Google, {license}.', {
+              noto: (
+                <a href="https://googlefonts.github.io/noto-emoji-animation/" target="_blank" rel="noreferrer">
+                  Noto Emoji Animation
+                </a>
+              ),
+              license: (
+                <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
+                  CC BY 4.0
+                </a>
+              ),
+            })}
           </p>
         </>
       ) : (
@@ -147,11 +151,11 @@ export function StickerPicker({
             onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false)}
             onDrop={drop}
           >
-            <div className="drop-title">Drop a sticker here</div>
+            <div className="drop-title">{t('Drop a sticker here')}</div>
             <button type="button" className="btn btn-sm" onClick={() => file.current?.click()}>
-              Choose a sticker
+              {t('Choose a sticker')}
             </button>
-            <div className="drop-sub">png · gif · webp, see-through and animated ones too</div>
+            <div className="drop-sub">{t('png · gif · webp, see-through and animated ones too')}</div>
             <input
               ref={file}
               type="file"
@@ -173,17 +177,17 @@ export function StickerPicker({
             <div className="gm-sticker-grid">
               {mine.map((m) => (
                 <div key={m.id} className="gm-mine">
-                  <button type="button" className="gm-sticker-cell" title={m.name} aria-label={`Add ${m.name}`} onClick={() => onAdd({ type: 'mine', id: m.id }, m.name)}>
+                  <button type="button" className="gm-sticker-cell" title={m.name} aria-label={t('Add {name}', { name: m.name })} onClick={() => onAdd({ type: 'mine', id: m.id }, m.name)}>
                     {mineUrls.get(m.id) && <img src={mineUrls.get(m.id)} alt="" draggable={false} />}
                   </button>
-                  <button type="button" className="gm-mine-x" aria-label={`Delete ${m.name} from my stickers`} onClick={() => onRemoveMine(m.id)}>
+                  <button type="button" className="gm-mine-x" aria-label={t('Delete {name} from my stickers', { name: m.name })} onClick={() => onRemoveMine(m.id)}>
                     ×
                   </button>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="note">Stickers you add are kept in this browser (and in Backup). Tip: on Giphy, open a sticker and save it as a .gif or .webp.</p>
+            <p className="note">{t('Stickers you add are kept in this browser (and in Backup). Tip: on Giphy, open a sticker and save it as a .gif or .webp.')}</p>
           )}
         </>
       )}

@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Output, Panel, Segmented, Toggle } from '../../components/ui';
 import { formatBytes, saveBlob } from '../../queue/download';
 import { Help } from '../../components/Help';
+import { t } from '../../lib/i18n-core';
 
 type Mode = 'encode' | 'decode';
 
@@ -48,7 +49,7 @@ export default function Base64() {
           /* fall through */
         }
       }
-      return { out: '', error: 'That isn’t valid Base64.' };
+      return { out: '', error: t('That isn’t valid Base64.') };
     }
   }, [input, mode, safe]);
 
@@ -60,32 +61,32 @@ export default function Base64() {
 
   return (
     <>
-      <section className="panel" aria-label="Text">
+      <section className="panel" aria-label={t('Text')}>
         <div className="inline" style={{ justifyContent: 'space-between' }}>
           <Segmented
-            label="Mode"
+            label={t('Mode')}
             value={mode}
             onChange={(m) => {
               if (m !== mode && result.out) setInput(result.out);
               setMode(m);
             }}
             options={[
-              { value: 'encode', label: 'encode' },
-              { value: 'decode', label: 'decode' },
+              { value: 'encode', label: t('encode') },
+              { value: 'decode', label: t('decode') },
             ]}
           />
           {mode === 'encode' && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span id="safe" className="opt-label">
-                URL-safe
+                {t('URL-safe')}
               </span>
-              <Help label="URL-safe" text="Uses - and _ instead of + and /, and drops the = padding, so the result can go straight into URLs and file names." />
+              <Help label={t('URL-safe')} text={t('Uses - and _ instead of + and /, and drops the = padding, so the result can go straight into URLs and file names.')} />
               <Toggle labelledBy="safe" checked={safe} onChange={setSafe} />
             </span>
           )}
         </div>
         <div className="field">
-          <label htmlFor="b64-in">{mode === 'encode' ? 'Text' : 'Base64'}</label>
+          <label htmlFor="b64-in">{mode === 'encode' ? t('Text') : 'Base64'}</label>
           <textarea id="b64-in" className="textarea mono" value={input} spellCheck={false} onChange={(e) => setInput(e.target.value)} />
         </div>
         {result.error && (
@@ -93,21 +94,21 @@ export default function Base64() {
             {result.error}
           </p>
         )}
-        {result.out && <Output label={mode === 'encode' ? 'Base64' : 'Text'} value={result.out} multiline />}
+        {result.out && <Output label={mode === 'encode' ? 'Base64' : t('Text')} value={result.out} multiline />}
         {result.binary && result.bytes && (
           <div className="inline">
-            <p className="note">Decoded {formatBytes(result.bytes.length)} of binary data.</p>
+            <p className="note">{t('Decoded {size} of binary data.', { size: formatBytes(result.bytes.length) })}</p>
             <button type="button" className="btn btn-sm" onClick={() => saveBlob(new Blob([result.bytes as BlobPart]), 'decoded.bin')}>
-              download bytes
+              {t('download bytes')}
             </button>
           </div>
         )}
       </section>
 
-      <Panel title="file to base64">
+      <Panel title={t('file to base64')}>
         <div className="inline">
           <button type="button" className="btn" onClick={() => picker.current?.click()}>
-            Choose a file
+            {t('Choose a file')}
           </button>
           {file && (
             <span className="mono muted" style={{ fontSize: 13 }}>
@@ -119,10 +120,10 @@ export default function Base64() {
         {file && (
           <>
             <Output label="Base64" value={file.b64.length > 200_000 ? `${file.b64.slice(0, 200_000)}…` : file.b64} multiline />
-            <Output label="Data URL" value={`data:${file.type};base64,${file.b64.slice(0, 200_000)}${file.b64.length > 200_000 ? '…' : ''}`} multiline />
+            <Output label={t('Data URL')} value={`data:${file.type};base64,${file.b64.slice(0, 200_000)}${file.b64.length > 200_000 ? '…' : ''}`} multiline />
             {file.b64.length > 200_000 && (
               <button type="button" className="btn btn-sm" onClick={() => saveBlob(new Blob([file.b64], { type: 'text/plain' }), `${file.name}.b64.txt`)}>
-                download full Base64 ({formatBytes(file.b64.length)})
+                {t('download the whole Base64 ({size})', { size: formatBytes(file.b64.length) })}
               </button>
             )}
           </>

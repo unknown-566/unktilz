@@ -1,5 +1,6 @@
 import { getOutputs } from './blobs';
 import type { Job } from './store';
+import { fmtNum, t } from '../lib/i18n-core';
 
 export function saveBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -31,14 +32,14 @@ async function zipOutputs(outputs: { name: string; blob: Blob }[]): Promise<Blob
 
 export async function downloadJob(job: Job) {
   const outputs = await getOutputs(job.id);
-  if (!outputs?.length) throw new Error('The result is no longer stored. Run the job again.');
+  if (!outputs?.length) throw new Error(t('The result is no longer stored. Run the job again.'));
   if (outputs.length === 1) return saveBlob(outputs[0].blob, outputs[0].name);
   const base = job.file.replace(/\.[^.]+$/, '') || job.slug;
   saveBlob(await zipOutputs(outputs), `${base}.zip`);
 }
 
-export const formatBytes = (n: number) =>
-  n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1024 ** 2).toFixed(1)} MB`;
+const oneDecimal = (n: number) => fmtNum(n, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+export const formatBytes = (n: number) => (n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${oneDecimal(n / 1024)} KB` : `${oneDecimal(n / 1024 ** 2)} MB`);
 
 /** 'song.ogg' → 'song.mp3' */
 export const swapExt = (name: string, ext: string) => `${name.replace(/\.[^./]+$/, '') || 'file'}.${ext}`;

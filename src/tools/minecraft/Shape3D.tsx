@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useTheme } from '../../lib/theme';
 import { ShapeScene } from './shapeScene';
 import type { Layers } from './shapeFaces';
+import { t } from '../../lib/i18n-core';
 
 /** The shape in 3D: drag to turn it, the buttons zoom. The layer being built is highlighted. */
 export default function Shape3D({ layers, layer, height }: { layers: Layers; layer: number; height: number }) {
@@ -57,21 +58,21 @@ export default function Shape3D({ layers, layer, height }: { layers: Layers; lay
         ref={host}
         className="shape3d-view"
         role="img"
-        aria-label={`3D view, layer ${layer + 1} of ${layers.grids.length} highlighted. Drag to turn it.`}
+        aria-label={t('3D view, layer {n} of {length} highlighted. Drag to turn it.', { n: layer + 1, length: layers.grids.length })}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
       />
       <div className="shape3d-tools">
-        <button type="button" className="btn btn-sm" aria-label="Zoom in" title="Zoom in" onClick={() => scene.current?.zoom(1.25)}>
+        <button type="button" className="btn btn-sm" aria-label={t('Zoom in')} title={t('Zoom in')} onClick={() => scene.current?.zoom(1.25)}>
           +
         </button>
-        <button type="button" className="btn btn-sm" aria-label="Zoom out" title="Zoom out" onClick={() => scene.current?.zoom(0.8)}>
+        <button type="button" className="btn btn-sm" aria-label={t('Zoom out')} title={t('Zoom out')} onClick={() => scene.current?.zoom(0.8)}>
           −
         </button>
-        <button type="button" className="btn btn-sm" title="Back to the starting view" onClick={() => scene.current?.reset()}>
-          reset
+        <button type="button" className="btn btn-sm" title={t('Back to the starting view')} onClick={() => scene.current?.reset()}>
+          {t('reset')}
         </button>
       </div>
     </div>

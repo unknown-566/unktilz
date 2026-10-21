@@ -2,6 +2,7 @@ import { computeValue } from '../../../lib/compute';
 import { ffmpegRun } from '../../../lib/ffmpeg';
 import { isHeic, isTiff } from '../../../workers/tasks/imageCodecs';
 import { drawFrame, type PhotoFrame, type Settings, type StickerAnim } from './compose';
+import { t } from '../../../lib/i18n-core';
 
 export type VideoSource = { name: string; url: string; duration: number; w: number; h: number; converted: boolean };
 
@@ -10,12 +11,12 @@ const once = (el: EventTarget, ok: string, fail = 'error', ms = 8000) =>
     const done = (f: () => void) => () => {
       el.removeEventListener(ok, good);
       el.removeEventListener(fail, bad);
-      clearTimeout(t);
+      clearTimeout(timer);
       f();
     };
     const good = done(resolve);
     const bad = done(() => reject(new Error(fail)));
-    const t = setTimeout(done(() => reject(new Error('timeout'))), ms);
+    const timer = setTimeout(done(() => reject(new Error('timeout' /* i18n-ignore */))), ms);
     el.addEventListener(ok, good);
     el.addEventListener(fail, bad);
   });
@@ -30,8 +31,8 @@ function newVideo(url: string) {
 }
 
 /** Moves the video to `t` and waits until that frame can be drawn. */
-async function seek(v: HTMLVideoElement, t: number) {
-  const target = Math.max(0, Math.min(t, v.duration - 0.001));
+async function seek(v: HTMLVideoElement, tt: number) {
+  const target = Math.max(0, Math.min(tt, v.duration - 0.001));
   if (Math.abs(v.currentTime - target) < 0.0005 && v.readyState >= 2) return;
   const p = once(v, 'seeked');
   v.currentTime = target;
@@ -43,7 +44,7 @@ async function probe(url: string) {
   const v = newVideo(url);
   try {
     await once(v, 'loadeddata', 'error', 6000);
-    if (!v.videoWidth || !Number.isFinite(v.duration)) throw new Error('no picture');
+    if (!v.videoWidth || !Number.isFinite(v.duration)) throw new Error(t('no picture'));
     await seek(v, Math.min(0.1, v.duration / 2));
     return { duration: v.duration, w: v.videoWidth, h: v.videoHeight };
   } finally {
@@ -63,20 +64,20 @@ export async function openVideo(file: File, onStatus: (text: string) => void): P
   } catch {
     URL.revokeObjectURL(url);
   }
-  onStatus('This browser can’t play this video, so it’s being converted first…');
+  onStatus(t('This browser can’t play this video, so it’s being converted first…'));
   const ext = file.name.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase() ?? 'bin';
   const [mp4] = await ffmpegRun(
     [{ name: `src.${ext}`, data: new Uint8Array(await file.arrayBuffer()) }],
     ['-i', `src.${ext}`, '-an', '-vf', 'scale=trunc(min(iw\\,1280)/2)*2:-2', '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'proxy.mp4'],
     ['proxy.mp4'],
-    { onProgress: (p) => onStatus(`Converting the video so it can be shown… ${Math.round(p * 100)} %`) },
+    { onProgress: (p) => onStatus(t('Converting the video so it can be shown… {n} %', { n: Math.round(p * 100) })) },
   );
   const proxy = URL.createObjectURL(new Blob([mp4 as BlobPart], { type: 'video/mp4' }));
   try {
     return { name: file.name, url: proxy, ...(await probe(proxy)), converted: true };
   } catch {
     URL.revokeObjectURL(proxy);
-    throw new Error(`${file.name} couldn’t be read as a video.`);
+    throw new Error(t('{name} couldn’t be read as a video.', { name: file.name }));
   }
 }
 
@@ -149,7 +150,7 @@ export async function loadPhoto(file: File, max = 1600): Promise<ImageBitmap> {
   try {
     bmp = await createImageBitmap(blob);
   } catch {
-    throw new Error(`${file.name} couldn’t be read as a picture.`);
+    throw new Error(t('{name} couldn’t be read as a picture.', { name: file.name }));
   }
   const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
   if (k >= 1) return bmp;
@@ -191,7 +192,7 @@ export async function makeGif(
   for (let i = 0; i < refs.length; i++) {
     if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
     const pics = picsFor(refs[i], video, photos);
-    if (!pics) throw new Error('A frame is missing. Wait until the frames are ready and try again.');
+    if (!pics) throw new Error(t('A frame is missing. Wait until the frames are ready and try again.'));
     drawFrame(ctx, W, H, s, pics, i / s.fps, duration, stickers);
     const rgba = ctx.getImageData(0, 0, W, H).data;
     for (let p = 0, q = i * frameBytes; p < rgba.length; p += 4, q += 3) {

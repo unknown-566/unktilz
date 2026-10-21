@@ -4,8 +4,13 @@ import { del, get, set } from 'idb-keyval';
 import type { Category, Opts, Tool } from '../registry';
 import { controllers, dropAll, putInputs } from './blobs';
 import { TASK_GONE, dropTask, putTask, type TaskRun } from './tasks';
+import { plural, t, tx } from '../lib/i18n-core';
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'error';
+
+const STATUS: Record<JobStatus, string> = { queued: tx('job|queued'), running: tx('job|running'), done: tx('job|done'), error: tx('job|failed') };
+/** A job's state as shown ("queued", "failed"…). */
+export const statusText = (s: JobStatus) => t(STATUS[s]);
 
 export type Job = {
   id: string;
@@ -48,7 +53,7 @@ const storage: PersistStorage<Persisted> = {
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
-const fileLabel = (files: File[]) => (files.length === 1 ? files[0].name : `${files.length} files`);
+const fileLabel = (files: File[]) => (files.length === 1 ? files[0].name : plural(files.length, ['{n} file', '{n} files'], ['{n} soubor', '{n} soubory', '{n} souborů']));
 
 export const useQueue = create<QueueState>()(
   persist(

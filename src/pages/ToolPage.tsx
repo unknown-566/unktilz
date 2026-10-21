@@ -9,6 +9,7 @@ import { SwapIcon } from '../components/icons';
 import { ToolTags } from '../components/ToolTags';
 import { prefersReducedMotion } from '../lib/theme';
 import NotFound from './NotFound';
+import { t } from '../lib/i18n-core';
 
 const GLYPHS = '<>/\\[]{}=+*#01_';
 
@@ -22,7 +23,7 @@ function useScramble(text: string, delay: number) {
     let f = 0;
     let iv: number;
     setFrame(0);
-    const t = window.setTimeout(
+    const timer = window.setTimeout(
       () => {
         iv = window.setInterval(() => {
           f++;
@@ -36,7 +37,7 @@ function useScramble(text: string, delay: number) {
     );
     first.current = false;
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       clearInterval(iv);
     };
   }, [text, delay]);
@@ -68,7 +69,7 @@ function ToolView({ slug }: { slug: string }) {
   const title = useScramble(tool.name, (location.state as { swap?: boolean } | null)?.swap ? 0 : 380);
 
   useEffect(() => {
-    document.title = `${tool.name} · unktilz`;
+    document.title = t('{name} · unktilz', { name: tool.name });
   }, [tool.name]);
 
   const reverse = getTool(tool.reverse);
@@ -81,12 +82,12 @@ function ToolView({ slug }: { slug: string }) {
   const cat = categoryLabel(tool.category).toLowerCase();
   const wide = tool.layout === 'workbench';
 
-  const relatedLinks = related(tool, 4).map((t) => (
-    <a key={t.slug} className="rel" href={`/t/${t.slug}`} onClick={(e) => launch(e, t.slug)} onMouseEnter={() => preloadTool(t)} onFocus={() => preloadTool(t)}>
+  const relatedLinks = related(tool, 4).map((tt) => (
+    <a key={tt.slug} className="rel" href={`/t/${tt.slug}`} onClick={(e) => launch(e, tt.slug)} onMouseEnter={() => preloadTool(tt)} onFocus={() => preloadTool(tt)}>
       <span>
-        {t.name} <ToolTags tool={t} />
+        {tt.name} <ToolTags tool={tt} />
       </span>
-      <span className="card-meta">{t.meta}</span>
+      <span className="card-meta">{tt.meta}</span>
     </a>
   ));
 
@@ -98,9 +99,9 @@ function ToolView({ slug }: { slug: string }) {
         </h1>
         <ToolTags tool={tool} explain />
         {reverse && (
-          <button type="button" className="swap" onClick={swap} aria-label={`Swap direction: ${reverse.name}`}>
+          <button type="button" className="swap" onClick={swap} aria-label={t('Swap direction: {name}', { name: reverse.name })}>
             <SwapIcon rotate={rot} />
-            <span>swap</span>
+            <span>{t('swap')}</span>
           </button>
         )}
       </div>
@@ -109,18 +110,18 @@ function ToolView({ slug }: { slug: string }) {
   );
 
   const body = tool.run ? (
-    <Suspense fallback={<div className="panel muted mono">loading…</div>}>
+    <Suspense fallback={<div className="panel muted mono">{t('loading…')}</div>}>
       <FileTool tool={tool} />
     </Suspense>
   ) : tool.component ? (
-    <Suspense fallback={<div className="panel muted mono">loading…</div>}>
+    <Suspense fallback={<div className="panel muted mono">{t('loading…')}</div>}>
       <tool.component />
     </Suspense>
   ) : null;
 
   const crumbs = (
-    <nav aria-label="Breadcrumb" className="crumbs">
-      <GoLink to="/">tools</GoLink>
+    <nav aria-label={t('Breadcrumb')} className="crumbs">
+      <GoLink to="/">{t('tools')}</GoLink>
       <span aria-hidden="true">/</span>
       <GoLink to={`/?cat=${tool.category}`}>{cat}</GoLink>
       <span aria-hidden="true">/</span>
@@ -135,8 +136,8 @@ function ToolView({ slug }: { slug: string }) {
         {crumbs}
         {head}
         {body}
-        <section className="related-row" aria-label="Related tools">
-          <div className="side-label">// related</div>
+        <section className="related-row" aria-label={t('Related tools')}>
+          <div className="side-label">{t('// related')}</div>
           <div className="rel-grid">{relatedLinks}</div>
         </section>
       </div>
@@ -150,8 +151,8 @@ function ToolView({ slug }: { slug: string }) {
           {head}
           {body}
         </div>
-        <aside className="tool-side" aria-label="Related tools">
-          <div className="side-label">// related</div>
+        <aside className="tool-side" aria-label={t('Related tools')}>
+          <div className="side-label">{t('// related')}</div>
           {relatedLinks}
         </aside>
       </div>

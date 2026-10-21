@@ -49,6 +49,15 @@ export function CategoryIcon({ category }: { category: Category }) {
           <path d="M4 7.5l8 4.5 8-4.5M12 12v9" />
         </svg>
       );
+    case 'calc':
+      return (
+        <svg {...base}>
+          <rect x="4" y="4" width="6" height="6" rx="1" />
+          <rect x="14" y="4" width="6" height="6" rx="1" />
+          <rect x="4" y="14" width="6" height="6" rx="1" />
+          <path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 20v-2M20 14h-2" />
+        </svg>
+      );
     default:
       return (
         <svg {...base}>

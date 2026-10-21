@@ -26,6 +26,7 @@ import {
   type Pick,
   type Rect,
 } from './mask';
+import { fmtNum, t, tn } from '../../../lib/i18n';
 
 /** Pictures are edited at most this big (long side). */
 const MAX_SIDE = 4096;
@@ -46,7 +47,7 @@ async function loadImage(file: File): Promise<Img> {
   try {
     bmp = await createImageBitmap(src, { imageOrientation: 'from-image' });
   } catch {
-    throw new Error(`${file.name} couldn’t be read as a picture.`);
+    throw new Error(t('{name} couldn’t be read as a picture.', { name: file.name }));
   }
   const k = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
   const w = Math.max(1, Math.round(bmp.width * k));
@@ -111,10 +112,10 @@ export default function BgRemover() {
           const o = i * 4;
           if (showRemoved) {
             // The original, with what's removed tinted red.
-            const t = (255 - a) / 255;
-            d[o] = src[o] + (230 - src[o]) * t * 0.7;
-            d[o + 1] = src[o + 1] * (1 - t * 0.7);
-            d[o + 2] = src[o + 2] * (1 - t * 0.7);
+            const tt = (255 - a) / 255;
+            d[o] = src[o] + (230 - src[o]) * tt * 0.7;
+            d[o + 1] = src[o + 1] * (1 - tt * 0.7);
+            d[o + 2] = src[o + 2] * (1 - tt * 0.7);
             d[o + 3] = 255;
           } else {
             d[o] = src[o];
@@ -233,15 +234,16 @@ export default function BgRemover() {
   const runAi = async () => {
     if (!img) return;
     if (prob) return change({ aiOn: true }, 'aiOn');
-    setAiState({ busy: true, text: cached ? 'Starting the AI…' : `Downloading the AI model (${mb(MODEL.size)}, only the first time)…` });
+    setAiState({ busy: true, text: cached ? t('Starting the AI…') : t('Downloading the AI model ({mb}, only the first time)…', { mb: mb(MODEL.size) }) });
     try {
       const r = await findSubject(await createImageBitmap(img.bitmap), (e) =>
-        setAiState((s) => ({ ...s, text: e.type === 'download' ? `Downloading the AI model… ${mb(e.loaded)} / ${mb(e.total)}` : e.text })),
+        setAiState((s) => ({ ...s, text: e.type === 'download' ? t('Downloading the AI model… {mb} / {mb2}', { mb: mb(e.loaded), mb2: mb(e.total) }) : e.text })),
       );
       setCached(true);
       setProb(r.prob);
       change({ aiOn: true }, 'aiOn');
-      setAiState({ busy: false, text: '', info: `Done in ${(r.ms / 1000).toFixed(1)} s on the ${r.backend === 'webgpu' ? 'graphics card' : 'processor'}.` });
+      const s = fmtNum(r.ms / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      setAiState({ busy: false, text: '', info: r.backend === 'webgpu' ? t('Done in {s} s on the graphics card.', { s }) : t('Done in {s} s on the processor.', { s }) });
     } catch (e) {
       setAiState({ busy: false, text: '', error: e instanceof Error ? e.message : String(e) });
     }
@@ -511,8 +513,8 @@ export default function BgRemover() {
     if (brushSeen.current === brush) return;
     brushSeen.current = brush;
     setSizeShown(true);
-    const t = setTimeout(() => setSizeShown(false), 900);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSizeShown(false), 900);
+    return () => clearTimeout(timer);
   }, [brush]);
   const ring = <span className="bgr-brush-core" style={{ width: `${Math.max(0, brush.hardness)}%`, height: `${Math.max(0, brush.hardness)}%` }} />;
 
@@ -528,24 +530,24 @@ export default function BgRemover() {
 
   const preview = (
     <Panel
-      title={img ? `${img.w} × ${img.h}` : 'preview'}
+      title={img ? `${img.w} × ${img.h}` : t('preview')}
       actions={
         img ? (
           <span className="inline">
-            <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1 / 1.25)} aria-label="Zoom out" title="Zoom out (mouse wheel)">
+            <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1 / 1.25)} aria-label={t('Zoom out')} title={t('Zoom out (mouse wheel)')}>
               −
             </button>
-            <button type="button" className="btn btn-sm" onClick={() => setFit(true)} title="Fit the whole picture">
+            <button type="button" className="btn btn-sm" onClick={() => setFit(true)} title={t('Fit the whole picture')}>
               {Math.round(zoom * 100)} %
             </button>
-            <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1.25)} aria-label="Zoom in" title="Zoom in (mouse wheel)">
+            <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1.25)} aria-label={t('Zoom in')} title={t('Zoom in (mouse wheel)')}>
               +
             </button>
             <button
               type="button"
               className="btn btn-sm"
-              title={full ? 'Leave full screen (Esc)' : 'Full screen'}
-              aria-label={full ? 'Leave full screen' : 'Full screen'}
+              title={full ? t('Leave full screen (Esc)') : t('Full screen')}
+              aria-label={full ? t('Leave full screen') : t('Full screen')}
               aria-pressed={full}
               onClick={toggleFull}
             >
@@ -582,7 +584,7 @@ export default function BgRemover() {
                   className={`bgr-canvas bgr-tool-${tool}`}
                   style={{ width: img.w * zoom, height: img.h * zoom }}
                   role="img"
-                  aria-label="The picture with the background removed. Paint on it with the brush, or click the background with the colour picker."
+                  aria-label={t('The picture with the background removed. Paint on it with the brush, or click the background with the colour picker.')}
                 />
                 {cursor && tool !== 'pick' && !panning && (
                   <span className="bgr-brush" style={{ left: cursor.x, top: cursor.y, width: brush.size, height: brush.size }} aria-hidden="true">
@@ -599,65 +601,65 @@ export default function BgRemover() {
             )}
             {full && (
               // Full screen: the painting tools float over the picture in its corner.
-              <div className="bgr-float" role="toolbar" aria-label="Painting tools">
+              <div className="bgr-float" role="toolbar" aria-label={t('Painting tools')}>
                 <Segmented
-                  label="Tool"
+                  label={t('Tool')}
                   compact
                   value={tool}
                   onChange={setTool}
                   options={[
-                    { value: 'erase', label: 'erase (E)' },
-                    { value: 'restore', label: 'restore (R)' },
-                    { value: 'pick', label: 'picker (P)' },
+                    { value: 'erase', label: t('erase (E)') },
+                    { value: 'restore', label: t('restore (R)') },
+                    { value: 'pick', label: t('picker (P)') },
                   ]}
                 />
                 <label className="bgr-float-row">
-                  <span className="bgr-float-label">size</span>
+                  <span className="bgr-float-label">{t('size')}</span>
                   <input type="range" min={2} max={300} value={Math.min(300, brush.size)} onChange={(e) => setBrush({ ...brush, size: Number(e.target.value) })} />
                   <span className="hint mono">{brush.size} px</span>
                 </label>
                 <label className="bgr-float-row">
-                  <span className="bgr-float-label">hardness</span>
+                  <span className="bgr-float-label">{t('hardness')}</span>
                   <input type="range" min={0} max={100} value={brush.hardness} onChange={(e) => setBrush({ ...brush, hardness: Number(e.target.value) })} />
                   <span className="hint mono">{brush.hardness} %</span>
                 </label>
                 <div className="inline">
-                  <button type="button" className="btn btn-sm" disabled={!undo.length} onClick={doUndo} title="Undo (Ctrl+Z)">
-                    undo
+                  <button type="button" className="btn btn-sm" disabled={!undo.length} onClick={doUndo} title={t('Undo (Ctrl+Z)')}>
+                    {t('undo')}
                   </button>
-                  <button type="button" className="btn btn-sm" disabled={!redo.length} onClick={doRedo} title="Redo (Ctrl+Y)">
-                    redo
+                  <button type="button" className="btn btn-sm" disabled={!redo.length} onClick={doRedo} title={t('Redo (Ctrl+Y)')}>
+                    {t('redo')}
                   </button>
                   <span className="bgr-float-gap" />
-                  <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1 / 1.25)} aria-label="Zoom out" title="Zoom out (mouse wheel)">
+                  <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1 / 1.25)} aria-label={t('Zoom out')} title={t('Zoom out (mouse wheel)')}>
                     −
                   </button>
-                  <button type="button" className="btn btn-sm" onClick={() => setFit(true)} title="Fit the whole picture">
+                  <button type="button" className="btn btn-sm" onClick={() => setFit(true)} title={t('Fit the whole picture')}>
                     {Math.round(zoom * 100)} %
                   </button>
-                  <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1.25)} aria-label="Zoom in" title="Zoom in (mouse wheel)">
+                  <button type="button" className="btn btn-sm" onClick={() => zoomCentre(1.25)} aria-label={t('Zoom in')} title={t('Zoom in (mouse wheel)')}>
                     +
                   </button>
-                  <button type="button" className="btn btn-sm" onClick={toggleFull} title="Leave full screen (Esc)" aria-label="Leave full screen">
+                  <button type="button" className="btn btn-sm" onClick={toggleFull} title={t('Leave full screen (Esc)')} aria-label={t('Leave full screen')}>
                     ⤡
                   </button>
                 </div>
                 <div className="inline">
                   <Segmented
-                    label="Background behind the picture"
+                    label={t('Background behind the picture')}
                     compact
                     value={backdrop}
                     onChange={setBackdrop}
                     options={[
-                      { value: 'checker', label: 'checks' },
-                      { value: 'white', label: 'white' },
-                      { value: 'black', label: 'black' },
-                      { value: 'green', label: 'green' },
+                      { value: 'checker', label: t('checks') },
+                      { value: 'white', label: t('white') },
+                      { value: 'black', label: t('black') },
+                      { value: 'green', label: t('green') },
                     ]}
                   />
                   <label className="check">
                     <input type="checkbox" checked={showRemoved} onChange={(e) => setShowRemoved(e.target.checked)} />
-                    <span>show removed in red</span>
+                    <span>{t('show removed in red')}</span>
                   </label>
                 </div>
               </div>
@@ -665,33 +667,33 @@ export default function BgRemover() {
           </div>
           <div className="inline bgr-viewbar">
             <Segmented
-              label="Background behind the picture"
+              label={t('Background behind the picture')}
               compact
               value={backdrop}
               onChange={setBackdrop}
               options={[
-                { value: 'checker', label: 'checks' },
-                { value: 'white', label: 'white' },
-                { value: 'black', label: 'black' },
-                { value: 'green', label: 'green' },
+                { value: 'checker', label: t('checks') },
+                { value: 'white', label: t('white') },
+                { value: 'black', label: t('black') },
+                { value: 'green', label: t('green') },
               ]}
             />
             <label className="check">
               <input type="checkbox" checked={showRemoved} onChange={(e) => setShowRemoved(e.target.checked)} />
-              <span>show removed in red</span>
+              <span>{t('show removed in red')}</span>
             </label>
-            <span className="note mono">{Math.round(removedShare * 100)} % removed</span>
+            <span className="note mono">{t('{n} % removed', { n: Math.round(removedShare * 100) })}</span>
           </div>
         </>
       ) : (
-        <p className="note">Open a picture to start.</p>
+        <p className="note">{t('Open a picture to start.')}</p>
       )}
     </Panel>
   );
 
   return (
     <Workbench preview={preview}>
-      <Panel title="picture">
+      <Panel title={t('picture')}>
         <label
           className="bgr-drop"
           onDragOver={(e) => e.preventDefault()}
@@ -702,43 +704,43 @@ export default function BgRemover() {
           }}
         >
           <input type="file" accept="image/*,.heic,.heif,.tif,.tiff" onChange={(e) => e.target.files?.[0] && void open(e.target.files[0])} hidden />
-          <b>{img ? img.name : 'Drop a picture here, click to choose one, or paste it (Ctrl+V)'}</b>
-          <span className="note">PNG, JPG, WebP, HEIC (iPhone), TIFF… Big pictures are edited at up to {MAX_SIDE} px.</span>
+          <b>{img ? img.name : t('Drop a picture here, click to choose one, or paste it (Ctrl+V)')}</b>
+          <span className="note">{t('PNG, JPG, WebP, HEIC (iPhone), TIFF… Big pictures are edited at up to {max} px.', { max: MAX_SIDE })}</span>
         </label>
         {loadError && <p className="error-text">{loadError}</p>}
       </Panel>
 
       {img && (
         <>
-          <Panel title="1 · automatic (AI)">
-            <p className="note">Finds the subject (people, animals, things) and removes the rest. Runs on your computer; the first time it downloads its model ({mb(MODEL.size)}).</p>
+          <Panel title={t('1 · automatic (AI)')}>
+            <p className="note">{t('Finds the subject (people, animals, things) and removes the rest. Runs on your computer; the first time it downloads its model ({size}).', { size: mb(MODEL.size) })}</p>
             {snap.aiOn ? (
               <>
                 <div className="opt-row">
                   <label className="opt-label" htmlFor="bgr-edge">
-                    Edge <span className="hint">{snap.ai.edge < 35 ? 'soft' : snap.ai.edge > 70 ? 'sharp' : 'medium'}</span>
+                    {t('Edge')} <span className="hint">{snap.ai.edge < 35 ? t('soft') : snap.ai.edge > 70 ? t('sharp') : t('medium')}</span>
                   </label>
                   <div className="range">
                     <input id="bgr-edge" type="range" min={0} max={100} value={snap.ai.edge} onChange={(e) => change({ ai: { ...snap.ai, edge: Number(e.target.value) } }, 'edge')} />
                   </div>
-                  <Help label="edge" text="Soft keeps fine see-through edges like hair and fur. Sharp gives clean, hard edges for things like products, cars or logos." />
+                  <Help label={t('edge')} text={t('Soft keeps fine see-through edges like hair and fur. Sharp gives clean, hard edges for things like products, cars or logos.')} />
                 </div>
                 <div className="opt-row">
                   <label className="opt-label" htmlFor="bgr-str">
-                    Strength <span className="hint">{snap.ai.strength} %</span>
+                    {t('Strength')} <span className="hint">{snap.ai.strength} %</span>
                   </label>
                   <div className="range">
                     <input id="bgr-str" type="range" min={0} max={100} value={snap.ai.strength} onChange={(e) => change({ ai: { ...snap.ai, strength: Number(e.target.value) } }, 'strength')} />
                   </div>
-                  <Help label="strength" text="Higher removes more of the parts the AI wasn't sure about; lower keeps more of them." />
+                  <Help label={t('strength')} text={t('Higher removes more of the parts the AI wasn\'t sure about; lower keeps more of them.')} />
                 </div>
                 <button type="button" className="btn btn-sm" onClick={() => change({ aiOn: false }, 'aiOn')}>
-                  Undo the AI
+                  {t('Undo the AI')}
                 </button>
               </>
             ) : (
               <button type="button" className="btn btn-primary" disabled={aiState.busy} onClick={() => void runAi()}>
-                {aiState.busy ? 'Working…' : 'Remove background (AI)'}
+                {aiState.busy ? t('Working…') : t('Remove background (AI)')}
               </button>
             )}
             {aiState.busy && <p className="note mono">{aiState.text}</p>}
@@ -746,31 +748,31 @@ export default function BgRemover() {
             {aiState.error && <p className="error-text">{aiState.error}</p>}
           </Panel>
 
-          <Panel title="2 · by colour">
+          <Panel title={t('2 · by colour')}>
             <p className="note">
-              Pick the <b>colour picker</b> tool below and click the background: that colour goes. Click again to add more shades.
+              {tn('Pick the {tool} tool below and click the background: that colour goes. Click again to add more shades.', { tool: <b>{t('colour picker')}</b> })}
             </p>
             <div className="opt-row">
               <label className="opt-label" htmlFor="bgr-tol">
-                Tolerance <span className="hint">{snap.color.tolerance} %</span>
+                {t('Tolerance')} <span className="hint">{snap.color.tolerance} %</span>
               </label>
               <div className="range">
                 <input id="bgr-tol" type="range" min={0} max={60} value={snap.color.tolerance} onChange={(e) => change({ color: { ...snap.color, tolerance: Number(e.target.value) } }, 'tolerance')} />
               </div>
-              <Help label="tolerance" text="How different a colour may be from the one you clicked and still be removed. Low = only that exact colour, high = similar shades too." />
+              <Help label={t('tolerance')} text={t('How different a colour may be from the one you clicked and still be removed. Low = only that exact colour, high = similar shades too.')} />
             </div>
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="bgr-cont">
-                  Only the connected area
+                  {t('Only the connected area')}
                 </span>
-                <Help label="connected area" text="On: removes only the area touching where you clicked. Off: that colour everywhere in the picture (e.g. the sky showing through holes)." />
+                <Help label={t('connected area')} text={t('On: removes only the area touching where you clicked. Off: that colour everywhere in the picture (e.g. the sky showing through holes).')} />
               </span>
               <Toggle labelledBy="bgr-cont" checked={snap.color.contiguous} onChange={(contiguous) => change({ color: { ...snap.color, contiguous } }, 'contiguous')} />
             </div>
             <div className="opt-row">
               <label className="opt-label" htmlFor="bgr-feather">
-                Soften the edge <span className="hint">{snap.color.feather} px</span>
+                {t('Soften the edge')} <span className="hint">{snap.color.feather} px</span>
               </label>
               <div className="range">
                 <input id="bgr-feather" type="range" min={0} max={10} value={snap.color.feather} onChange={(e) => change({ color: { ...snap.color, feather: Number(e.target.value) } }, 'feather')} />
@@ -779,34 +781,34 @@ export default function BgRemover() {
             {snap.picks.length > 0 && (
               <div className="inline">
                 {snap.picks.map((p, i) => (
-                  <span key={i} className="bgr-swatch" style={{ background: `rgb(${p.r},${p.g},${p.b})` }} title={`rgb(${p.r}, ${p.g}, ${p.b})`} />
+                  <span key={i} className="bgr-swatch" style={{ background: `rgb(${p.r},${p.g},${p.b})` }} title={t('rgb({r}, {g}, {b})', { r: p.r, g: p.g, b: p.b })} />
                 ))}
                 <button type="button" className="btn btn-sm" onClick={() => change({ picks: [] }, 'picks')}>
-                  clear colours
+                  {t('clear colours')}
                 </button>
               </div>
             )}
           </Panel>
 
-          <Panel title="3 · fix by hand">
+          <Panel title={t('3 · fix by hand')}>
             <div className="opt-row">
               <span className="opt-label" id="bgr-tool">
-                Tool
+                {t('Tool')}
               </span>
               <Segmented
                 labelledBy="bgr-tool"
                 value={tool}
                 onChange={setTool}
                 options={[
-                  { value: 'erase', label: 'erase (E)' },
-                  { value: 'restore', label: 'restore (R)' },
-                  { value: 'pick', label: 'colour picker (P)' },
+                  { value: 'erase', label: t('erase (E)') },
+                  { value: 'restore', label: t('restore (R)') },
+                  { value: 'pick', label: t('colour picker (P)') },
                 ]}
               />
             </div>
             <div className="opt-row">
               <label className="opt-label" htmlFor="bgr-size">
-                Brush size <span className="hint">{brush.size} px</span>
+                {t('Brush size')} <span className="hint">{brush.size} px</span>
               </label>
               <div className="range">
                 <input id="bgr-size" type="range" min={2} max={300} value={brush.size} onChange={(e) => setBrush({ ...brush, size: Number(e.target.value) })} />
@@ -814,7 +816,7 @@ export default function BgRemover() {
             </div>
             <div className="opt-row">
               <label className="opt-label" htmlFor="bgr-hard">
-                Hardness <span className="hint">{brush.hardness} %</span>
+                {t('Hardness')} <span className="hint">{brush.hardness} %</span>
               </label>
               <div className="range">
                 <input id="bgr-hard" type="range" min={0} max={100} value={brush.hardness} onChange={(e) => setBrush({ ...brush, hardness: Number(e.target.value) })} />
@@ -822,22 +824,21 @@ export default function BgRemover() {
             </div>
             <div className="inline">
               <button type="button" className="btn btn-sm" disabled={!undo.length} onClick={doUndo}>
-                undo (Ctrl+Z)
+                {t('undo (Ctrl+Z)')}
               </button>
               <button type="button" className="btn btn-sm" disabled={!redo.length} onClick={doRedo}>
-                redo (Ctrl+Y)
+                {t('redo (Ctrl+Y)')}
               </button>
             </div>
             <p className="note">
-              Erase removes what's left of the background, restore brings back parts of the subject. The mouse wheel zooms, Ctrl + wheel or [ ] changes the brush size; drag with the right (or middle)
-              button, or hold Space, to move around a zoomed picture.
+              {t('Erase removes what\'s left of the background, restore brings back parts of the subject. The mouse wheel zooms, Ctrl + wheel or [ ] changes the brush size; drag with the right (or middle) button, or hold Space, to move around a zoomed picture.')}
             </p>
           </Panel>
 
-          <Panel title="download">
+          <Panel title={t('download')}>
             <div className="opt-row">
               <span className="opt-label" id="bgr-fmt">
-                Format
+                {t('Format')}
               </span>
               <Segmented
                 labelledBy="bgr-fmt"
@@ -853,26 +854,26 @@ export default function BgRemover() {
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="bgr-fill">
-                  Fill the background
+                  {t('Fill the background')}
                 </span>
-                <Help label="fill" text="Puts a solid colour behind the picture instead of leaving it see-through. JPG can't be see-through, so it's always filled (white unless you pick a colour)." />
+                <Help label={t('fill')} text={t('Puts a solid colour behind the picture instead of leaving it see-through. JPG can\'t be see-through, so it\'s always filled (white unless you pick a colour).')} />
               </span>
               <Toggle labelledBy="bgr-fill" checked={out.fill} onChange={(fill) => setOut({ ...out, fill })} />
-              {out.fill && <input type="color" value={out.fillColor} onChange={(e) => setOut({ ...out, fillColor: e.target.value })} aria-label="Background colour" />}
+              {out.fill && <input type="color" value={out.fillColor} onChange={(e) => setOut({ ...out, fillColor: e.target.value })} aria-label={t('Background colour')} />}
             </div>
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="bgr-crop">
-                  Crop to the subject
+                  {t('Crop to the subject')}
                 </span>
-                <Help label="crop" text="Cuts off the empty space around what's left, keeping a little margin." />
+                <Help label={t('crop')} text={t('Cuts off the empty space around what\'s left, keeping a little margin.')} />
               </span>
               <Toggle labelledBy="bgr-crop" checked={out.crop} onChange={(crop) => setOut({ ...out, crop })} />
             </div>
             {out.crop && (
               <div className="opt-row">
                 <label className="opt-label" htmlFor="bgr-pad">
-                  Margin <span className="hint">{out.pad} px</span>
+                  {t('Margin')} <span className="hint">{out.pad} px</span>
                 </label>
                 <div className="range">
                   <input id="bgr-pad" type="range" min={0} max={200} value={out.pad} onChange={(e) => setOut({ ...out, pad: Number(e.target.value) })} />
@@ -880,7 +881,7 @@ export default function BgRemover() {
               </div>
             )}
             <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void download()}>
-              {saving ? 'Saving…' : `Download ${out.format.toUpperCase()}`}
+              {saving ? t('Saving…') : t('Download {format}', { format: out.format.toUpperCase() })}
             </button>
           </Panel>
         </>

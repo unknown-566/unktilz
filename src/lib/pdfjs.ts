@@ -1,4 +1,5 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { t } from './i18n-core';
 
 // pdf.js (Apache-2.0) draws PDF pages. It parses in its own worker and draws here, on a canvas,
 // so it's loaded only when a PDF tool runs.
@@ -17,10 +18,13 @@ export async function openPdf(file: File): Promise<PDFDocumentProxy> {
   try {
     return await m.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
   } catch (e) {
-    if ((e as Error)?.name === 'PasswordException') throw new Error(`${file.name} is password protected. Remove the password first.`);
-    throw new Error(`${file.name} isn't a readable PDF.`);
+    if ((e as Error)?.name === 'PasswordException') throw new Error(t('{name} is password protected. Remove the password first.', { name: file.name }));
+    throw new Error(t('{name} isn\'t a readable PDF.', { name: file.name }));
   }
 }
+
+/** Frees what pdf.js holds for a document (its worker's copy too). pdf.js 6 does this through the loading task. */
+export const closePdf = (doc: PDFDocumentProxy | null | undefined) => (doc ? doc.loadingTask.destroy() : Promise.resolve());
 
 /** Most pixels one page may have (a browser canvas fails above roughly this). */
 const MAX_PIXELS = 60_000_000;
@@ -48,7 +52,7 @@ export async function renderPage(doc: PDFDocumentProxy, index: number, dpi: numb
 }
 
 export const canvasBlob = (canvas: HTMLCanvasElement, type: string, quality?: number) =>
-  new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('The page is too big to draw.'))), type, quality));
+  new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t('The page is too big to draw.')))), type, quality));
 
 /** "file.pdf" → "file" */
 export const baseName = (name: string) => name.replace(/\.[^./]+$/, '') || 'document';

@@ -1,6 +1,7 @@
 import type { Opts } from '../../registry/types';
 import { ffTime, parseTime, trimArgs } from '../../lib/timecode';
 import { audioArgs } from './audioOptions';
+import { t } from '../../lib/i18n-core';
 
 export type AudioFormat = 'mp3' | 'wav' | 'ogg' | 'opus' | 'flac' | 'm4a';
 
@@ -53,10 +54,10 @@ export function audioCommand(o: Opts, input: string, output: string): string[] {
   const fadeOut = Math.max(0, Number(o.fadeOut) || 0);
   if (fadeIn) filters.push(`afade=t=in:st=0:d=${ffTime(fadeIn)}`);
   if (fadeOut) {
-    const b = parseTime(end, 'End');
+    const b = parseTime(end, t('End'));
     if (b !== null) {
       // The length is known from the trim, so the fade can start at a fixed time.
-      const length = b - (parseTime(start, 'Start') ?? 0);
+      const length = b - (parseTime(start, t('Start')) ?? 0);
       filters.push(`afade=t=out:st=${ffTime(Math.max(0, length - fadeOut))}:d=${ffTime(fadeOut)}`);
     } else {
       // Unknown length: fade in the reversed sound, then turn it back around.

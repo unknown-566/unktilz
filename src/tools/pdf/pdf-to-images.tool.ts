@@ -1,7 +1,8 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { defineTool, type Opts, type RunEvent } from '../../registry/types';
 import { parsePages } from '../../lib/pageRange';
-import { baseName, canvasBlob, openPdf, renderPage } from '../../lib/pdfjs';
+import { baseName, canvasBlob, closePdf, openPdf, renderPage } from '../../lib/pdfjs';
+import { t } from '../../lib/i18n-core';
 
 /** One page as the tool saves it; the preview uses the same. */
 async function pagePicture(doc: PDFDocumentProxy, index: number, opts: Opts) {
@@ -11,28 +12,28 @@ async function pagePicture(doc: PDFDocumentProxy, index: number, opts: Opts) {
 
 export default defineTool({
   slug: 'pdf-to-images',
-  name: 'PDF to images',
+  name: t('PDF to images'),
   category: 'pdf',
-  order: 2,
-  meta: '.pdf → .png / .jpg',
+  order: 6,
+  meta: t('.pdf → .png / .jpg'),
   beta: true,
-  description: 'Turn PDF pages into PNG or JPG pictures, all of them or only the pages you pick. Several pages download as one .zip.',
+  description: t('Turn PDF pages into PNG or JPG pictures, all of them or only the pages you pick. Several pages download as one .zip.'),
   keywords: ['pdf to jpg', 'pdf to png', 'pdf to image', 'pdf page', 'screenshot', 'convert'],
   accepts: ['.pdf'],
   preview: async (file, opts) => {
     const doc = await openPdf(file);
     try {
       const pages = parsePages(String(opts.pages ?? ''), doc.numPages);
-      return { blob: await pagePicture(doc, pages[0], opts), bytes: true, note: `page ${pages[0] + 1} of ${doc.numPages}` };
+      return { blob: await pagePicture(doc, pages[0], opts), bytes: true, note: t('page {n} of {numPages}', { n: pages[0] + 1, numPages: doc.numPages }) };
     } finally {
-      void doc.destroy();
+      void closePdf(doc);
     }
   },
   options: [
     {
       key: 'format',
-      label: 'Format',
-      help: 'PNG is sharpest for text and drawings. JPG is much smaller for scans and photos.',
+      label: t('Format'),
+      help: t('PNG is sharpest for text and drawings. JPG is much smaller for scans and photos.'),
       type: 'choice',
       default: 'png',
       choices: [
@@ -42,9 +43,9 @@ export default defineTool({
     },
     {
       key: 'dpi',
-      label: 'Resolution',
+      label: t('Resolution'),
       hint: 'dpi',
-      help: 'Dots per inch. 150 is good for the screen, 300 for printing or zooming in. Higher makes bigger files.',
+      help: t('Dots per inch. 150 is good for the screen, 300 for printing or zooming in. Higher makes bigger files.'),
       type: 'choice',
       default: '150',
       choices: [
@@ -53,8 +54,8 @@ export default defineTool({
         { value: '300', label: '300' },
       ],
     },
-    { key: 'quality', label: 'Quality', help: 'Lower makes smaller JPG files with more blur.', type: 'range', min: 30, max: 100, step: 1, default: 88, unit: '%', when: (o) => o.format === 'jpg' },
-    { key: 'pages', label: 'Pages', help: 'Empty takes every page. Otherwise e.g. 1-3, 5 or 7- (to the end).', type: 'text', default: '', placeholder: 'all', mono: true },
+    { key: 'quality', label: t('Quality'), help: t('Lower makes smaller JPG files with more blur.'), type: 'range', min: 30, max: 100, step: 1, default: 88, unit: '%', when: (o) => o.format === 'jpg' },
+    { key: 'pages', label: t('Pages'), help: t('Empty takes every page. Otherwise e.g. 1-3, 5 or 7- (to the end).'), type: 'text', default: '', placeholder: t('all'), mono: true },
   ],
   run: ([file], opts, { signal }) =>
     (async function* (): AsyncGenerator<RunEvent> {
@@ -67,11 +68,13 @@ export default defineTool({
           if (signal.aborted) return;
           const blob = await pagePicture(doc, pages[i], opts);
           const n = String(pages[i] + 1).padStart(digits, '0');
+          // (File names stay the same in every language.)
+          // i18n-ignore
           yield { type: 'result', name: `${baseName(file.name)}-page-${n}.${jpg ? 'jpg' : 'png'}`, blob };
           yield { type: 'progress', value: (i + 1) / pages.length };
         }
       } finally {
-        void doc.destroy();
+        void closePdf(doc);
       }
     })(),
 });

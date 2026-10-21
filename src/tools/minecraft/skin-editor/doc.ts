@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { Model } from '../../../lib/mc/skinLayout';
 import type { Pixels } from '../../../lib/mc/skinOps';
+import { t } from '../../../lib/i18n-core';
 
 export type Step = { id: number; label: string; pixels: Pixels; model: Model };
 
@@ -23,7 +24,7 @@ export class SkinDoc {
   private savedId: number;
   private listeners = new Set<() => void>();
 
-  constructor(name: string, pixels: Pixels, model: Model, label = 'Opened') {
+  constructor(name: string, pixels: Pixels, model: Model, label = t('Opened')) {
     this.name = name;
     this.pixels = new Uint8ClampedArray(pixels);
     this.model = model;

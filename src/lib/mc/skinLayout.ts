@@ -1,3 +1,5 @@
+import { t } from '../i18n-core';
+
 /**
  * Where every part of a 64×64 Java skin lives in the texture and on the 3D player.
  *
@@ -22,12 +24,12 @@ export const LAYERS: Layer[] = ['base', 'overlay'];
 export const FACES: FaceId[] = ['top', 'bottom', 'right', 'front', 'left', 'back'];
 
 export const PART_LABEL: Record<PartId, [base: string, overlay: string]> = {
-  head: ['Head', 'Hat'],
-  body: ['Body', 'Jacket'],
-  rightArm: ['Right arm', 'Right sleeve'],
-  leftArm: ['Left arm', 'Left sleeve'],
-  rightLeg: ['Right leg', 'Right pants leg'],
-  leftLeg: ['Left leg', 'Left pants leg'],
+  head: [t('skin|Head'), t('skin|Hat')],
+  body: [t('skin|Body'), t('skin|Jacket')],
+  rightArm: [t('skin|Right arm'), t('skin|Right sleeve')],
+  leftArm: [t('skin|Left arm'), t('skin|Left sleeve')],
+  rightLeg: [t('skin|Right leg'), t('skin|Right pants leg')],
+  leftLeg: [t('skin|Left leg'), t('skin|Left pants leg')],
 };
 
 const UV: Record<PartId, Record<Layer, [number, number]>> = {

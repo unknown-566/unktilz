@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NumberField, Output, Panel, Segmented, Stat, num } from '../../components/ui';
+import { t } from '../../lib/i18n-core';
 
 type Dir = 'toNether' | 'toOverworld';
 
@@ -19,14 +20,14 @@ export default function NetherPortal() {
 
   return (
     <>
-      <section className="panel" aria-label="Coordinates">
+      <section className="panel" aria-label={t('Coordinates')}>
         <Segmented
-          label="Direction"
+          label={t('Direction')}
           value={dir}
           onChange={setDir}
           options={[
-            { value: 'toNether', label: 'overworld → nether' },
-            { value: 'toOverworld', label: 'nether → overworld' },
+            { value: 'toNether', label: t('overworld → nether') },
+            { value: 'toOverworld', label: t('nether → overworld') },
           ]}
         />
         <div className="fields">
@@ -36,7 +37,7 @@ export default function NetherPortal() {
         </div>
       </section>
 
-      <Panel title={`${to.toLowerCase()} portal`}>
+      <Panel title={t('{v1} portal', { v1: to.toLowerCase() })}>
         {filled ? (
           <>
             <div className="stats" aria-live="polite">
@@ -44,14 +45,13 @@ export default function NetherPortal() {
               <Stat label="Y" value={ty} />
               <Stat label="Z" value={tz} />
             </div>
-            <Output label="Teleport command" value={`/execute in minecraft:${to === 'Nether' ? 'the_nether' : 'overworld'} run tp @s ${tx} ${ty} ${tz}`} />
+            <Output label={t('Teleport command')} value={`/execute in minecraft:${to === 'Nether' ? 'the_nether' : 'overworld'} run tp @s ${tx} ${ty} ${tz}`} />
           </>
         ) : (
-          <p className="note">Enter the X and Z of your {from} portal.</p>
+          <p className="note">{t('Enter the X and Z of your portal in the {dimension}.', { dimension: from })}</p>
         )}
         <p className="note">
-          Y stays the same. A portal links to the closest portal within {to === 'Nether' ? '16' : '128'} blocks of the target point, so build it close to these coordinates to
-          avoid linking to the wrong one.
+          {t('Y stays the same. A portal links to the closest portal within {n} blocks of the target point, so build it close to these coordinates to avoid linking to the wrong one.', { n: to === 'Nether' ? 16 : 128 })}
         </p>
       </Panel>
     </>

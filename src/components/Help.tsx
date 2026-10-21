@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { t } from '../lib/i18n-core';
 
 /**
  * A small "?" that shows an explanation while hovered or focused (a tap shows it on touch).
@@ -16,10 +17,10 @@ export function Help({ text, label }: { text: string; label: string }) {
   useLayoutEffect(() => {
     if (!open || !btn.current || !tip.current) return;
     const b = btn.current.getBoundingClientRect();
-    const t = tip.current.getBoundingClientRect();
+    const tt = tip.current.getBoundingClientRect();
     const gap = 8;
-    const left = Math.min(window.innerWidth - t.width - gap, Math.max(gap, b.left + b.width / 2 - t.width / 2));
-    const above = b.top - t.height - gap;
+    const left = Math.min(window.innerWidth - tt.width - gap, Math.max(gap, b.left + b.width / 2 - tt.width / 2));
+    const above = b.top - tt.height - gap;
     setPos({ left, top: above >= gap ? above : b.bottom + gap, visible: true });
   }, [open, text]);
 
@@ -46,7 +47,7 @@ export function Help({ text, label }: { text: string; label: string }) {
         ref={btn}
         type="button"
         className="help"
-        aria-label={`What is ${label}?`}
+        aria-label={t('What is {label}?', { label })}
         aria-describedby={id}
         aria-expanded={open}
         onMouseEnter={show}

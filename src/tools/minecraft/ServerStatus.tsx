@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { SavedPanel } from '../../components/SavedPanel';
 import { Panel, Segmented, Stat, TextField } from '../../components/ui';
 import { McText } from '../../lib/mc/text';
+import { t } from '../../lib/i18n-core';
 
 type Status = {
   online: boolean;
@@ -39,11 +40,11 @@ export default function ServerStatus() {
     try {
       const url = `https://api.mcsrvstat.us/${ed === 'bedrock' ? 'bedrock/' : ''}3/${encodeURIComponent(host)}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Status service answered ${res.status}. Try again in a minute.`);
+      if (!res.ok) throw new Error(t('Status service answered {status}. Try again in a minute.', { status: res.status }));
       setResult({ address: host, status: (await res.json()) as Status });
     } catch (err) {
       setResult(null);
-      setError(err instanceof TypeError ? 'Could not reach the status service. Check your connection.' : (err as Error).message);
+      setError(err instanceof TypeError ? t('Could not reach the status service. Check your connection.') : (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -52,12 +53,12 @@ export default function ServerStatus() {
   const s = result?.status;
   return (
     <>
-      <form className="panel" onSubmit={check} aria-label="Server address">
+      <form className="panel" onSubmit={check} aria-label={t('Server address')}>
         <div className="inline">
-          <TextField label="Server address" value={address} onChange={setAddress} placeholder="play.example.net or 1.2.3.4:25565" mono autoFocus />
-          <Segmented label="Edition" value={edition} onChange={setEdition} options={[{ value: 'java', label: 'java' }, { value: 'bedrock', label: 'bedrock' }]} />
+          <TextField label={t('Server address')} value={address} onChange={setAddress} placeholder={t('play.example.net or 1.2.3.4:25565')} mono autoFocus />
+          <Segmented label={t('Edition')} value={edition} onChange={setEdition} options={[{ value: 'java', label: t('java') }, { value: 'bedrock', label: t('bedrock') }]} />
           <button type="submit" className="btn btn-primary" disabled={loading || !address.trim()}>
-            {loading ? 'Checking…' : 'Check'}
+            {loading ? t('Checking…') : t('Check')}
           </button>
         </div>
         {error && (
@@ -69,10 +70,10 @@ export default function ServerStatus() {
 
       <SavedPanel<{ address: string; edition: Edition }>
         slug="server-status"
-        title="favourite servers"
-        help="Servers you check often. Click one to check it right away."
-        saveLabel="add"
-        loadLabel="Check"
+        title={t('favourite servers')}
+        help={t('Servers you check often. Click one to check it right away.')}
+        saveLabel={t('add')}
+        loadLabel={t('Check')}
         undoable={false}
         suggestName={() => address.trim()}
         getData={() => (address.trim() ? { address: address.trim(), edition } : null)}
@@ -82,7 +83,7 @@ export default function ServerStatus() {
           run(d.address, d.edition);
         }}
         describe={(i) => `${i.data.address} · ${i.data.edition}`}
-        emptyText="No favourites yet. Type an address above and press add."
+        emptyText={t('No favourites yet. Type an address above and press add.')}
       />
 
       {s && result && (
@@ -91,30 +92,30 @@ export default function ServerStatus() {
             {s.icon && <img src={s.icon} width={64} height={64} alt="" style={{ imageRendering: 'pixelated', borderRadius: 6 }} />}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span className="mono" style={{ fontSize: 18, color: s.online ? 'var(--accent-text)' : 'var(--danger)' }}>
-                {s.online ? '● online' : '○ offline'}
+                {s.online ? t('● online') : t('○ offline')}
               </span>
               <span className="mono muted" style={{ fontSize: 13 }}>
-                {s.ip ? `${s.ip}:${s.port}` : 'no answer from this address'}
+                {s.ip ? `${s.ip}:${s.port}` : t('no answer from this address')}
               </span>
             </div>
           </div>
           {s.online && (
             <>
               {s.motd?.raw?.length ? (
-                <div className="mc-preview" aria-label={`MOTD: ${s.motd.clean?.join(' ') ?? ''}`}>
+                <div className="mc-preview" aria-label={`MOTD: ${s.motd.clean?.join(' ') ?? ''}` /* i18n-ignore */}>
                   <McText text={s.motd.raw.join('\n')} prefixes="§" />
                 </div>
               ) : null}
               <div className="stats">
-                <Stat label="players" value={s.players ? `${s.players.online} / ${s.players.max}` : '–'} />
-                <Stat label="version" value={s.protocol?.name ?? s.version ?? '–'} />
-                {s.protocol?.version !== undefined && <Stat label="protocol" value={s.protocol.version} />}
-                {s.software && <Stat label="software" value={s.software} />}
-                {s.gamemode && <Stat label="gamemode" value={s.gamemode} />}
+                <Stat label={t('players')} value={s.players ? `${s.players.online} / ${s.players.max}` : '–'} />
+                <Stat label={t('version')} value={s.protocol?.name ?? s.version ?? '–'} />
+                {s.protocol?.version !== undefined && <Stat label={t('protocol')} value={s.protocol.version} />}
+                {s.software && <Stat label={t('software')} value={s.software} />}
+                {s.gamemode && <Stat label={t('gamemode')} value={s.gamemode} />}
               </div>
               {s.players?.list?.length ? (
                 <div className="field">
-                  <span className="field-label">Players online</span>
+                  <span className="field-label">{t('Players online')}</span>
                   <div className="seg">
                     {s.players.list.slice(0, 60).map((p) => (
                       <span key={p.uuid ?? p.name} className="btn btn-sm mono" style={{ cursor: 'default' }}>
@@ -126,7 +127,7 @@ export default function ServerStatus() {
               ) : null}
             </>
           )}
-          <p className="note">Status comes from mcsrvstat.us and is cached for a few minutes.</p>
+          <p className="note">{t('Status comes from mcsrvstat.us and is cached for a few minutes.')}</p>
         </Panel>
       )}
     </>

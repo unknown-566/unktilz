@@ -1,6 +1,7 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import type { RunEvent } from '../registry/types';
 import { abortError, channel } from './channel';
+import { t } from './i18n-core';
 
 // ffmpeg.wasm runs in its own worker; the ~30 MB core is fetched on first use only.
 let instance: Promise<FFmpeg> | null = null;
@@ -144,7 +145,7 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
         } catch (e) {
           // The wasm crashed: this instance is unusable now.
           discard(ff);
-          throw new Error(`ffmpeg crashed (${String(e).replace(/^RuntimeError: /, '')}). The file may be too big or use something this browser version of ffmpeg can't handle.`);
+          throw new Error(t('ffmpeg crashed ({reason}). The file may be too big or use something this browser version of ffmpeg can’t handle.', { reason: String(e).replace(/^RuntimeError: /, '') }));
         }
         if (signal.aborted) return;
         if (code === 0 && (attempts[a].accept?.(log) ?? true)) break;
@@ -156,7 +157,7 @@ export function ffmpegJob(file: File, outName: string, args: Args | Attempt[], m
           continue;
         }
         const reason = failedLog.filter((l) => /error|invalid|unsupported|not found|no such|does not contain|matches no streams/i.test(l)).pop();
-        throw new Error(reason ? `ffmpeg: ${reason.trim()}` : `ffmpeg exited with code ${code}.`);
+        throw new Error(reason ? t('ffmpeg says: {reason}', { reason: reason.trim() }) : t('ffmpeg exited with code {code}.', { code }));
       }
       const data = (await ff.readFile(output)) as Uint8Array;
       ch.push({ type: 'result', name: outName, blob: new Blob([data as BlobPart], { type: mime }) });
@@ -221,13 +222,13 @@ async function runOnce(
       code = await ff.exec(['-hide_banner', ...args]);
     } catch (e) {
       failed = true;
-      throw new Error(`ffmpeg crashed (${String(e).replace(/^RuntimeError: /, '')}).`);
+      throw new Error(t('ffmpeg crashed ({reason}).', { reason: String(e).replace(/^RuntimeError: /, '') }));
     }
     if (signal?.aborted) throw abortError();
     if (code !== 0) {
       failed = true;
       const reason = log.filter((l) => /error|invalid|unsupported|not found|no such/i.test(l)).pop();
-      throw new Error(reason ? `ffmpeg: ${reason.trim()}` : `ffmpeg exited with code ${code}.`);
+      throw new Error(reason ? t('ffmpeg says: {reason}', { reason: reason.trim() }) : t('ffmpeg exited with code {code}.', { code }));
     }
     return (await Promise.all(outputs.map((o) => ff.readFile(o)))) as Uint8Array[];
   } finally {

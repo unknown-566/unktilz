@@ -18,6 +18,8 @@ type OptionBase = {
 
 export type OptionSchema =
   | (OptionBase & { type: 'choice'; choices: { value: string; label: string }[]; default: string })
+  /** Any number of the choices at once, kept as their values separated by commas ("" = none). */
+  | (OptionBase & { type: 'multi'; choices: { value: string; label: string }[]; default: string })
   | (OptionBase & { type: 'range'; min: number; max: number; step?: number; default: number; unit?: string })
   | (OptionBase & { type: 'number'; min?: number; max?: number; default: number; unit?: string })
   | (OptionBase & { type: 'toggle'; default: boolean })

@@ -1,3 +1,5 @@
+import { t } from '../../lib/i18n-core';
+
 /**
  * Image formats the browser can't read or write by itself: HEIC (iPhone photos) and TIFF in,
  * ICO and BMP out. The decoders are loaded only when a file needs them.
@@ -24,11 +26,11 @@ export async function decodeHeic(file: File): Promise<ImageBitmap> {
   const lib = await heif;
   const images = new lib.HeifDecoder().decode(new Uint8Array(await file.arrayBuffer()));
   const img = images[0];
-  if (!img) throw new Error(`${file.name} has no picture in it.`);
+  if (!img) throw new Error(t('{name} has no picture in it.', { name: file.name }));
   const width = img.get_width();
   const height = img.get_height();
   const data = await new Promise<Uint8ClampedArray>((resolve, reject) =>
-    img.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, (out) => (out ? resolve(out.data) : reject(new Error(`Couldn't read ${file.name}.`)))),
+    img.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, (out) => (out ? resolve(out.data) : reject(new Error(t('Couldn\'t read {name}.', { name: file.name }))))),
   );
   for (const i of images) i.free?.();
   return createImageBitmap(new ImageData(new Uint8ClampedArray(data), width, height));
@@ -41,7 +43,7 @@ export async function decodeTiff(file: File): Promise<ImageBitmap> {
   const ifds = UTIF.decode(buf);
   // Thumbnails and masks come as tiny or 1-bit pages; the real picture is the biggest one.
   const page = ifds.reduce((a, b) => ((b.width ?? 0) * (b.height ?? 0) > (a.width ?? 0) * (a.height ?? 0) ? b : a), ifds[0]);
-  if (!page) throw new Error(`${file.name} has no picture in it.`);
+  if (!page) throw new Error(t('{name} has no picture in it.', { name: file.name }));
   UTIF.decodeImage(buf, page);
   const rgba = UTIF.toRGBA8(page);
   return createImageBitmap(new ImageData(new Uint8ClampedArray(rgba), page.width, page.height));

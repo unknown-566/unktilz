@@ -2,6 +2,7 @@
 // Runs cubiomes (compiled to WebAssembly, see scripts/build-cubiomes.mjs) for the seed map:
 // biome tiles as images, structure positions, and biome names for the legend.
 import wasmUrl from './cubiomes.wasm?url';
+import { t } from '../lib/i18n-core';
 
 type Exports = {
   memory: WebAssembly.Memory;
@@ -56,7 +57,7 @@ function use(w: Exports, world: World) {
   const key = `${world.version}|${world.seed}|${world.large}`;
   if (key === current) return;
   const mc = mcOf(w, world.version);
-  if (!mc) throw new Error(`Unknown version ${world.version}`);
+  if (!mc) throw new Error(t('Unknown version {version}', { version: world.version }));
   w.sm_init(mc, BigInt.asUintN(64, BigInt(world.seed)), world.large ? 1 : 0);
   current = key;
 }
@@ -87,7 +88,7 @@ async function handle(req: SeedMapRequest): Promise<{ result: unknown; transfer:
     const { scale, x, z, size } = req;
     // Biomes near sea level (y = 15 at 1:4 is block 60–63), the usual height for seed maps.
     const p = w.sm_biomes(scale, x, z, size, size, 15);
-    if (!p) throw new Error('Biome generation failed');
+    if (!p) throw new Error(t('Biome generation failed'));
     const src = new Int32Array(w.memory.buffer, p, size * size);
     const ids = new Uint8Array(size * size);
     const rgba = new Uint32Array(size * size);

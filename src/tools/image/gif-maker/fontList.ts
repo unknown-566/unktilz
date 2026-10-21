@@ -1,4 +1,5 @@
 import gfData from '../../../lib/google-fonts.json';
+import { t } from '../../../lib/i18n-core';
 
 /**
  * Every font the GIF maker's texts can use: a few that come with the computer, ten that come with
@@ -20,11 +21,11 @@ export type FontInfo = {
 };
 
 export const FONT_CATS: { value: FontCat; label: string }[] = [
-  { value: 'display', label: 'Display' },
-  { value: 'sans', label: 'Sans' },
-  { value: 'serif', label: 'Serif' },
-  { value: 'hand', label: 'Handwriting' },
-  { value: 'mono', label: 'Mono' },
+  { value: 'display', label: t('Display') },
+  { value: 'sans', label: t('Sans') },
+  { value: 'serif', label: t('Serif') },
+  { value: 'hand', label: t('Handwriting') },
+  { value: 'mono', label: t('Mono') },
 ];
 
 /** System fonts with the CSS that writes them (and what to use where one is missing). */

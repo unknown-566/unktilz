@@ -3,6 +3,7 @@ import { SKIN, allRegions, texelAt, type Layer, type PartId, type Rect } from '.
 import type { Clip } from '../../../lib/mc/skinOps';
 import { useDoc, type SkinDoc } from './doc';
 import { Stroke, capture, pickColor, type Settings } from './paint';
+import { t } from '../../../lib/i18n-core';
 
 export type Float = Clip & { x: number; y: number };
 
@@ -216,7 +217,7 @@ export function TextureView(p: Props) {
   void version;
   return (
     <div ref={box} className="sk-2d">
-      <canvas ref={cv} aria-label="Skin texture, 64 by 64 pixels" role="img" />
+      <canvas ref={cv} aria-label={t('Skin texture, 64 by 64 pixels')} role="img" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { getPx } from '../../../lib/mc/skinOps';
 import { useDoc, type SkinDoc } from './doc';
 import { Stroke, capture, pickColor, type Settings } from './paint';
 import { SkinScene, type Hit, type ViewName } from './scene';
+import { t } from '../../../lib/i18n-core';
 
 type Props = {
   doc: SkinDoc;
@@ -180,7 +181,7 @@ export function Viewport3D(p: Props) {
       className={`sk-3d${p.interactive ? '' : ' sk-3d-mini'}`}
       role="img"
       aria-label={p.label}
-      title={p.interactive ? undefined : 'Click to edit this skin'}
+      title={p.interactive ? undefined : t('Click to edit this skin')}
     />
   );
 }

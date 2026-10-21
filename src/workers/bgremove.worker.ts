@@ -10,6 +10,7 @@ import * as ort from 'onnxruntime-web/webgpu';
 import wasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url';
 import mjsUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.mjs?url';
 import { MODEL } from '../tools/image/bg-remover/model';
+import { applyLang, t, type Lang } from '../lib/i18n-core';
 
 ort.env.wasm.wasmPaths = { wasm: wasmUrl, mjs: mjsUrl };
 // Its harmless optimisation notes would show up as red errors in the console.
@@ -37,7 +38,7 @@ async function modelBytes(): Promise<Uint8Array> {
   const hit = await cache.match(MODEL.url);
   if (hit) return new Uint8Array(await hit.arrayBuffer());
   const res = await fetch(MODEL.url);
-  if (!res.ok || !res.body) throw new Error(`Downloading the AI model failed (${res.status}). Check the internet connection.`);
+  if (!res.ok || !res.body) throw new Error(t('Downloading the AI model failed ({status}). Check the internet connection.', { status: res.status }));
   const total = Number(res.headers.get('content-length')) || MODEL.size;
   const buf = new Uint8Array(Math.max(total, MODEL.size));
   let loaded = 0;
@@ -50,15 +51,15 @@ async function modelBytes(): Promise<Uint8Array> {
     ctx.postMessage({ type: 'download', loaded, total });
   }
   const bytes = buf.subarray(0, loaded);
-  status('Checking the download…');
-  if (hex(await crypto.subtle.digest('SHA-256', bytes)) !== MODEL.sha256) throw new Error("The downloaded AI model doesn't match its checksum. Try again.");
+  status(t('Checking the download…'));
+  if (hex(await crypto.subtle.digest('SHA-256', bytes)) !== MODEL.sha256) throw new Error(t('The downloaded AI model doesn\'t match its checksum. Try again.'));
   await cache.put(MODEL.url, new Response(bytes, { headers: { 'Content-Type': 'application/octet-stream' } }));
   return bytes;
 }
 
 async function open(backend: Backend) {
   model ??= await modelBytes();
-  status(backend === 'webgpu' ? 'Starting the AI on the graphics card…' : 'Starting the AI on the processor…');
+  status(backend === 'webgpu' ? t('Starting the AI on the graphics card…') : t('Starting the AI on the processor…'));
   const s = await ort.InferenceSession.create(model, { executionProviders: [backend] });
   session = { s, backend };
   return session;
@@ -101,8 +102,8 @@ async function run(bitmap: ImageBitmap) {
   const data = input(bitmap);
   bitmap.close();
   await getSession();
-  status(session!.backend === 'webgpu' ? 'Finding the subject (graphics card)…' : 'Finding the subject (processor, takes a few seconds)…');
-  const t = performance.now();
+  status(session!.backend === 'webgpu' ? t('Finding the subject (graphics card)…') : t('Finding the subject (processor, takes a few seconds)…'));
+  const started = performance.now();
   let raw: Float32Array;
   try {
     raw = await infer(data);
@@ -112,7 +113,7 @@ async function run(bitmap: ImageBitmap) {
     await session.s.release().catch(() => {});
     session = null;
     await open('wasm');
-    status('Finding the subject (processor, takes a few seconds)…');
+    status(t('Finding the subject (processor, takes a few seconds)…'));
     raw = await infer(data);
   }
   const n = SIDE * SIDE;
@@ -125,11 +126,12 @@ async function run(bitmap: ImageBitmap) {
     if (prob[i] > max) max = prob[i];
   }
   if (min < -0.001 || max > 1.001) for (let i = 0; i < n; i++) prob[i] = 1 / (1 + Math.exp(-prob[i]));
-  return { prob, backend: session!.backend, ms: Math.round(performance.now() - t) };
+  return { prob, backend: session!.backend, ms: Math.round(performance.now() - started) };
 }
 
-ctx.onmessage = async (e: MessageEvent<{ id: number; bitmap: ImageBitmap }>) => {
+ctx.onmessage = async (e: MessageEvent<{ id: number; bitmap: ImageBitmap; lang: Lang }>) => {
   try {
+    await applyLang(e.data.lang).catch(() => {});
     const r = await run(e.data.bitmap);
     ctx.postMessage({ type: 'done', id: e.data.id, ...r }, [r.prob.buffer]);
   } catch (err) {

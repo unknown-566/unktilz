@@ -1,6 +1,7 @@
 import { texelAt, type Layer, type Region } from '../../../lib/mc/skinLayout';
 import { brush, floodFill, getPx, hexToRgba, line, rgbaToHex, setPx, shade, withMirror } from '../../../lib/mc/skinOps';
 import type { SkinDoc } from './doc';
+import { t } from '../../../lib/i18n-core';
 
 export type ToolId = 'pencil' | 'eraser' | 'fill' | 'shade' | 'picker' | 'select';
 
@@ -17,17 +18,17 @@ export type Settings = {
 };
 
 export const TOOL_LABEL: Record<ToolId, string> = {
-  pencil: 'Pencil',
-  eraser: 'Eraser',
-  fill: 'Fill',
-  shade: 'Shade',
-  picker: 'Pick color',
-  select: 'Select',
+  pencil: t('Pencil'),
+  eraser: t('Eraser'),
+  fill: t('Fill'),
+  shade: t('Shade'),
+  picker: t('Pick color'),
+  select: t('Select'),
 };
 
 const SHADE_STEP = 0.12;
 
-export const ERASE_BASE_MSG = 'The eraser only works on the outer layer. The game draws the base layer fully solid, so an erased pixel there would show up black. Paint over it instead.';
+export const ERASE_BASE_MSG = t('The eraser only works on the outer layer. The game draws the base layer fully solid, so an erased pixel there would show up black. Paint over it instead.');
 
 /** The color under a pixel, or null when it's see-through or outside the skin. */
 export function pickColor(doc: SkinDoc, x: number, y: number): string | null {
@@ -106,7 +107,7 @@ export class Stroke {
 
   /** Commits the stroke. Returns a message for the user when something couldn't be done. */
   end(): string | null {
-    const label = TOOL_LABEL[this.s.tool] + (this.s.tool === 'shade' ? (this.dir > 0 ? ' (lighter)' : ' (darker)') : '') + (this.s.mirror ? ' · mirrored' : '');
+    const label = TOOL_LABEL[this.s.tool] + (this.s.tool === 'shade' ? (this.dir > 0 ? ` (${t('lighter')})` : ` (${t('darker')})`) : '') + (this.s.mirror ? ' · mirrored' : '');
     if (this.changed) this.doc.commit(label);
     return this.blockedBase && !this.changed ? ERASE_BASE_MSG : null;
   }

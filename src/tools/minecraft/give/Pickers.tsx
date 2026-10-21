@@ -1,4 +1,5 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { t } from '../../../lib/i18n-core';
 
 export type Option = { id: string; name: string };
 
@@ -53,7 +54,7 @@ export function Combo({
   const input = useRef<HTMLInputElement>(null);
   const matches = useMemo(() => search(options, query, 40), [options, query]);
   const custom = allowCustom && query.trim() && !matches.some((m) => m.id === query.trim().toLowerCase()) ? query.trim().toLowerCase().replace(/\s+/g, '_') : '';
-  const rows: Option[] = custom ? [...matches, { id: custom, name: `Use “${custom}” as the id` }] : matches;
+  const rows: Option[] = custom ? [...matches, { id: custom, name: t('Use “{id}” as the id', { id: custom }) }] : matches;
 
   const pick = (o: Option) => {
     onPick(o.id);
@@ -116,13 +117,13 @@ export function MultiPick({ label, options, values, onChange }: { label: string;
   return (
     <div className="field">
       <span className="field-label">{label}</span>
-      <Combo label={label} options={options} onPick={(id) => !values.includes(id) && onChange([...values, id])} placeholder="search blocks…" allowCustom clearOnPick />
+      <Combo label={label} options={options} onPick={(id) => !values.includes(id) && onChange([...values, id])} placeholder={t('search blocks…')} allowCustom clearOnPick />
       {values.length > 0 && (
         <div className="chips-row">
           {values.map((v) => (
             <span key={v} className="pick-chip">
               {byId.get(v)?.name ?? v}
-              <button type="button" aria-label={`Remove ${byId.get(v)?.name ?? v}`} onClick={() => onChange(values.filter((x) => x !== v))}>
+              <button type="button" aria-label={t('Remove {name}', { name: byId.get(v)?.name ?? v })} onClick={() => onChange(values.filter((x) => x !== v))}>
                 ×
               </button>
             </span>

@@ -1,4 +1,5 @@
 import { MODEL } from './model';
+import { getLang, t } from '../../../lib/i18n-core';
 
 /** What the AI worker reports while it works. */
 export type AiEvent = { type: 'download'; loaded: number; total: number } | { type: 'status'; text: string };
@@ -36,11 +37,11 @@ export function findSubject(bitmap: ImageBitmap, onEvent: (e: AiEvent) => void):
       (e) => {
         w.removeEventListener('message', onMessage);
         worker = null;
-        reject(new Error(e.message || 'The AI stopped working.'));
+        reject(new Error(e.message || t('The AI stopped working.')));
       },
       { once: true },
     );
-    w.postMessage({ id, bitmap }, [bitmap]);
+    w.postMessage({ id, bitmap, lang: getLang() }, [bitmap]);
   });
 }
 

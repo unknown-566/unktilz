@@ -6,7 +6,8 @@ import { savedWhen, useAutosave, useSaved } from '../../../lib/saved';
 import { useQueue } from '../../../queue/store';
 import { formatBytes } from '../../../queue/download';
 import { DEFAULT_OPTIONS, checkExtra, fitQuality, heightsOf, isWebUrl, type DlFormat, type DlInfo, type DlOptions, type Phase, type Quality } from './args';
-import { NoServerError, download, getInfo, getStatus, install, liveDownloads, subscribeLive, updateYtdlp, type Status } from './api';
+import { NoServerError, download, getInfo, getStatus, install, liveDownloads, subscribeLive, serverText, updateYtdlp, type Status } from './api';
+import { plural, t, tn, tx } from '../../../lib/i18n';
 
 /** Playlists longer than this start with nothing picked. */
 const BIG_PLAYLIST = 50;
@@ -16,12 +17,12 @@ const SHOW_ITEMS = 2000;
 type HistoryItem = { url: string; title: string; size: number; mode: DlOptions['mode'] };
 
 const PHASE: Record<Phase, string> = {
-  starting: 'starting',
-  downloading: 'downloading',
-  merging: 'joining video and sound',
-  converting: 'converting',
-  embedding: 'adding cover / subtitles',
-  finishing: 'cutting sponsors',
+  starting: tx('starting'),
+  downloading: tx('downloading'),
+  merging: tx('joining video and sound'),
+  converting: tx('converting'),
+  embedding: tx('adding cover / subtitles'),
+  finishing: tx('cutting sponsors'),
 };
 
 const time = (s?: number) => {
@@ -55,21 +56,25 @@ function Setup({ status, refresh }: { status: Status; refresh: () => void }) {
   // While installing, follow its progress.
   useEffect(() => {
     if (!inst.running) return;
-    const t = setInterval(refresh, 700);
-    return () => clearInterval(t);
+    const timer = setInterval(refresh, 700);
+    return () => clearInterval(timer);
   }, [inst.running, refresh]);
 
   if (missing || inst.running || inst.error)
     return (
-      <Panel title="programs">
+      <Panel title={t('programs')}>
         <p className="note">
-          The downloader uses three free programs on your computer: <b>yt-dlp</b> (finds the video on the page), <b>aria2c</b> (downloads it in 16 parts at once) and{' '}
-          <b>ffmpeg</b> (joins video and sound). They come from their official GitHub pages (about 110 MB) into the site's <span className="mono">bin</span> folder.
+          {tn('The downloader uses three free programs on your computer: {ytdlp} (finds the video on the page), {aria} (downloads it in 16 parts at once) and {ffmpeg} (joins video and sound). They come from their official GitHub pages (about 110 MB) into the site’s {bin} folder.', {
+            ytdlp: <b>yt-dlp</b>,
+            aria: <b>aria2c</b>,
+            ffmpeg: <b>ffmpeg</b>,
+            bin: <span className="mono">bin</span>,
+          })}
         </p>
         {inst.running ? (
           <>
             <p className="note mono">
-              Installing {inst.step}… {Math.round(inst.progress * 100)} %
+              {t('Installing {step}… {n} %', { step: inst.step ?? '', n: Math.round(inst.progress * 100) })}
             </p>
             <div className="dl-bar">
               <span style={{ width: `${Math.round(inst.progress * 100)}%` }} />
@@ -84,11 +89,11 @@ function Setup({ status, refresh }: { status: Status; refresh: () => void }) {
               void install().then(refresh, (e: Error) => setMsg(e.message));
             }}
           >
-            Install yt-dlp, aria2c and ffmpeg
+            {t('Install yt-dlp, aria2c and ffmpeg')}
           </button>
         )}
-        {status.platform !== 'win32' && <p className="note">Installing works on Windows. Elsewhere install yt-dlp, aria2c and ffmpeg yourself (they're used from PATH).</p>}
-        {(inst.error || msg) && <p className="error-text">{inst.error || msg}</p>}
+        {status.platform !== 'win32' && <p className="note">{t('Installing works on Windows. Elsewhere install yt-dlp, aria2c and ffmpeg yourself (they\'re used from PATH).')}</p>}
+        {(inst.error || msg) && <p className="error-text">{inst.error ? serverText(inst.error) : msg}</p>}
       </Panel>
     );
 
@@ -113,9 +118,9 @@ function Setup({ status, refresh }: { status: Status; refresh: () => void }) {
             });
         }}
       >
-        {busy ? 'updating…' : 'update yt-dlp'}
+        {busy ? t('updating…') : t('update yt-dlp')}
       </button>
-      <Help label="update yt-dlp" text="Sites like YouTube change often and old yt-dlp versions stop working. If a download fails, update it first." />
+      <Help label={t('update yt-dlp')} text={t('Sites like YouTube change often and old yt-dlp versions stop working. If a download fails, update it first.')} />
       {msg && <span className="dl-update-msg">{msg}</span>}
     </p>
   );
@@ -143,24 +148,24 @@ function SubtitlePicker({ info, value, onChange }: { info: DlInfo; value: string
   return (
     <div className="dl-subs">
       <span style={{ display: 'flex', alignItems: 'center' }}>
-        <span className="opt-label">Subtitles</span>
-        <Help label="subtitles" text="Pick the languages you want; below, choose whether they go into the video or come as .srt / .vtt files. Automatic ones are made by the site from the speech (or machine-translated), so they can have mistakes." />
+        <span className="opt-label">{t('Subtitles')}</span>
+        <Help label={t('subtitles')} text={t('Pick the languages you want; below, choose whether they go into the video or come as .srt / .vtt files. Automatic ones are made by the site from the speech (or machine-translated), so they can have mistakes.')} />
       </span>
       {!info.subtitles.length && !info.autoCaptions.length ? (
-        <p className="note">This video has no subtitles.</p>
+        <p className="note">{t('This video has no subtitles.')}</p>
       ) : (
         <>
           {info.subtitles.length + spoken.length + pickedOthers.length > 0 && (
-            <div className="chips-row" role="group" aria-label="Subtitles this video has">
-              {info.subtitles.map((s) => chip(s.code, s.name, `${s.code} · made by people`))}
-              {spoken.map((s) => chip(s.code, `${s.name.replace(/\s*\(original\)$/i, '')} · automatic`, `${s.code} · made automatically from the speech`))}
-              {pickedOthers.map((s) => chip(s.code, `${s.name} · translated`, `${s.code} · machine-translated`))}
+            <div className="chips-row" role="group" aria-label={t('Subtitles this video has')}>
+              {info.subtitles.map((s) => chip(s.code, s.name, t('{code} · made by people', { code: s.code })))}
+              {spoken.map((s) => chip(s.code, t('{name} · automatic', { name: s.name.replace(/\s*\(original\)$/i, '') }), t('{code} · made automatically from the speech', { code: s.code })))}
+              {pickedOthers.map((s) => chip(s.code, t('{name} · translated', { name: s.name }), t('{code} · machine-translated', { code: s.code })))}
             </div>
           )}
           {others.length > 0 && (
-            <select className="select" value="" onChange={(e) => e.target.value && toggle(e.target.value)} aria-label="Add automatic subtitles in another language">
+            <select className="select" value="" onChange={(e) => e.target.value && toggle(e.target.value)} aria-label={t('Add automatic subtitles in another language')}>
               <option value="">
-                {spoken.length ? `+ automatic, translated to… (${others.length} languages)` : `+ automatic subtitles… (${others.length} languages)`}
+                {spoken.length ? t('+ automatic, translated to… ({length} languages)', { length: others.length }) : t('+ automatic subtitles… ({length} languages)', { length: others.length })}
               </option>
               {others.map((s) => (
                 <option key={s.code} value={s.code}>
@@ -173,8 +178,8 @@ function SubtitlePicker({ info, value, onChange }: { info: DlInfo; value: string
         </>
       )}
       {picked.some((c) => !known.has(c)) && (
-        <div className="chips-row" role="group" aria-label="Picked languages this video doesn't have">
-          {picked.filter((c) => !known.has(c)).map((c) => chip(c, `${c} · not on this video`, 'Click to remove'))}
+        <div className="chips-row" role="group" aria-label={t('Picked languages this video doesn\'t have')}>
+          {picked.filter((c) => !known.has(c)).map((c) => chip(c, t('{code} · not on this video', { code: c }), t('Click to remove')))}
         </div>
       )}
     </div>
@@ -218,7 +223,7 @@ export default function Downloader() {
   const lookUp = async (link = url) => {
     const u = link.trim();
     if (!isWebUrl(u)) {
-      setError('Paste a web address (starting with http:// or https://).');
+      setError(t('Paste a web address (starting with http:// or https://).'));
       return;
     }
     setUrl(u);
@@ -240,13 +245,13 @@ export default function Downloader() {
 
   const paste = async () => {
     try {
-      const t = (await navigator.clipboard.readText()).trim();
-      if (t) {
-        setUrl(t);
-        if (isWebUrl(t)) void lookUp(t);
+      const tt = (await navigator.clipboard.readText()).trim();
+      if (tt) {
+        setUrl(tt);
+        if (isWebUrl(tt)) void lookUp(tt);
       }
     } catch {
-      setError('The browser didn’t allow reading the clipboard: paste with Ctrl+V instead.');
+      setError(t('The browser didn’t allow reading the clipboard: paste with Ctrl+V instead.'));
     }
   };
 
@@ -257,7 +262,7 @@ export default function Downloader() {
     const items = info.playlist ? info.entries.map((e, n) => ({ e, n })).filter(({ n }) => picked.has(n)) : [null];
     for (const it of items) {
       const title = it ? it.e.title : info.title;
-      useQueue.getState().addTask({ slug: 'downloader', name: 'Downloader', category: 'video', file: title }, async (signal, onProgress) => {
+      useQueue.getState().addTask({ slug: 'downloader', name: 'Downloader' /* i18n-ignore: the queue shows the tool's name */, category: 'video', file: title }, async (signal, onProgress) => {
         const files = await download(info.url, opts, title, it ? it.n + 1 : undefined, signal, onProgress);
         const size = files.reduce((n, f) => n + f.blob.size, 0);
         // Remembered in the history (the last 50).
@@ -271,11 +276,11 @@ export default function Downloader() {
 
   if (noServer)
     return (
-      <Panel title="downloader">
+      <Panel title={t('downloader')}>
         <p className="note">{noServer}</p>
       </Panel>
     );
-  if (!status) return <p className="note">Checking the downloader…</p>;
+  if (!status) return <p className="note">{t('Checking the downloader…')}</p>;
 
   const videoFormats = info?.formats.filter((f) => f.vcodec && f.vcodec !== 'none') ?? [];
   const audioFormats = info?.formats.filter((f) => (!f.vcodec || f.vcodec === 'none') && f.acodec && f.acodec !== 'none') ?? [];
@@ -287,7 +292,7 @@ export default function Downloader() {
     <div className="dl">
       <Setup status={status} refresh={refresh} />
 
-      <Panel title="link">
+      <Panel title={t('link')}>
         <form
           className="dl-link"
           onSubmit={(e) => {
@@ -295,27 +300,28 @@ export default function Downloader() {
             void lookUp();
           }}
         >
-          <TextField label="Video, song or playlist address" value={url} onChange={setUrl} placeholder="https://www.youtube.com/watch?v=…" mono autoFocus />
+          <TextField label={t('Video, song or playlist address')} value={url} onChange={setUrl} placeholder="https://www.youtube.com/watch?v=…" mono autoFocus />
           <button type="button" className="btn" onClick={paste} disabled={!ready}>
-            Paste
+            {t('Paste')}
           </button>
           <button type="submit" className="btn btn-primary" disabled={!ready || loading || !url.trim()}>
-            {loading ? 'Reading…' : 'Get info'}
+            {loading ? t('Reading…') : t('Get info')}
           </button>
         </form>
         <p className="note">
-          Works with YouTube, SoundCloud, Twitch, X, Reddit, TikTok, Bandcamp and{' '}
-          <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank" rel="noopener noreferrer">
-            1800+ other sites
-          </a>
-          . Not Spotify or Netflix (their music and films are locked with DRM). Download only what you may: your own videos, free-licence ones, or for personal use where
-          that's allowed.
+          {tn('Works with YouTube, SoundCloud, Twitch, X, Reddit, TikTok, Bandcamp and {sites}. Not Spotify or Netflix (their music and films are locked with DRM). Download only what you may: your own videos, free-licence ones, or for personal use where that’s allowed.', {
+            sites: (
+              <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md" target="_blank" rel="noopener noreferrer">
+                {t('1800+ other sites')}
+              </a>
+            ),
+          })}
         </p>
         {error && <p className="error-text">{error}</p>}
       </Panel>
 
       {info && (
-        <Panel title={info.playlist ? `playlist · ${info.entries.length} items` : 'video'}>
+        <Panel title={info.playlist ? t('playlist · {length} items', { length: info.entries.length }) : t('video')}>
           <div className="dl-card">
             {info.thumbnail && <img className="dl-thumb" src={info.thumbnail} alt="" referrerPolicy="no-referrer" />}
             <div className="dl-card-text">
@@ -328,12 +334,12 @@ export default function Downloader() {
             <>
               <div className="inline">
                 <button type="button" className="btn btn-sm" onClick={() => setPicked(new Set(info.entries.map((_, n) => n)))}>
-                  all
+                  {t('all')}
                 </button>
                 <button type="button" className="btn btn-sm" onClick={() => setPicked(new Set())}>
-                  none
+                  {t('pick|none')}
                 </button>
-                <span className="note">{picked.size} picked</span>
+                <span className="note">{t('{n} picked', { n: picked.size })}</span>
               </div>
               <ul className="dl-items">
                 {info.entries.slice(0, SHOW_ITEMS).map((e, n) => (
@@ -359,25 +365,25 @@ export default function Downloader() {
                   </li>
                 ))}
               </ul>
-              {info.entries.length > SHOW_ITEMS && <p className="note">Showing the first {SHOW_ITEMS}; “all” picks all {info.entries.length}.</p>}
-              {info.entries.length > BIG_PLAYLIST && picked.size === 0 && <p className="note">A long list: pick what you want (or “all”).</p>}
+              {info.entries.length > SHOW_ITEMS && <p className="note">{t('Showing the first {shown}; “all” picks all {count}.', { shown: SHOW_ITEMS, count: info.entries.length })}</p>}
+              {info.entries.length > BIG_PLAYLIST && picked.size === 0 && <p className="note">{t('A long list: pick what you want (or “all”).')}</p>}
             </>
           )}
         </Panel>
       )}
 
-      <Panel title="what to download">
+      <Panel title={t('what to download')}>
         <div className="opt-row">
           <span className="opt-label" id="dl-mode">
-            Get
+            {t('Get')}
           </span>
           <Segmented
             labelledBy="dl-mode"
             value={o.mode}
             onChange={(mode) => set({ mode, format: '' })}
             options={[
-              { value: 'video', label: 'video' },
-              { value: 'audio', label: 'audio only' },
+              { value: 'video', label: t('video') },
+              { value: 'audio', label: t('audio only') },
             ]}
           />
         </div>
@@ -386,25 +392,25 @@ export default function Downloader() {
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="dl-q">
-                  Quality
+                  {t('Quality')}
                 </span>
-                <Help label="quality" text="The best the site has up to this height. If it doesn't have that much, you get the best there is." />
+                <Help label={t('quality')} text={t('The best the site has up to this height. If it doesn\'t have that much, you get the best there is.')} />
               </span>
               <Segmented
                 labelledBy="dl-q"
                 value={quality}
                 onChange={(q) => set({ quality: q })}
-                options={qualities.map((q) => ({ value: q, label: q === 'best' ? 'best' : `${q}p` }))}
+                options={qualities.map((q) => ({ value: q, label: q === 'best' ? t('best') : `${q}p` }))}
               />
             </div>
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="dl-c">
-                  Format
+                  {t('Format')}
                 </span>
                 <Help
-                  label="format"
-                  text="MP4 plays everywhere (phones, Discord, Windows); on YouTube that means up to 1080p. MKV and WebM keep the best quality (4K, HDR) as the site has it, but don't play everywhere."
+                  label={t('format')}
+                  text={t('MP4 plays everywhere (phones, Discord, Windows); on YouTube that means up to 1080p. MKV and WebM keep the best quality (4K, HDR) as the site has it, but don\'t play everywhere.')}
                 />
               </span>
               <Segmented
@@ -424,18 +430,18 @@ export default function Downloader() {
               <>
                 <div className="fields">
                   <TextField
-                    label="Subtitles"
+                    label={t('Subtitles')}
                     value={o.subs}
                     onChange={(subs) => set({ subs })}
-                    placeholder="e.g. en,cs (empty = none)"
+                    placeholder={t('e.g. en,cs (empty = none)')}
                     mono
-                    help="Language codes, separated by commas. Press “Get info” on a video to pick from the subtitles it has."
+                    help={t('Language codes, separated by commas. Press “Get info” on a video to pick from the subtitles it has.')}
                   />
                 </div>
                 {o.subs.trim() && (
                   <div className="opt-row">
                     <span className="opt-label" id="dl-auto">
-                      Also automatic subtitles
+                      {t('Also automatic subtitles')}
                     </span>
                     <Toggle labelledBy="dl-auto" checked={o.autoSubs} onChange={(autoSubs) => set({ autoSubs })} />
                   </div>
@@ -447,18 +453,18 @@ export default function Downloader() {
                 <div className="opt-row">
                   <span style={{ display: 'flex', alignItems: 'center' }}>
                     <span className="opt-label" id="dl-subs-mode">
-                      Subtitles go
+                      {t('Subtitles go')}
                     </span>
-                    <Help label="subtitles go" text="In the video: the player can turn them on. As files: separate .srt / .vtt files next to the video (for editors, or players that want a file). Both: in the video and as files." />
+                    <Help label={t('subtitles go')} text={t('In the video: the player can turn them on. As files: separate .srt / .vtt files next to the video (for editors, or players that want a file). Both: in the video and as files.')} />
                   </span>
                   <Segmented
                     labelledBy="dl-subs-mode"
                     value={o.subsMode}
                     onChange={(subsMode) => set({ subsMode })}
                     options={[
-                      { value: 'embed', label: 'in the video' },
-                      { value: 'file', label: 'as files' },
-                      { value: 'both', label: 'both' },
+                      { value: 'embed', label: t('in the video') },
+                      { value: 'file', label: t('as files') },
+                      { value: 'both', label: t('both') },
                     ]}
                   />
                 </div>
@@ -466,9 +472,9 @@ export default function Downloader() {
                   <div className="opt-row">
                     <span style={{ display: 'flex', alignItems: 'center' }}>
                       <span className="opt-label" id="dl-subs-fmt">
-                        Subtitle files
+                        {t('Subtitle files')}
                       </span>
-                      <Help label="subtitle files" text="SRT works almost everywhere (players, video editors). VTT is the web's format and keeps a little more styling." />
+                      <Help label={t('subtitle files')} text={t('SRT works almost everywhere (players, video editors). VTT is the web\'s format and keeps a little more styling.')} />
                     </span>
                     <Segmented
                       labelledBy="dl-subs-fmt"
@@ -489,9 +495,9 @@ export default function Downloader() {
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="dl-a">
-                  Format
+                  {t('Format')}
                 </span>
-                <Help label="audio format" text="MP3 plays everywhere. M4A and Opus are smaller for the same quality. Original keeps the site's own file without converting." />
+                <Help label={t('audio format')} text={t('MP3 plays everywhere. M4A and Opus are smaller for the same quality. Original keeps the site\'s own file without converting.')} />
               </span>
               <Segmented
                 labelledBy="dl-a"
@@ -501,16 +507,16 @@ export default function Downloader() {
                   { value: 'mp3', label: 'mp3' },
                   { value: 'm4a', label: 'm4a' },
                   { value: 'opus', label: 'opus' },
-                  { value: 'best', label: 'original' },
+                  { value: 'best', label: t('original') },
                 ]}
               />
             </div>
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="dl-meta">
-                  Cover and tags
+                  {t('Cover and tags')}
                 </span>
-                <Help label="cover and tags" text="Puts the thumbnail in as cover art, and the title, artist and album into the file, so music players show them." />
+                <Help label={t('cover and tags')} text={t('Puts the thumbnail in as cover art, and the title, artist and album into the file, so music players show them.')} />
               </span>
               <Toggle labelledBy="dl-meta" checked={o.embedMeta} onChange={(embedMeta) => set({ embedMeta })} />
             </div>
@@ -519,22 +525,22 @@ export default function Downloader() {
         <div className="opt-row">
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <span className="opt-label" id="dl-sb">
-              Cut out sponsors
+              {t('Cut out sponsors')}
             </span>
-            <Help label="SponsorBlock" text="Removes the sponsored parts of YouTube videos, using SponsorBlock's community-marked segments." />
+            <Help label={t('SponsorBlock')} text={t('Removes the sponsored parts of YouTube videos, using SponsorBlock\'s community-marked segments.')} />
           </span>
           <Toggle labelledBy="dl-sb" checked={o.sponsorBlock} onChange={(sponsorBlock) => set({ sponsorBlock })} />
         </div>
 
         <details className="dl-advanced">
-          <summary>Advanced: exact format, extra yt-dlp options</summary>
+          <summary>{t('Advanced: exact format, extra yt-dlp options')}</summary>
           {info && !info.playlist && (
             <div className="fields">
               {o.mode === 'video' && (
                 <div className="field grow">
-                  <label htmlFor="dl-fv">Video stream</label>
+                  <label htmlFor="dl-fv">{t('Video stream')}</label>
                   <select id="dl-fv" className="select" value={fv} onChange={(e) => pickFormat(e.target.value, fa)}>
-                    <option value="">from the settings above</option>
+                    <option value="">{t('from the settings above')}</option>
                     {videoFormats.map((f) => (
                       <option key={f.id} value={f.id}>
                         {formatLabel(f)}
@@ -544,9 +550,9 @@ export default function Downloader() {
                 </div>
               )}
               <div className="field grow">
-                <label htmlFor="dl-fa">Sound stream</label>
+                <label htmlFor="dl-fa">{t('Sound stream')}</label>
                 <select id="dl-fa" className="select" value={fa} onChange={(e) => pickFormat(o.mode === 'video' ? fv : '', e.target.value)}>
-                  <option value="">{o.mode === 'video' && fv ? 'none (only if the video stream has sound)' : 'from the settings above'}</option>
+                  <option value="">{o.mode === 'video' && fv ? t('none (only if the video stream has sound)') : t('from the settings above')}</option>
                   {audioFormats.map((f) => (
                     <option key={f.id} value={f.id}>
                       {formatLabel(f)}
@@ -558,36 +564,36 @@ export default function Downloader() {
           )}
           <div className="fields">
             <TextField
-              label="Extra yt-dlp options"
+              label={t('Extra yt-dlp options')}
               value={o.extra}
               onChange={(v) => set({ extra: v })}
-              placeholder="e.g. --cookies-from-browser firefox --limit-rate 5M"
+              placeholder={t('e.g. --cookies-from-browser firefox --limit-rate 5M')}
               mono
-              help="Anything from yt-dlp's option list, added to the command. Options that would run other programs or write outside the download (like --exec or -o) aren't allowed."
+              help={t('Anything from yt-dlp\'s option list, added to the command. Options that would run other programs or write outside the download (like --exec or -o) aren\'t allowed.')}
             />
           </div>
           {'error' in extra && <p className="error-text">{extra.error}</p>}
           <SavedPanel<DlOptions>
             slug="downloader-templates"
-            title="my templates"
-            help="Saves these download settings (and extra options) under a name, like Seal's command templates."
+            title={t('my templates')}
+            help={t('Saves these download settings (and extra options) under a name, like Seal\'s command templates.')}
             suggestName={() => (o.mode === 'audio' ? `Audio ${o.audioFormat}` : `Video ${o.quality} ${o.container}`)}
             getData={() => ({ ...o, format: '' })}
             onLoad={(d) => setO({ ...DEFAULT_OPTIONS, ...d, format: '' })}
             describe={(i) =>
-              [i.data.mode === 'audio' ? `audio ${i.data.audioFormat}` : `video ${i.data.quality} ${i.data.container}`, i.data.extra].filter(Boolean).join(' · ')
+              [i.data.mode === 'audio' ? t('audio {format}', { format: i.data.audioFormat }) : t('video {quality} {container}', { quality: i.data.quality, container: i.data.container }), i.data.extra].filter(Boolean).join(' · ')
             }
           />
         </details>
 
         <button type="button" className="btn btn-primary" disabled={!info || !ready || 'error' in extra || count === 0} onClick={start}>
-          {info?.playlist ? `Download ${count} item${count === 1 ? '' : 's'}` : 'Download'}
+          {info?.playlist ? plural(count, ['Download {n} item', 'Download {n} items'], ['Stáhnout {n} položku', 'Stáhnout {n} položky', 'Stáhnout {n} položek']) : t('Download')}
         </button>
-        {!info && <p className="note">Get the info of a link first.</p>}
+        {!info && <p className="note">{t('Get the info of a link first.')}</p>}
       </Panel>
 
       {live.length > 0 && (
-        <Panel title="downloading">
+        <Panel title={t('downloading')}>
           <ul className="dl-live">
             {live.map((j) => (
               <li key={j.id}>
@@ -596,35 +602,35 @@ export default function Downloader() {
                   <span style={{ width: `${Math.round(j.progress * 100)}%` }} />
                 </div>
                 <span className="note mono">
-                  {Math.round(j.progress * 100)} % · {PHASE[j.phase]}
-                  {j.phase === 'downloading' && j.parts > 1 ? ` ${j.part === 1 ? 'video' : 'sound'}` : ''}
+                  {Math.round(j.progress * 100)} % · {t(PHASE[j.phase])}
+                  {j.phase === 'downloading' && j.parts > 1 ? ` ${j.part === 1 ? t('video|the video') : t('video|the sound')}` : ''}
                   {j.phase === 'downloading' && j.speed ? ` · ${formatBytes(j.speed)}/s` : ''}
-                  {j.phase === 'downloading' && j.connections ? ` · ${j.connections} connections` : ''}
-                  {j.phase === 'downloading' && j.eta ? ` · ${time(j.eta)} left` : ''}
+                  {j.phase === 'downloading' && j.connections ? ` · ${plural(j.connections, ['{n} connection', '{n} connections'], ['{n} spojení', '{n} spojení', '{n} spojení'])}` : ''}
+                  {j.phase === 'downloading' && j.eta ? ` · ${t('{time} left', { time: time(j.eta) })}` : ''}
                 </span>
-                {j.fallback && <span className="note">aria2c couldn't download this one, so yt-dlp does it by itself (one connection, slower).</span>}
+                {j.fallback && <span className="note">{t('aria2c couldn\'t download this one, so yt-dlp does it by itself (one connection, slower).')}</span>}
               </li>
             ))}
           </ul>
-          <p className="note">The finished files wait in the queue on the left. Stop a download with its ×.</p>
+          <p className="note">{t('The finished files wait in the queue on the left. Stop a download with its ×.')}</p>
         </Panel>
       )}
 
-      <Panel title="history">
+      <Panel title={t('history')}>
         {history.items.length === 0 ? (
-          <p className="note">Nothing downloaded yet.</p>
+          <p className="note">{t('Nothing downloaded yet.')}</p>
         ) : (
           <ul className="dl-history">
             {history.items.map((h) => (
               <li key={h.id}>
                 <span className="dl-history-title">{h.data.title}</span>
                 <span className="note mono">
-                  {h.data.mode} · {formatBytes(h.data.size)} · {savedWhen(h.savedAt)}
+                  {h.data.mode === 'audio' ? t('audio') : t('video')} · {formatBytes(h.data.size)} · {savedWhen(h.savedAt)}
                 </span>
                 <button type="button" className="btn btn-sm" disabled={!ready} onClick={() => void lookUp(h.data.url)}>
-                  again
+                  {t('again')}
                 </button>
-                <button type="button" className="btn btn-sm" aria-label={`Remove ${h.data.title} from the history`} onClick={() => void history.remove(h.id)}>
+                <button type="button" className="btn btn-sm" aria-label={t('Remove {title} from the history', { title: h.data.title })} onClick={() => void history.remove(h.id)}>
                   ×
                 </button>
               </li>

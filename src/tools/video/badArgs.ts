@@ -2,6 +2,7 @@ import type { OptionSchema, Opts } from '../../registry/types';
 import type { Attempt } from '../../lib/ffmpeg';
 import { trimArgs } from '../../lib/timecode';
 import { fitShortSide } from './videoArgs';
+import { t } from '../../lib/i18n-core';
 
 /** "Make it bad": on purpose terrible quality, meme style. Shared by the video and the audio tool. */
 
@@ -44,6 +45,16 @@ export const SOUND_FX: Record<SoundFx, string[]> = {
   crushed: ['acrusher=bits=4:samples=6:mode=lin:aa=0'],
 };
 
+/**
+ * The picked effects ("bass,phone"; an old single one like "bass" too), in the order they're
+ * applied: first what shapes the sound (phone, underwater), then the boosting, the crushing last.
+ */
+const FX_ORDER: SoundFx[] = ['phone', 'underwater', 'bass', 'earrape', 'crushed'];
+export const soundEffects = (value: unknown): SoundFx[] => {
+  const picked = new Set(String(value ?? '').split(','));
+  return FX_ORDER.filter((fx) => picked.has(fx));
+};
+
 /** The short side the picture is blown up to again, so it isn't tiny in the chat. */
 export const SHOW_SIDE = 480;
 const upTo = (side: number, flags: string) => `scale=if(gt(iw\\,ih)\\,-2\\,${side}):if(gt(iw\\,ih)\\,${side}\\,-2):flags=${flags}`;
@@ -78,7 +89,7 @@ function pictureFilters(picture: Picture, l: Level) {
 function soundArgs(o: Opts, minRate = 0) {
   const l = LEVELS[o.badness as Badness] ?? LEVELS.bad;
   const rate = Math.max(l.rate, minRate);
-  const fx = SOUND_FX[o.soundFx as SoundFx] ?? [];
+  const fx = soundEffects(o.soundFx).flatMap((k) => SOUND_FX[k]);
   const steady = [`aresample=${rate}`, `aformat=sample_fmts=s16:sample_rates=${rate}:channel_layouts=${l.mono ? 'mono' : 'stereo'}`];
   return ['-af', [...fx, ...steady].join(','), '-b:a', `${l.kbps}k`];
 }
@@ -119,41 +130,40 @@ export function badVideoAttempts(o: Opts): Attempt[] {
 /** "clip.mp4" → "clip-bad.mp4". */
 export const badName = (name: string, ext: string) => `${name.replace(/\.[^./]+$/, '') || 'file'}-bad.${ext}`;
 
-const TIME_HELP = 'Seconds (90) or minutes:seconds (1:30).';
+const TIME_HELP = t('Seconds (90) or minutes:seconds (1:30).');
 
 /** The options of one of the two tools (the audio one has no picture settings). */
 export const badOptions = (kind: 'video' | 'audio'): OptionSchema[] => {
   const options: OptionSchema[] = [
     {
       key: 'badness',
-      label: 'How bad',
+      label: t('How bad'),
       help:
         kind === 'video'
-          ? 'How much quality is thrown away: a smaller picture, fewer frames, fewer colors and crunchier sound. “Unusable” is barely recognizable.'
-          : 'How much quality is thrown away: fewer details and a duller, crunchier sound. “Unusable” sounds like an old phone in a tin can.',
+          ? t('How much quality is thrown away: a smaller picture, fewer frames, fewer colors and crunchier sound. “Unusable” is barely recognizable.')
+          : t('How much quality is thrown away: fewer details and a duller, crunchier sound. “Unusable” sounds like an old phone in a tin can.'),
       type: 'choice',
       default: 'bad',
       choices: [
-        { value: 'bit', label: 'a bit' },
-        { value: 'bad', label: 'bad' },
-        { value: 'awful', label: 'awful' },
-        { value: 'unusable', label: 'unusable' },
+        { value: 'bit', label: t('a bit') },
+        { value: 'bad', label: t('bad') },
+        { value: 'awful', label: t('awful') },
+        { value: 'unusable', label: t('unusable') },
       ],
     },
     {
       key: 'soundFx',
-      label: 'Sound effect',
-      help: 'Bass boosted: huge, distorted bass. Earrape: as loud and distorted as it gets, careful with headphones. Phone call: thin, like through a phone. Underwater: only the low, muffled part. Crushed: robotic, like an old video game.',
-      type: 'choice',
-      default: 'none',
+      label: t('Sound effects'),
+      help: t('Pick any number, they all go on together (none picked = none). Bass boosted: huge, distorted bass. Earrape: as loud and distorted as it gets, careful with headphones. Phone call: thin, like through a phone. Underwater: only the low, muffled part. Crushed: robotic, like an old video game.'),
+      type: 'multi',
+      default: '',
       when: (o) => o.audio !== 'remove',
       choices: [
-        { value: 'none', label: 'none' },
-        { value: 'bass', label: 'bass boosted' },
-        { value: 'earrape', label: 'earrape' },
-        { value: 'phone', label: 'phone call' },
-        { value: 'underwater', label: 'underwater' },
-        { value: 'crushed', label: 'crushed' },
+        { value: 'bass', label: t('bass boosted') },
+        { value: 'earrape', label: t('earrape') },
+        { value: 'phone', label: t('phone call') },
+        { value: 'underwater', label: t('underwater') },
+        { value: 'crushed', label: t('crushed') },
       ],
     },
   ];
@@ -161,32 +171,32 @@ export const badOptions = (kind: 'video' | 'audio'): OptionSchema[] => {
     options.push(
       {
         key: 'picture',
-        label: 'Picture',
-        help: `Blurry: shrunk and blown up again, smudgy. Pixelated: big blocky squares. Deep fried: crazy colors, way too sharp and noisy. It comes out ${SHOW_SIDE}p so it isn't tiny in a chat.`,
+        label: t('Picture'),
+        help: t('Blurry: shrunk and blown up again, smudgy. Pixelated: big blocky squares. Deep fried: crazy colors, way too sharp and noisy. It comes out {SHOW_SIDE}p so it isn\'t tiny in a chat.', { SHOW_SIDE }),
         type: 'choice',
         default: 'blurry',
         choices: [
-          { value: 'blurry', label: 'blurry' },
-          { value: 'pixelated', label: 'pixelated' },
-          { value: 'fried', label: 'deep fried' },
+          { value: 'blurry', label: t('blurry') },
+          { value: 'pixelated', label: t('pixelated') },
+          { value: 'fried', label: t('deep fried') },
         ],
       },
       {
         key: 'audio',
-        label: 'Sound',
-        help: 'Remove takes the sound out completely.',
+        label: t('Sound'),
+        help: t('Remove takes the sound out completely.'),
         type: 'choice',
         default: 'keep',
         choices: [
-          { value: 'keep', label: 'keep' },
-          { value: 'remove', label: 'remove' },
+          { value: 'keep', label: t('keep') },
+          { value: 'remove', label: t('remove') },
         ],
       },
     );
   }
   options.push(
-    { key: 'start', label: 'Start at', help: `Cut off the beginning. ${TIME_HELP} Empty starts at the beginning.`, type: 'text', default: '', placeholder: 'e.g. 0:05', mono: true },
-    { key: 'end', label: 'End at', help: `Cut off the end: the time in the original where it should stop. ${TIME_HELP} Empty goes to the end.`, type: 'text', default: '', placeholder: 'e.g. 1:30', mono: true },
+    { key: 'start', label: t('Start at'), help: t('Cut off the beginning. {TIME_HELP} Empty starts at the beginning.', { TIME_HELP }), type: 'text', default: '', placeholder: t('e.g. 0:05'), mono: true },
+    { key: 'end', label: t('End at'), help: t('Cut off the end: the time in the original where it should stop. {TIME_HELP} Empty goes to the end.', { TIME_HELP }), type: 'text', default: '', placeholder: t('e.g. 1:30'), mono: true },
   );
   return options;
 };

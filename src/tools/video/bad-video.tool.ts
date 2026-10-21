@@ -1,16 +1,17 @@
 import { defineTool } from '../../registry/types';
 import { ffmpegJob } from '../../lib/ffmpeg';
 import { badName, badOptions, badVideoAttempts, badVideoCommand } from './badArgs';
+import { t } from '../../lib/i18n-core';
 
 export default defineTool({
   slug: 'bad-video',
-  name: 'Make video bad',
+  name: t('Make video bad'),
   category: 'video',
   order: 2,
-  meta: '144p · deep fried',
+  meta: t('144p · deep fried'),
   added: '2026-10-19',
   description:
-    'Ruin a video on purpose for memes: low quality, blurry, pixelated or deep fried, with bass boosted, earrape or phone call sound. Comes out as a small MP4.',
+    t('Ruin a video on purpose for memes: low quality, blurry, pixelated or deep fried, with bass boosted, earrape or phone call sound. Comes out as a small MP4.'),
   keywords: [
     'low quality', 'bad quality', 'shitty', 'meme', 'deep fried', 'deepfry', 'pixelated', 'blurry', '144p', 'potato quality', 'crunchy',
     'earrape', 'ear rape', 'bass boosted', 'loud', 'distorted', 'compress video', 'ruin video',

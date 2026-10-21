@@ -2,13 +2,14 @@ import { ALIASES, defaultOpts, getTool } from '../registry';
 import { controllers, dropInputs, getInputs, putOutputs, type Output } from './blobs';
 import { useQueue, type Job } from './store';
 import { TASK_GONE, dropTask, getTask } from './tasks';
+import { t } from '../lib/i18n-core';
 
 // Jobs run one at a time, in the order they were added, whatever page is open.
 let busy = false;
 
 const clamp = (n: number) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
 
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e)) || 'Something went wrong.';
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e)) || t('Something went wrong.');
 
 function tick() {
   const { hydrated, jobs } = useQueue.getState();
@@ -43,9 +44,9 @@ async function run(job: Job) {
       const alias = ALIASES[job.slug];
       const tool = getTool(job.slug) ?? getTool(alias?.to);
       const opts = alias && tool && !getTool(job.slug) ? { ...defaultOpts(tool), ...job.opts, ...alias.opts } : job.opts;
-      if (!tool?.run) throw new Error('This tool is no longer available.');
+      if (!tool?.run) throw new Error(t('This tool is no longer available.'));
       const files = await getInputs(job.id);
-      if (!files?.length) throw new Error('The input file is gone. Add it again.');
+      if (!files?.length) throw new Error(t('The input file is gone. Add it again.'));
 
       for await (const ev of tool.run(files, opts, { signal: controller.signal })) {
         if (controller.signal.aborted) break;
@@ -54,7 +55,7 @@ async function run(job: Job) {
       }
     }
     if (controller.signal.aborted) return;
-    if (!outputs.length) throw new Error('No output was produced.');
+    if (!outputs.length) throw new Error(t('No output was produced.'));
 
     await putOutputs(job.id, outputs);
     patch(job.id, {

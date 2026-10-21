@@ -1,5 +1,6 @@
 import { abortError } from '../../../lib/channel';
 import type { DlInfo, DlOptions, Phase } from './args';
+import { t, tx } from '../../../lib/i18n-core';
 
 /**
  * Talks to the downloader in the site's own local server (scripts/downloader-server.ts). The header tells
@@ -7,9 +8,44 @@ import type { DlInfo, DlOptions, Phase } from './args';
  */
 const HEADERS = { 'X-Unktilz': '1' };
 
+// The server's own messages (scripts/downloader-server.ts) are English; they're translated here.
+// What yt-dlp itself says stays as it is.
+const SERVER_TEXTS: string[] = [
+  tx('Not allowed.'),
+  tx('Installing works on Windows. Elsewhere, install yt-dlp, aria2c and ffmpeg yourself.'),
+  tx('Paste a web address (starting with http:// or https://).'),
+  tx("yt-dlp couldn't read that link."),
+  tx("yt-dlp's answer couldn't be read."),
+  tx('Bad playlist item.'),
+  tx('That download is gone (the site was restarted?).'),
+  tx('No such file.'),
+  tx('Unknown request.'),
+  tx('Too much data.'),
+  tx('Bad request.'),
+  tx("yt-dlp.exe doesn't match its published checksum."),
+  tx("aria2's download doesn't match the expected checksum."),
+  tx('aria2c.exe was not in the download.'),
+  tx("ffmpeg's download doesn't match its published checksum."),
+  tx('ffmpeg was not in the download.'),
+];
+const SERVER_PATTERNS: [RegExp, string][] = [
+  [/^Downloading (?<url>.+) failed \((?<status>\d+)\)\.$/, tx('Downloading {url} failed ({status}).')],
+  [/^No checksum published for (?<name>.+)\.$/, tx('No checksum published for {name}.')],
+  [/^Unpacking failed: (?<why>.*)$/s, tx('Unpacking failed: {why}')],
+];
+/** A message from the downloader's server, in the page's language when it's one of its own. */
+export function serverText(message: string) {
+  if (SERVER_TEXTS.includes(message)) return t(message);
+  for (const [re, key] of SERVER_PATTERNS) {
+    const m = message.match(re);
+    if (m?.groups) return t(key, m.groups);
+  }
+  return message;
+}
+
 export class NoServerError extends Error {
   constructor() {
-    super('The downloader runs yt-dlp on your computer, so it only works when the site is started with start.bat.');
+    super(t('The downloader runs yt-dlp on your computer, so it only works when the site is started with start.bat.'));
   }
 }
 
@@ -28,7 +64,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   // A static host answers with its index page (or nothing): no downloader there.
   if (!type.includes('application/json')) throw new NoServerError();
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? `The downloader answered ${res.status}.`);
+  if (!res.ok) throw new Error(data.error ? serverText(data.error) : t('The downloader answered {status}.', { status: res.status }));
   return data as T;
 }
 
@@ -104,13 +140,13 @@ export async function download(
       live.set(key, { ...j, title });
       changed();
       onProgress(j.progress);
-      if (j.status === 'error') throw new Error(j.error ?? 'The download failed.');
+      if (j.status === 'error') throw new Error(j.error ? serverText(j.error) : t('The download failed.'));
       if (j.status === 'cancelled') throw abortError();
       if (j.status === 'done') {
         const out: { name: string; blob: Blob }[] = [];
         for (let i = 0; i < j.files.length; i++) {
           const res = await fetch(`/api/dl/job/${job.id}/file/${i}`, { headers: HEADERS, signal });
-          if (!res.ok) throw new Error(`Getting ${j.files[i].name} from the downloader failed.`);
+          if (!res.ok) throw new Error(t('Getting {name} from the downloader failed.', { name: j.files[i].name }));
           out.push({ name: j.files[i].name, blob: await res.blob() });
         }
         return out;

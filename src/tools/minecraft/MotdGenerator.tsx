@@ -5,6 +5,7 @@ import { Output, Panel } from '../../components/ui';
 import { Workbench } from '../../components/Workbench';
 import { McText } from '../../lib/mc/text';
 import { CodePalette, applyCode } from './CodePalette';
+import { t } from '../../lib/i18n-core';
 
 const START = '&a&lMy Server &7· &fSurvival\n&eJoin us at &bplay.example.net';
 
@@ -26,14 +27,14 @@ export default function MotdGenerator() {
   const motd = lines.slice(0, 2).join('\n');
 
   const preview = (
-    <Panel title="preview">
+    <Panel title={t('preview')}>
       <div className="mc-preview" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
         <div aria-hidden="true" style={{ flex: 'none', width: 64, height: 64, borderRadius: 4, background: '#3b3b3b', display: 'grid', placeItems: 'center', color: '#777' }}>
           ?
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ color: '#fff', textShadow: '2px 2px 0 #3f3f3f' }}>Minecraft Server</span>
+            <span style={{ color: '#fff', textShadow: '2px 2px 0 #3f3f3f' }}>{t('Minecraft Server')}</span>
             <span style={{ color: '#aaa' }}>0/20</span>
           </div>
           <McText text={motd} />
@@ -43,18 +44,18 @@ export default function MotdGenerator() {
   );
 
   const output = (
-    <Panel title="copy">
-      <Output label="server.properties" value={`motd=${toProperties(motd)}`} />
-      <Output label="Plugins & configs (& codes)" value={motd.replace(/\n/g, '\\n')} />
-      <Output label="Section signs (§)" value={motd.replace(/&([0-9a-fk-orx#])/gi, '§$1')} multiline />
+    <Panel title={t('copy')}>
+      <Output label={t('server.properties')} value={`motd=${toProperties(motd)}`} />
+      <Output label={t('Plugins & configs (& codes)')} value={motd.replace(/\n/g, '\\n')} />
+      <Output label={t('Section signs (§)')} value={motd.replace(/&([0-9a-fk-orx#])/gi, '§$1')} multiline />
     </Panel>
   );
 
   return (
     <Workbench preview={preview} output={output}>
-      <section className="panel" aria-label="Edit MOTD">
+      <section className="panel" aria-label={t('Edit MOTD')}>
         <div className="field">
-          <label htmlFor="motd">MOTD · two lines, & for codes</label>
+          <label htmlFor="motd">{t('MOTD · two lines, & for codes')}</label>
           <textarea
             id="motd"
             ref={area}
@@ -64,20 +65,20 @@ export default function MotdGenerator() {
             spellCheck={false}
             onChange={(e) => setText(e.target.value)}
           />
-          {tooMany && <p className="note">Only the first two lines show in the server list.</p>}
+          {tooMany && <p className="note">{t('Only the first two lines show in the server list.')}</p>}
         </div>
         <CodePalette onInsert={(code) => applyCode(area.current, text, code, setText)} />
-        <p className="note">Select text, then click a color or style to apply it to just that text.</p>
+        <p className="note">{t('Select text, then click a color or style to apply it to just that text.')}</p>
       </section>
       <SavedPanel<string>
         slug="motd-generator"
-        title="my MOTDs"
-        help="Keep MOTDs for later (events, maintenance…). Saved in this browser."
+        title={t('my MOTDs')}
+        help={t('Keep MOTDs for later (events, maintenance…). Saved in this browser.')}
         suggestName={() => text.replace(/[&§]#[0-9a-f]{6}|[&§][0-9a-fk-orx]/gi, '').split('\n')[0].trim().slice(0, 40)}
         getData={() => text}
         onLoad={setText}
         describe={(i) => i.data.replace(/[&§]#[0-9a-f]{6}|[&§][0-9a-fk-orx]/gi, '').replace(/\n/g, ' · ')}
-        emptyText="No saved MOTDs yet."
+        emptyText={t('No saved MOTDs yet.')}
       />
     </Workbench>
   );

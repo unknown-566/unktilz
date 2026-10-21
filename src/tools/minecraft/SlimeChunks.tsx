@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { NumberField, Panel, Stat, TextField, num } from '../../components/ui';
 import { isSlimeChunk, parseSeed } from '../../lib/mc/slime';
 import { Workbench } from '../../components/Workbench';
+import { t } from '../../lib/i18n-core';
 
 const R = 12; // chunks around the center → 25×25 grid
 
@@ -43,14 +44,14 @@ export default function SlimeChunks() {
   const sel = picked ?? (nearest ? [nearest[0], nearest[1]] : null);
 
   const map = !grid ? (
-    <Panel title="slime chunks">
-      <p className="note">Enter your world seed to see the slime chunks around you.</p>
+    <Panel title={t('slime chunks')}>
+      <p className="note">{t('Enter your world seed to see the slime chunks around you.')}</p>
     </Panel>
   ) : (
-    <Panel title={`slime chunks · ${count} of ${(R * 2 + 1) ** 2}`}>
+    <Panel title={t('slime chunks · {n} of {all}', { n: count, all: (R * 2 + 1) ** 2 })}>
       <div
         role="grid"
-        aria-label="Chunks around you, north at the top"
+        aria-label={t('Chunks around you, north at the top')}
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${R * 2 + 1}, minmax(0, 1fr))`,
@@ -72,7 +73,7 @@ export default function SlimeChunks() {
                   key={ix}
                   type="button"
                   role="gridcell"
-                  aria-label={`Chunk ${gx}, ${gz}${slime ? ', slime chunk' : ''}${here ? ', you are here' : ''}`}
+                  aria-label={[t('Chunk {x}, {z}', { x: gx, z: gz }), slime ? t('slime chunk') : '', here ? t('you are here') : ''].filter(Boolean).join(', ')}
                   aria-selected={!!isSel}
                   tabIndex={here ? 0 : -1}
                   onClick={() => setPicked([gx, gz])}
@@ -92,34 +93,34 @@ export default function SlimeChunks() {
       </div>
       {sel && (
         <div className="stats">
-          <Stat label="chunk" value={`${sel[0]}, ${sel[1]}`} />
-          <Stat label="blocks from" value={`${sel[0] * 16}, ${sel[1] * 16}`} />
-          <Stat label="blocks to" value={`${sel[0] * 16 + 15}, ${sel[1] * 16 + 15}`} />
-          <Stat label="slime chunk" value={isSlimeChunk(seed!, sel[0], sel[1]) ? 'yes' : 'no'} />
+          <Stat label={t('chunk')} value={`${sel[0]}, ${sel[1]}`} />
+          <Stat label={t('blocks from')} value={`${sel[0] * 16}, ${sel[1] * 16}`} />
+          <Stat label={t('blocks to')} value={`${sel[0] * 16 + 15}, ${sel[1] * 16 + 15}`} />
+          <Stat label={t('slime chunk')} value={isSlimeChunk(seed!, sel[0], sel[1]) ? 'yes' : 'no'} />
         </div>
       )}
-      <p className="note">Outlined square: your chunk. Click a square for its block range.</p>
+      <p className="note">{t('Outlined square: your chunk. Click a square for its block range.')}</p>
     </Panel>
   );
 
   return (
     <Workbench preview={map}>
-      <section className="panel" aria-label="Seed and position">
+      <section className="panel" aria-label={t('Seed and position')}>
         <TextField
-          label="World seed"
+          label={t('World seed')}
           value={seedText}
           onChange={setSeedText}
           placeholder="-4172144997902289642"
           mono
           autoFocus
-          help="Type /seed in the game to see it (needs operator or cheats). Words work too: the game turns a text seed into a number the same way."
+          help={t('Type /seed in the game to see it (needs operator or cheats). Words work too: the game turns a text seed into a number the same way.')}
         />
         <div className="fields">
-          <NumberField label="Your X" value={x} onChange={setX} />
-          <NumberField label="Your Z" value={z} onChange={setZ} />
+          <NumberField label={t('Your X')} value={x} onChange={setX} />
+          <NumberField label={t('Your Z')} value={z} onChange={setZ} />
         </div>
         <p className="note">
-          Slimes spawn in slime chunks below Y 40 in any light level, except in mushroom fields. Bedrock Edition uses a different rule.
+          {t('Slimes spawn in slime chunks below Y 40 in any light level, except in mushroom fields. Bedrock Edition uses a different rule.')}
         </p>
       </section>
     </Workbench>

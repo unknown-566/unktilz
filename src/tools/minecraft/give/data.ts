@@ -4,6 +4,7 @@ import effectsRaw from '../../../lib/mc/data/effects.json';
 import attributesRaw from '../../../lib/mc/data/attributes.json';
 import blocksRaw from '../../../lib/mc/data/blocks.json';
 import mobsRaw from '../../../lib/mc/data/mobs.json';
+import { t } from '../../../lib/i18n-core';
 
 export type ItemInfo = { id: string; name: string; stack: number; durability: number; cats: string[] };
 export type EnchInfo = { id: string; name: string; max: number; cat: string; curse: boolean; exclude: string[] };
@@ -36,28 +37,30 @@ export function enchantFits(item: string, ench: string) {
 }
 
 export const SLOTS = [
-  { value: 'any', label: 'any slot' },
-  { value: 'mainhand', label: 'main hand' },
-  { value: 'offhand', label: 'off hand' },
-  { value: 'hand', label: 'either hand' },
-  { value: 'head', label: 'head' },
-  { value: 'chest', label: 'chest' },
-  { value: 'legs', label: 'legs' },
-  { value: 'feet', label: 'feet' },
-  { value: 'armor', label: 'any armor slot' },
-  { value: 'body', label: 'body (animal armor)' },
+  { value: 'any', label: t('slot|any slot') },
+  { value: 'mainhand', label: t('slot|main hand') },
+  { value: 'offhand', label: t('slot|off hand') },
+  { value: 'hand', label: t('slot|either hand') },
+  { value: 'head', label: t('slot|head') },
+  { value: 'chest', label: t('slot|chest') },
+  { value: 'legs', label: t('slot|legs') },
+  { value: 'feet', label: t('slot|feet') },
+  { value: 'armor', label: t('slot|any armor slot') },
+  { value: 'body', label: t('slot|body (animal armor)') },
 ];
+// The game's own words in the tooltip preview (English, like the game): not translated.
+// i18n-ignore
 export const SLOT_HEADING: Record<string, string> = {
-  any: 'When equipped:',
-  mainhand: 'When in Main Hand:',
-  offhand: 'When in Off Hand:',
-  hand: 'When in Hand:',
-  head: 'When on Head:',
-  chest: 'When on Body:',
-  legs: 'When on Legs:',
-  feet: 'When on Feet:',
-  armor: 'When worn:',
-  body: 'When worn:',
+  any: 'When equipped:', // i18n-ignore
+  mainhand: 'When in Main Hand:', // i18n-ignore
+  offhand: 'When in Off Hand:', // i18n-ignore
+  hand: 'When in Hand:', // i18n-ignore
+  head: 'When on Head:', // i18n-ignore
+  chest: 'When on Body:', // i18n-ignore
+  legs: 'When on Legs:', // i18n-ignore
+  feet: 'When on Feet:', // i18n-ignore
+  armor: 'When worn:', // i18n-ignore
+  body: 'When worn:', // i18n-ignore
 };
 
 export const POTIONS = [
@@ -85,11 +88,11 @@ export const TRIM_MATERIALS: { id: string; color: string }[] = [
 ];
 
 export const FIREWORK_SHAPES = [
-  { value: 'small_ball', label: 'small ball' },
-  { value: 'large_ball', label: 'large ball' },
-  { value: 'star', label: 'star' },
-  { value: 'creeper', label: 'creeper' },
-  { value: 'burst', label: 'burst' },
+  { value: 'small_ball', label: t('firework|small ball') },
+  { value: 'large_ball', label: t('firework|large ball') },
+  { value: 'star', label: t('firework|star') },
+  { value: 'creeper', label: t('firework|creeper') },
+  { value: 'burst', label: t('firework|burst') },
 ] as const;
 
 /** The 16 dye colors, as fireworks use them. */

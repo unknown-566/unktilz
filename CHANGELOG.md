@@ -2,6 +2,47 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.19.0] - 2026-10-21
+
+- Make video bad / Make audio bad: several sound effects at once
+- New tool: Organize PDF (see the pages, drag them around, turn, delete, add blank pages, join PDFs)
+- Split PDF works with page pictures: click between pages to split
+- Compress PDF can keep the text sharp and selectable
+- Images to PDF: drag the paper's corners, only what's written on a clean page inside the margins, text recognition (searchable PDF)
+- Images to PDF: the text always comes out level, even when the paper's edges aren't in the photo
+- Merge PDF is no longer beta
+- PDF tools: safer pdf.js (security fix)
+- New tool: QR code maker (links, Wi-Fi, contacts, payments… in any colours and shapes, with a logo and a frame)
+- The whole site in Czech: the “lang” button at the top switches between English and Czech
+
+### Added
+- Czech translation of the whole site: the home page, the queue, every tool with its options, help texts and error messages. The “lang: en” button next to the theme switches it (English stays the default, and the site remembers your pick). Numbers, sizes and dates are written the Czech way (1,5 MB), and search finds tools by their Czech names too. Minecraft names (blocks, items, enchantments, biomes, structures) stay English like in the game.
+- QR code maker, in the new "Calc & generators" category:
+  - What it holds: a link, text, Wi-Fi (phones join without typing the password), a contact (vCard), an e-mail, an SMS, a phone number, WhatsApp, a place (paste a map link and the coordinates are taken from it), a calendar event, a payment (Czech QR Platba with the account number checked and turned into an IBAN, or European EPC / SEPA) or a crypto address.
+  - Its look: 11 dot shapes (square, rounded, dots, small, diamond, star, heart, lines both ways, smooth, fluid), 6 corner frames and 6 corner middles, colours or gradients (straight or round, up to 3 colours), see-through background, own corner colours and 16 ready colour sets.
+  - A logo in the middle (the code switches to error correction H for it), a frame with your text ("SCAN ME") in one of 11 fonts.
+  - It checks that the code still scans and says why when it may not (low contrast, light on dark, logo too big, too little empty border).
+  - Save it as PNG, SVG, JPG or WebP up to 4096 px, or copy the picture. Looks can be saved and used again.
+- Organize PDF (beta): every page as a picture. Drag pages into a new order (several picked pages move together), turn single pages, duplicate or delete them, add empty pages, add more PDFs to put their pages in between, undo and reset. Delete, Ctrl+Z and Ctrl+A work too.
+- Images to PDF: the found corners of the paper show on the photo and can be dragged when they're off (or "whole photo", or "find it again"); photos can be turned and put in order. A page preview shows exactly how each page comes out, margins included.
+- Images to PDF: "only what's written": the text and drawings are taken off the paper (no paper edges, shadows or table) and put on a clean white page, where they were on the paper, always inside the margins. Margins are now 0 / 10 / 15 / 25 mm and hold for every page.
+- Images to PDF: text recognition (English, Czech, Slovak, German, Polish, Spanish, French, several at once). The text goes into the PDF invisibly under the scan, so it can be searched (Ctrl+F), selected and copied, accents included. The first time it loads about 7 MB from the site; after that it works offline.
+- Compress PDF: method "keep text" (the new default) only makes the pictures inside smaller, so text and drawings stay sharp and selectable. "Redraw pages" is the old way, best for scans.
+
+### Changed
+- Split PDF shows the pages as pictures: click ✂ between two pages to split there, or split into single pages, every N pages or in half; each part gets its colour and a name you can change. Picked pages can be saved as one PDF. Reordering, turning and deleting pages moved to Organize PDF.
+- Images to PDF: scanned paper comes out pure white (near-white grey and specks of dust are cleaned away; light colours like highlighter stay).
+- Images to PDF: the text is turned level by its own lines, so a sheet photographed a bit crooked, under a clipboard clip or with its edges cut off still comes out straight, in colour, grayscale and black & white alike (where the text is and how it lies is always read from a black and white copy).
+- Images to PDF: paper lying on a light table or a beige surface is found more often (white paper is told apart by its colour, not only its brightness).
+- Images to PDF, “only what's written”: leftovers around the paper (the table, a clipboard, shadows) are wiped, so the page holds only what's on the sheet.
+- The PDF tools are in a clearer order: Merge, Organize, Split, Compress, Images to PDF, PDF to images. Merge PDF isn't beta any more.
+- Make video bad and Make audio bad: the sound effects can be combined, e.g. bass boosted + phone call, or all five at once. Click to turn each on or off; none on means no effect. They're applied in a fixed order (phone / underwater first, then bass boosted, earrape, crushed last), and the sound still never goes past full volume.
+
+### Fixed
+- Tabs (in the QR code maker, the GIF maker and other tools) no longer show a tiny up-and-down scrollbar next to them.
+- Tool cards on the home page: the description keeps room for its words and the “new” / “beta” / “online” tags sit next to it, or on the line below when there are too many, instead of squeezing the description to one word per line and covering it.
+- PDF tools: pdf.js updated to 6.4, which fixes a security problem (a specially made PDF could run code on the page, CVE-2026-16633).
+
 ## [1.18.0] - 2026-10-19
 
 - Background remover: the brush no longer keeps painting after you let go outside the picture

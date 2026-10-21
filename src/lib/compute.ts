@@ -1,6 +1,8 @@
 import type { RunEvent } from '../registry/types';
 import { abortError, channel } from './channel';
 import type { FileTaskName, TaskName, TaskPayload, TaskResult } from '../workers/compute.worker';
+import { t } from './i18n-core';
+import { getLang } from './i18n-core';
 
 type Reply =
   | { id: number; type: 'progress'; value: number }
@@ -18,7 +20,7 @@ function getWorker() {
     worker = new Worker(new URL('../workers/compute.worker.ts', import.meta.url), { type: 'module' });
     worker.onmessage = (e: MessageEvent<Reply>) => listeners.get(e.data.id)?.(e.data);
     worker.onerror = (e) => {
-      for (const [id, fn] of listeners) fn({ id, type: 'error', message: e.message || 'Worker crashed.' });
+      for (const [id, fn] of listeners) fn({ id, type: 'error', message: e.message || t('Worker crashed.') });
     };
   }
   return worker;
@@ -39,7 +41,7 @@ export function compute<T extends FileTaskName>(task: T, payload: TaskPayload<T>
     worker?.terminate();
     worker = null;
     // Anything else waiting on that worker would hang forever; tell it to try again.
-    for (const [other, fn] of [...listeners]) fn({ id: other, type: 'error', message: 'Interrupted, please try again.' });
+    for (const [other, fn] of [...listeners]) fn({ id: other, type: 'error', message: t('Interrupted, please try again.') });
     ch.fail(abortError());
   };
 
@@ -55,7 +57,7 @@ export function compute<T extends FileTaskName>(task: T, payload: TaskPayload<T>
     }
   });
   signal.addEventListener('abort', onAbort, { once: true });
-  w.postMessage({ id, task, payload });
+  w.postMessage({ id, task, payload, lang: getLang() });
   return ch;
 }
 
@@ -71,6 +73,6 @@ export function computeValue<T extends TaskName>(task: T, payload: TaskPayload<T
         else resolve(r.result as TaskResult<T>);
       }
     });
-    getWorker().postMessage({ id, task, payload });
+    getWorker().postMessage({ id, task, payload, lang: getLang() });
   });
 }

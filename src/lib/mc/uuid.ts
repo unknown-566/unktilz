@@ -1,4 +1,5 @@
 import { hex, md5 } from '../md5';
+import { t } from '../i18n-core';
 
 export const dashed = (raw: string) => {
   const h = raw.replace(/-/g, '').toLowerCase();
@@ -34,7 +35,7 @@ export async function lookupSkin(query: string): Promise<SkinInfo | null> {
   const body = (await res.json().catch(() => null)) as Body | null;
   const p = body?.success ? body.data?.player : null;
   if (!p) {
-    if (res.status >= 500) throw new Error('The lookup service is having trouble. Try again in a minute.');
+    if (res.status >= 500) throw new Error(t('The lookup service is having trouble. Try again in a minute.'));
     return null;
   }
   let url = p.skin_texture ?? '';
@@ -58,7 +59,7 @@ export async function lookupProfile(query: string): Promise<Profile | null> {
   const res = await fetch(`https://playerdb.co/api/player/minecraft/${encodeURIComponent(query.trim())}`);
   const body = (await res.json().catch(() => null)) as { success?: boolean; data?: { player?: { username: string; id: string } } } | null;
   if (!body?.success || !body.data?.player) {
-    if (res.status >= 500) throw new Error('The lookup service is having trouble. Try again in a minute.');
+    if (res.status >= 500) throw new Error(t('The lookup service is having trouble. Try again in a minute.'));
     return null;
   }
   return { name: body.data.player.username, id: dashed(body.data.player.id) };

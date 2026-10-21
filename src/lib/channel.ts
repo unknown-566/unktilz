@@ -20,7 +20,7 @@ export function channel<T>() {
       notify();
     },
     fail(err: unknown) {
-      failure = err ?? new Error('Failed');
+      failure = err ?? new Error('Failed'); // i18n-ignore
       done = true;
       notify();
     },

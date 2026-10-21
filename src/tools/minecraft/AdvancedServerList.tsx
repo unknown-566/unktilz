@@ -8,6 +8,7 @@ import { saveBlob } from '../../queue/download';
 import { MiniText, lintMiniMessage, stripFormatting, textWidthPx } from '../../lib/mc/minimessage';
 import { MOTD_WIDTH, charWidth } from '../../lib/mc/textWidth';
 import { MiniToolbar } from './MiniToolbar';
+import { t, tn } from '../../lib/i18n';
 
 // Profile format: https://asl.andre601.ch/profiles/
 
@@ -20,11 +21,11 @@ type FaviconMode = 'none' | 'head' | 'player' | 'file' | 'random' | 'url';
 type Audience = 'everyone' | 'maintenance' | 'new' | 'returning' | 'whitelist' | 'old' | 'player' | 'date' | 'after' | 'custom';
 
 const PLACEHOLDERS = [
-  { value: '${player name}', label: 'player name', sample: (p: string) => p },
-  { value: '${server playersOnline}', label: 'players online', sample: () => '12' },
-  { value: '${server playersMax}', label: 'max players', sample: () => '100' },
-  { value: '${server host}', label: 'address they typed', sample: () => 'play.example.net' },
-  { value: '${date current}', label: 'today’s date', sample: () => new Date().toLocaleDateString('en-GB') },
+  { value: '${player name}', label: t('player name'), sample: (p: string) => p },
+  { value: '${server playersOnline}', label: t('players online'), sample: () => '12' },
+  { value: '${server playersMax}', label: t('max players'), sample: () => '100' },
+  { value: '${server host}', label: t('address they typed'), sample: () => 'play.example.net' },
+  { value: '${date current}', label: t('today’s date'), sample: () => new Date().toLocaleDateString('en-GB') },
 ];
 
 // Protocol numbers of the first release of each version.
@@ -42,16 +43,16 @@ const VERSIONS = [
 ] as const;
 
 const AUDIENCES: { id: Audience; title: string; detail: string; priority: number; file: string }[] = [
-  { id: 'everyone', title: 'Everyone', detail: 'Your main look. Every server should have one of these.', priority: 0, file: 'default' },
-  { id: 'maintenance', title: 'During maintenance', detail: 'Needs the Maintenance plugin. Shows while maintenance mode is on.', priority: 20, file: 'maintenance' },
-  { id: 'new', title: 'Players who never joined before', detail: 'A welcome for newcomers. Paper servers only.', priority: 10, file: 'new-players' },
-  { id: 'returning', title: 'Players who joined before', detail: 'A “welcome back” for regulars. Paper servers only.', priority: 10, file: 'returning-players' },
-  { id: 'whitelist', title: 'Players not on the whitelist', detail: 'Shows while the whitelist is on to people who can’t join. Paper only.', priority: 15, file: 'not-whitelisted' },
-  { id: 'old', title: 'Players on an old Minecraft version', detail: 'Tell them to update, or that your server needs a newer version.', priority: 5, file: 'old-versions' },
-  { id: 'player', title: 'One specific player', detail: 'A personal message for one name.', priority: 10, file: 'player' },
-  { id: 'date', title: 'On one day', detail: 'For an event, a birthday or a holiday.', priority: 10, file: 'event' },
-  { id: 'after', title: 'After a date', detail: 'Starts showing the day after the date you pick.', priority: 10, file: 'after-date' },
-  { id: 'custom', title: 'Custom rule', detail: 'Write the condition yourself.', priority: 10, file: 'custom' },
+  { id: 'everyone', title: t('Everyone'), detail: t('Your main look. Every server should have one of these.'), priority: 0, file: 'default' },
+  { id: 'maintenance', title: t('During maintenance'), detail: t('Needs the Maintenance plugin. Shows while maintenance mode is on.'), priority: 20, file: 'maintenance' },
+  { id: 'new', title: t('Players who never joined before'), detail: t('A welcome for newcomers. Paper servers only.'), priority: 10, file: 'new-players' },
+  { id: 'returning', title: t('Players who joined before'), detail: t('A “welcome back” for regulars. Paper servers only.'), priority: 10, file: 'returning-players' },
+  { id: 'whitelist', title: t('Players not on the whitelist'), detail: t('Shows while the whitelist is on to people who can’t join. Paper only.'), priority: 15, file: 'not-whitelisted' },
+  { id: 'old', title: t('Players on an old Minecraft version'), detail: t('Tell them to update, or that your server needs a newer version.'), priority: 5, file: 'old-versions' },
+  { id: 'player', title: t('One specific player'), detail: t('A personal message for one name.'), priority: 10, file: 'player' },
+  { id: 'date', title: t('On one day'), detail: t('For an event, a birthday or a holiday.'), priority: 10, file: 'event' },
+  { id: 'after', title: t('After a date'), detail: t('Starts showing the day after the date you pick.'), priority: 10, file: 'after-date' },
+  { id: 'custom', title: t('Custom rule'), detail: t('Write the condition yourself.'), priority: 10, file: 'custom' },
 ];
 
 /** YAML single-quoted string: only the quote itself needs escaping. */
@@ -66,14 +67,14 @@ function Label({ id, children, help }: { id?: string; children: ReactNode; help:
       <label className="field-label" htmlFor={id}>
         {children}
       </label>
-      <Help label={typeof children === 'string' ? children : 'this option'} text={help} />
+      <Help label={typeof children === 'string' ? children : t('this option')} text={help} />
     </span>
   );
 }
 
 function Ping({ crossed }: { crossed: boolean }) {
   return crossed ? (
-    <svg width="20" height="16" viewBox="0 0 20 16" aria-label="Outdated server icon" role="img">
+    <svg width="20" height="16" viewBox="0 0 20 16" aria-label={t('Outdated server icon')} role="img">
       <path d="M3 3l14 10M17 3L3 13" stroke="#ff5555" strokeWidth="2.5" />
     </svg>
   ) : (
@@ -99,7 +100,7 @@ function Warnings({ list }: { list: string[] }) {
 function WidthMeter({ px }: { px: number }) {
   const over = px > MOTD_WIDTH;
   return (
-    <span className="width-meter" data-over={over || undefined} title="Estimated width in the Minecraft font, with sample values for live values">
+    <span className="width-meter" data-over={over || undefined} title={t('Estimated width in the Minecraft font, with sample values for live values')}>
       <span className="width-bar">
         <span style={{ width: `${Math.min(100, (px / MOTD_WIDTH) * 100)}%` }} />
       </span>
@@ -335,10 +336,10 @@ export default function AdvancedServerList() {
 
   const preview = (
     <Panel
-      title="preview"
+      title={t('preview')}
       actions={
         motds.length > 1 ? (
-          <Segmented label="MOTD to preview" value={String(cur)} onChange={(v) => setCur(Number(v))} compact options={motds.map((_, i) => ({ value: String(i), label: `${i + 1}` }))} />
+          <Segmented label={t('MOTD to preview')} value={String(cur)} onChange={(v) => setCur(Number(v))} compact options={motds.map((_, i) => ({ value: String(i), label: `${i + 1}` }))} />
         ) : undefined
       }
     >
@@ -348,14 +349,14 @@ export default function AdvancedServerList() {
       >
         <div style={{ flex: 'none', width: 64, height: 64, borderRadius: 4, background: '#3b3b3b', display: 'grid', placeItems: 'center', color: '#777', overflow: 'hidden' }}>
           {favPreview ? (
-            <img src={favPreview} width={64} height={64} alt="Server icon" style={{ imageRendering: 'pixelated' }} />
+            <img src={favPreview} width={64} height={64} alt={t('Server icon')} style={{ imageRendering: 'pixelated' }} />
           ) : (
             <span style={{ fontSize: 11 }}>{favMode === 'file' || favMode === 'random' ? '.png' : '?'}</span>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-            <span style={{ color: '#fff', textShadow: '2px 2px 0 #3f3f3f' }}>Minecraft Server</span>
+            <span style={{ color: '#fff', textShadow: '2px 2px 0 #3f3f3f' }}>{t('Minecraft Server')}</span>
             <span
               style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'default', position: 'relative' }}
               onMouseEnter={() => setShowHover(true)}
@@ -390,14 +391,15 @@ export default function AdvancedServerList() {
       </div>
       <div className="inline" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <p className="note" style={{ flex: '1 1 200px' }}>
-          {motds.length > 1 ? `MOTD ${cur + 1} of ${motds.length}, picked at random in the game. ` : ''}Hover the player count to see its hover text.
+          {motds.length > 1 ? `${t('MOTD {n} of {length}, picked at random in the game.', { n: cur + 1, length: motds.length })} ` : ''}
+          {t('Hover the player count to see its hover text.')}
         </p>
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <label htmlFor="asl-preview-name" className="mono muted" style={{ fontSize: 12 }}>
-            preview as
+            {t('preview as')}
           </label>
           <input id="asl-preview-name" className="input mono" style={{ width: 120, minHeight: 36 }} value={previewName} onChange={(e) => setPreviewName(e.target.value)} />
-          <Help label="preview as" text="Live values like the player name are filled in with this name here. In the game everyone sees their own name." />
+          <Help label={t('preview as')} text={t('Live values like the player name are filled in with this name here. In the game everyone sees their own name.')} />
         </span>
       </div>
     </Panel>
@@ -410,36 +412,38 @@ export default function AdvancedServerList() {
         <div className="seg">
           <CopyButton text={yaml} />
           <button type="button" className="btn btn-sm mono" onClick={() => saveBlob(new Blob([yaml], { type: 'text/yaml' }), file)}>
-            download
+            {t('download')}
           </button>
         </div>
       }
     >
       <ol className="steps">
         <li>
-          Install{' '}
-          <a href="https://modrinth.com/plugin/advancedserverlist" target="_blank" rel="noreferrer">
-            AdvancedServerList
-          </a>{' '}
-          on your Paper, Velocity or BungeeCord server.
+          {tn('Install {plugin} on your Paper, Velocity or BungeeCord server.', {
+            plugin: (
+              <a href="https://modrinth.com/plugin/advancedserverlist" target="_blank" rel="noreferrer">
+                AdvancedServerList
+              </a>
+            ),
+          })}
         </li>
         <li>
-          Download this file and put it in <span className="mono">plugins/AdvancedServerList/profiles/</span>
+          {tn('Download this file and put it in {folder}', { folder: <span className="mono">plugins/AdvancedServerList/profiles/</span> })}
         </li>
         <li>
-          Run <span className="mono">/asl reload</span> and refresh your server list.
+          {tn('Run {command} and refresh your server list.', { command: <span className="mono">/asl reload</span> })}
         </li>
       </ol>
       {audience !== 'everyone' && (
-        <p className="note">This profile only shows to “{aud.title.toLowerCase()}”. Keep a default.yml for everyone else.</p>
+        <p className="note">{t('This profile only shows to “{audience}”. Keep a default.yml for everyone else.', { audience: aud.title.toLowerCase() })}</p>
       )}
       <details>
         <summary className="mono muted" style={{ cursor: 'pointer', minHeight: 36, display: 'flex', alignItems: 'center' }}>
-          show the file
+          {t('show the file')}
         </summary>
         <div className="inline" style={{ alignItems: 'center', margin: '8px 0' }}>
           <label htmlFor="asl-file" className="mono muted" style={{ fontSize: 12 }}>
-            file name
+            {t('file name')}
           </label>
           <input
             id="asl-file"
@@ -465,7 +469,7 @@ export default function AdvancedServerList() {
     const centered = key === 'l1' ? motd.c1 : motd.c2;
     const width = textWidthPx(sample(value), charWidth);
     const warnings = lintMiniMessage(value).map((l) => l.message);
-    if (width > MOTD_WIDTH) warnings.push(`Too wide for the server list by about ${width - MOTD_WIDTH}px: the end wraps onto the next line or gets cut off.`);
+    if (width > MOTD_WIDTH) warnings.push(t('Too wide for the server list by about {px} px: the end wraps onto the next line or gets cut off.', { px: width - MOTD_WIDTH }));
     return (
       <div className="field">
         <Label id={`asl-${key}`} help={help}>
@@ -476,24 +480,24 @@ export default function AdvancedServerList() {
           ref={refs[key]}
           className="input mono"
           value={value}
-          placeholder={key === 'l1' ? 'First line, e.g. My Server' : 'Second line, e.g. Survival · 1.21'}
+          placeholder={key === 'l1' ? t('First line, e.g. My Server') : t('Second line, e.g. Survival · 1.21')}
           onFocus={() => setActive(key)}
           onChange={(e) => fields[key][1](e.target.value)}
           spellCheck={false}
         />
         <div className="line-tools">
           <Segmented
-            label={`${label} alignment`}
+            label={t('{label} alignment', { label })}
             value={centered ? 'center' : 'left'}
             onChange={(v) => setMotd(key === 'l1' ? { c1: v === 'center' } : { c2: v === 'center' })}
             compact
             options={[
-              { value: 'left', label: 'left' },
-              { value: 'center', label: 'center' },
+              { value: 'left', label: t('left') },
+              { value: 'center', label: t('center') },
             ]}
           />
           <button type="button" className="btn btn-sm" onClick={() => fields[key][1](stripFormatting(value))} disabled={stripFormatting(value) === value}>
-            clear formatting
+            {t('clear formatting')}
           </button>
           <WidthMeter px={width} />
         </div>
@@ -504,25 +508,25 @@ export default function AdvancedServerList() {
 
   const basicWarnings = (s: string) => [
     ...lintMiniMessage(s).map((l) => l.message),
-    ...(FANCY.test(s) ? ['Gradients, hex colors, shadows and heads don’t work here. The game shows the nearest basic color instead.'] : []),
+    ...(FANCY.test(s) ? [t('Gradients, hex colors, shadows and heads don’t work here. The game shows the nearest basic color instead.')] : []),
   ];
 
   const P = 'asl';
 
   return (
     <Workbench preview={preview} output={output}>
-      <section className="panel" aria-label="Profile settings">
-        <p className="note">A profile is how your server looks in the multiplayer list. Change it here, watch the preview, then download the file.</p>
+      <section className="panel" aria-label={t('Profile settings')}>
+        <p className="note">{t('A profile is how your server looks in the multiplayer list. Change it here, watch the preview, then download the file.')}</p>
         <Tabs
           idPrefix={P}
-          label="Profile settings"
+          label={t('Profile settings')}
           value={tab}
           onChange={setTab}
           tabs={[
-            { id: 'text', label: motds.length > 1 ? `text · ${motds.length}` : 'text' },
-            { id: 'count', label: 'player count', dot: countMode !== 'real' || hoverMode !== 'players' },
-            { id: 'icon', label: 'icon', dot: favMode !== 'none' },
-            { id: 'who', label: 'who sees it', dot: audience !== 'everyone' },
+            { id: 'text', label: motds.length > 1 ? t('text · {length}', { length: motds.length }) : t('text') },
+            { id: 'count', label: t('player count'), dot: countMode !== 'real' || hoverMode !== 'players' },
+            { id: 'icon', label: t('icon'), dot: favMode !== 'none' },
+            { id: 'who', label: t('who sees it'), dot: audience !== 'everyone' },
           ]}
         />
 
@@ -532,15 +536,15 @@ export default function AdvancedServerList() {
               onWrap={wrap}
               onInsert={insert}
               placeholders={PLACEHOLDERS}
-              hint="Click in a line, then pick a color or style. Select some words first to change only those."
+              hint={t('Click in a line, then pick a color or style. Select some words first to change only those.')}
             />
             {motds.length > 1 && (
               <p className="note mono" style={{ color: 'var(--fg)' }}>
-                editing MOTD {cur + 1} of {motds.length}
+                {t('editing MOTD {n} of {length}', { n: cur + 1, length: motds.length })}
               </p>
             )}
-            {lineEditor('l1', 'Line 1', 'The first line under your server’s name in the multiplayer list.')}
-            {lineEditor('l2', 'Line 2', 'The second line. The server list shows only two lines.')}
+            {lineEditor('l1', t('Line 1'), t('The first line under your server’s name in the multiplayer list.'))}
+            {lineEditor('l2', t('Line 2'), t('The second line. The server list shows only two lines.'))}
             <div className="inline" style={{ alignItems: 'center' }}>
               <button
                 type="button"
@@ -550,7 +554,7 @@ export default function AdvancedServerList() {
                   setCur(motds.length);
                 }}
               >
-                + add another MOTD
+                {t('+ add another MOTD')}
               </button>
               {motds.length > 1 && (
                 <button
@@ -561,10 +565,10 @@ export default function AdvancedServerList() {
                     setCur(Math.max(0, cur - 1));
                   }}
                 >
-                  remove MOTD {cur + 1}
+                  {t('remove MOTD {n}', { n: cur + 1 })}
                 </button>
               )}
-              <Help label="more MOTDs" text="Add several MOTDs and the plugin shows a random one every time someone refreshes the server list." />
+              <Help label={t('more MOTDs')} text={t('Add several MOTDs and the plugin shows a random one every time someone refreshes the server list.')} />
             </div>
           </TabPanel>
         )}
@@ -572,16 +576,16 @@ export default function AdvancedServerList() {
         {tab === 'count' && (
           <TabPanel idPrefix={P} id="count">
             <div className="field">
-              <span className="field-label">What shows instead of “12/100”</span>
+              <span className="field-label">{t('What shows instead of “12/100”')}</span>
               <Choices
-                label="Player count"
+                label={t('Player count')}
                 value={countMode}
                 onChange={setCountMode}
                 options={[
-                  { id: 'real', title: 'The real player count', detail: 'Normal. Nothing changes.' },
-                  { id: 'numbers', title: 'Different numbers', detail: 'Show your own online or max number, or always look almost full.' },
-                  { id: 'hidden', title: 'Hide it', detail: 'Shows ??? and no hover.' },
-                  { id: 'text', title: 'Your own text', detail: 'E.g. “Maintenance”. The game then shows the server as outdated.' },
+                  { id: 'real', title: t('The real player count'), detail: t('Normal. Nothing changes.') },
+                  { id: 'numbers', title: t('Different numbers'), detail: t('Show your own online or max number, or always look almost full.') },
+                  { id: 'hidden', title: t('Hide it'), detail: t('Shows ??? and no hover.') },
+                  { id: 'text', title: t('Your own text'), detail: t('E.g. “Maintenance”. The game then shows the server as outdated.') },
                 ]}
               />
             </div>
@@ -590,7 +594,7 @@ export default function AdvancedServerList() {
               <div className="sub-box">
                 <div className="opt-row">
                   <span className="opt-label" id="asl-online">
-                    Online players
+                    {t('Online players')}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Segmented
@@ -599,19 +603,19 @@ export default function AdvancedServerList() {
                       onChange={(v) => setOnlineFixed(v === 'fixed')}
                       compact
                       options={[
-                        { value: 'real', label: 'real' },
-                        { value: 'fixed', label: 'fixed number' },
+                        { value: 'real', label: t('real') },
+                        { value: 'fixed', label: t('fixed number') },
                       ]}
                     />
-                    {onlineFixed && <input className="input mono input-num" aria-label="Online players to show" inputMode="numeric" value={onlineAmount} onChange={(e) => setOnlineAmount(e.target.value)} />}
+                    {onlineFixed && <input className="input mono input-num" aria-label={t('Online players to show')} inputMode="numeric" value={onlineAmount} onChange={(e) => setOnlineAmount(e.target.value)} />}
                   </span>
                 </div>
                 <div className="opt-row">
                   <span style={{ display: 'flex', alignItems: 'center' }}>
                     <span className="opt-label" id="asl-max">
-                      Max players
+                      {t('Max players')}
                     </span>
-                    <Help label="max players" text="Only changes what the list shows, not how many can really join. “Online + N” makes the server always look almost full, like 12/13." />
+                    <Help label={t('max players')} text={t('Only changes what the list shows, not how many can really join. “Online + N” makes the server always look almost full, like 12/13.')} />
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <Segmented
@@ -620,15 +624,15 @@ export default function AdvancedServerList() {
                       onChange={setMaxMode}
                       compact
                       options={[
-                        { value: 'real', label: 'real' },
-                        { value: 'fixed', label: 'fixed number' },
-                        { value: 'plus', label: 'online + N' },
+                        { value: 'real', label: t('real') },
+                        { value: 'fixed', label: t('fixed number') },
+                        { value: 'plus', label: t('online + N') },
                       ]}
                     />
                     {maxMode !== 'real' && (
                       <input
                         className="input mono input-num"
-                        aria-label={maxMode === 'plus' ? 'Slots above the online count' : 'Max players to show'}
+                        aria-label={maxMode === 'plus' ? t('Slots above the online count') : t('Max players to show')}
                         inputMode="numeric"
                         value={maxAmount}
                         onChange={(e) => setMaxAmount(e.target.value)}
@@ -645,41 +649,41 @@ export default function AdvancedServerList() {
                 <input
                   ref={refs.text}
                   className="input mono"
-                  aria-label="Text instead of the player count"
+                  aria-label={t('Text instead of the player count')}
                   value={countText}
                   onFocus={() => setActive('text')}
                   onChange={(e) => setCountText(e.target.value)}
                   spellCheck={false}
                 />
                 <Warnings list={basicWarnings(countText)} />
-                <p className="note">Side effect: players see a red crossed-out signal icon, as if your server ran another version. The plugin can’t avoid this.</p>
+                <p className="note">{t('Side effect: players see a red crossed-out signal icon, as if your server ran another version. The plugin can’t avoid this.')}</p>
               </div>
             )}
 
             <hr className="divider" />
 
             {countMode === 'hidden' ? (
-              <p className="note">With the player count hidden there’s no hover box either.</p>
+              <p className="note">{t('With the player count hidden there’s no hover box either.')}</p>
             ) : (
               <div className="field">
-                <span className="field-label">What shows when someone hovers it</span>
+                <span className="field-label">{t('What shows when someone hovers it')}</span>
                 <Choices
-                  label="Hover"
+                  label={t('Hover')}
                   value={hoverMode}
                   onChange={setHoverMode}
                   options={[
-                    { id: 'players', title: 'The list of online players', detail: 'Normal. Nothing changes.' },
-                    { id: 'custom', title: 'Your own lines', detail: 'E.g. your Discord, website or rules.' },
-                    { id: 'none', title: 'Nothing', detail: 'Hovering shows no box at all.' },
+                    { id: 'players', title: t('The list of online players'), detail: t('Normal. Nothing changes.') },
+                    { id: 'custom', title: t('Your own lines'), detail: t('E.g. your Discord, website or rules.') },
+                    { id: 'none', title: t('Nothing'), detail: t('Hovering shows no box at all.') },
                   ]}
                 />
                 {hoverMode === 'custom' && (
                   <div className="sub-box">
-                    <MiniToolbar basic onWrap={wrap} onInsert={insert} placeholders={PLACEHOLDERS} hint="One line in the box per line here." />
+                    <MiniToolbar basic onWrap={wrap} onInsert={insert} placeholders={PLACEHOLDERS} hint={t('One line in the box per line here.')} />
                     <textarea
                       ref={refs.hover}
                       className="textarea mono"
-                      aria-label="Hover lines"
+                      aria-label={t('Hover lines')}
                       style={{ minHeight: 90 }}
                       value={hover}
                       onFocus={() => setActive('hover')}
@@ -697,23 +701,23 @@ export default function AdvancedServerList() {
         {tab === 'icon' && (
           <TabPanel idPrefix={P} id="icon">
             <Choices
-              label="Server icon"
+              label={t('Server icon')}
               value={favMode}
               onChange={setFavMode}
               options={[
-                { id: 'none', title: 'Keep the server’s own icon', detail: 'The server-icon.png you already have, or none.' },
-                { id: 'head', title: 'The head of whoever is looking', detail: 'Every player sees their own head. New players see a default head.' },
-                { id: 'player', title: 'The head of one player', detail: 'E.g. the owner.' },
-                { id: 'file', title: 'An image file', detail: 'A 64×64 .png in plugins/AdvancedServerList/favicons/.' },
-                { id: 'random', title: 'A random image', detail: 'Picks one of the .png files in the favicons folder each time.' },
-                { id: 'url', title: 'An image from a link', detail: 'Any https:// link to a .png.' },
+                { id: 'none', title: t('Keep the server’s own icon'), detail: t('The server-icon.png you already have, or none.') },
+                { id: 'head', title: t('The head of whoever is looking'), detail: t('Every player sees their own head. New players see a default head.') },
+                { id: 'player', title: t('The head of one player'), detail: t('E.g. the owner.') },
+                { id: 'file', title: t('An image file'), detail: t('A 64×64 .png in plugins/AdvancedServerList/favicons/.') },
+                { id: 'random', title: t('A random image'), detail: t('Picks one of the .png files in the favicons folder each time.') },
+                { id: 'url', title: t('An image from a link'), detail: t('Any https:// link to a .png.') },
               ]}
             />
             {(favMode === 'player' || favMode === 'file' || favMode === 'url') && (
               <input
                 className="input mono"
-                aria-label={favMode === 'player' ? 'Player name' : favMode === 'file' ? 'File name' : 'Image link'}
-                placeholder={favMode === 'player' ? 'Notch' : favMode === 'file' ? 'halloween.png' : 'https://example.net/icon.png'}
+                aria-label={favMode === 'player' ? t('Player name') : favMode === 'file' ? t('File name') : t('Image link')}
+                placeholder={favMode === 'player' ? t('Notch') : favMode === 'file' ? t('halloween.png') : 'https://example.net/icon.png'}
                 value={favValue}
                 onChange={(e) => setFavValue(e.target.value)}
                 spellCheck={false}
@@ -725,14 +729,13 @@ export default function AdvancedServerList() {
         {tab === 'who' && (
           <TabPanel idPrefix={P} id="who">
             <p className="note">
-              Most servers need only the “Everyone” profile. For something special, like maintenance, make a second file: it gets a higher priority and shows instead of
-              the main one while its rule is true.
+              {t('Most servers need only the “Everyone” profile. For something special, like maintenance, make a second file: it gets a higher priority and shows instead of the main one while its rule is true.')}
             </p>
-            <Choices label="Who sees this profile" value={audience} onChange={pickAudience} options={AUDIENCES} />
+            <Choices label={t('Who sees this profile')} value={audience} onChange={pickAudience} options={AUDIENCES} />
             {audience === 'old' && (
               <div className="sub-box opt-row">
                 <label className="opt-label" htmlFor="asl-ver">
-                  Older than
+                  {t('Older than')}
                 </label>
                 <select id="asl-ver" className="select mono" value={version} onChange={(e) => setVersion(e.target.value)}>
                   {VERSIONS.map(([v]) => (
@@ -746,7 +749,7 @@ export default function AdvancedServerList() {
             {audience === 'player' && (
               <div className="sub-box opt-row">
                 <label className="opt-label" htmlFor="asl-pname">
-                  Player name
+                  {t('Player name')}
                 </label>
                 <input
                   id="asl-pname"
@@ -763,19 +766,19 @@ export default function AdvancedServerList() {
             {(audience === 'date' || audience === 'after') && (
               <div className="sub-box opt-row">
                 <label className="opt-label" htmlFor="asl-date">
-                  Date
+                  {t('Date')}
                 </label>
                 <input id="asl-date" type="date" className="input mono" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             )}
             <details open={audience === 'custom'}>
               <summary className="mono muted" style={{ cursor: 'pointer', minHeight: 44, display: 'flex', alignItems: 'center' }}>
-                advanced: rule and priority
+                {t('advanced: rule and priority')}
               </summary>
               <div className="fields" style={{ marginTop: 8 }}>
                 <div className="field">
-                  <Label id="asl-priority" help="Higher numbers are checked first. The first profile whose rule is true is shown.">
-                    Priority
+                  <Label id="asl-priority" help={t('Higher numbers are checked first. The first profile whose rule is true is shown.')}>
+                    {t('Priority')}
                   </Label>
                   <input id="asl-priority" className="input mono input-num" inputMode="numeric" value={priority} onChange={(e) => setPriority(e.target.value)} />
                 </div>
@@ -783,15 +786,15 @@ export default function AdvancedServerList() {
               <div className="field" style={{ marginTop: 12 }}>
                 <Label
                   id="asl-cond"
-                  help={'Empty means always. Compare with == != < > <= >=, combine with and / or, negate with !. Text needs quotes: ${player name} == "Steve".'}
+                  help={t('Empty means always. Compare with == != < > <= >=, combine with and / or, negate with !. Text needs quotes: ${player name} == "Steve".')}
                 >
-                  Rule (condition)
+                  {t('Rule (condition)')}
                 </Label>
                 <input
                   id="asl-cond"
                   className="input mono"
                   value={condition}
-                  placeholder="empty = always"
+                  placeholder={t('empty = always')}
                   onChange={(e) => {
                     setAudience('custom');
                     setCustomCond(e.target.value);
@@ -805,13 +808,13 @@ export default function AdvancedServerList() {
       </section>
       <SavedPanel<Partial<Draft>>
         slug="advanced-server-list"
-        title="my profiles"
-        help="Keep profiles (a normal one, maintenance, an event…) and come back to edit them. Saved in this browser."
+        title={t('my profiles')}
+        help={t('Keep profiles (a normal one, maintenance, an event…) and come back to edit them. Saved in this browser.')}
         suggestName={() => fileName}
         getData={() => draft}
         onLoad={restore}
         describe={(i) => `${i.data.fileName ?? 'profile'}.yml · ${i.data.motds?.length ?? 1} MOTD${(i.data.motds?.length ?? 1) > 1 ? 's' : ''} · ${i.data.audience ?? 'everyone'}`}
-        emptyText="No saved profiles yet."
+        emptyText={t('No saved profiles yet.')}
       />
     </Workbench>
   );

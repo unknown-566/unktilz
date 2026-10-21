@@ -2,6 +2,7 @@ import { createStore, get, set } from 'idb-keyval';
 import { SKIN, guessModel, upgradeLegacy, type Model } from '../../../lib/mc/skinLayout';
 import type { Pixels } from '../../../lib/mc/skinOps';
 import { lookupSkin } from '../../../lib/mc/uuid';
+import { t } from '../../../lib/i18n-core';
 
 export type Loaded = { name: string; pixels: Pixels; model: Model; note?: string };
 
@@ -11,12 +12,12 @@ export async function decodeSkin(blob: Blob, name: string, model?: Model): Promi
   try {
     bmp = await createImageBitmap(blob);
   } catch {
-    throw new Error('That file isn’t an image this browser can open. Skins are .png files.');
+    throw new Error(t('That file isn’t an image this browser can open. Skins are .png files.'));
   }
   const { width: w, height: h } = bmp;
   if (w !== SKIN || (h !== SKIN && h !== 32)) {
     bmp.close();
-    throw new Error(`Skins are 64×64 pixels (or the old 64×32). This image is ${w}×${h}.`);
+    throw new Error(t('Skins are 64×64 pixels (or the old 64×32). This image is {w}×{h}.', { w, h }));
   }
   const c = new OffscreenCanvas(w, h);
   const ctx = c.getContext('2d')!;
@@ -29,7 +30,7 @@ export async function decodeSkin(blob: Blob, name: string, model?: Model): Promi
     name,
     pixels,
     model: model ?? (legacy ? 'classic' : guessModel(pixels)),
-    note: legacy ? 'This was an old 64×32 skin. It now has its own left arm and leg (copied from the right ones), like the game does.' : undefined,
+    note: legacy ? t('This was an old 64×32 skin. It now has its own left arm and leg (copied from the right ones), like the game does.') : undefined,
   };
 }
 
@@ -38,11 +39,11 @@ export async function loadPlayer(query: string): Promise<Loaded> {
   try {
     info = await lookupSkin(query);
   } catch (err) {
-    throw err instanceof TypeError ? new Error('Could not reach the lookup service. Check your connection.') : err;
+    throw err instanceof TypeError ? new Error(t('Could not reach the lookup service. Check your connection.')) : err;
   }
-  if (!info) throw new Error(`No Java account named “${query.trim()}”.`);
+  if (!info) throw new Error(t('No Java account named “{v1}”.', { v1: query.trim() }));
   const res = await fetch(info.url).catch(() => null);
-  if (!res?.ok) throw new Error('Found the player, but their skin file wouldn’t download. Try again in a moment.');
+  if (!res?.ok) throw new Error(t('Found the player, but their skin file wouldn’t download. Try again in a moment.'));
   return decodeSkin(await res.blob(), info.name, info.slim ? 'slim' : 'classic');
 }
 

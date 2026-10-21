@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NumberField, Panel, Segmented, Stat, num } from '../../components/ui';
 import { Help } from '../../components/Help';
+import { t } from '../../lib/i18n-core';
 
 type Size = '64' | '16' | '1';
 
@@ -28,15 +29,15 @@ export default function StackCalculator() {
 
   return (
     <>
-      <Panel title="items → storage">
+      <Panel title={t('items → storage')}>
         <div className="inline">
-          <NumberField label="Items" value={items} onChange={setItems} min={0} />
+          <NumberField label={t('Items')} value={items} onChange={setItems} min={0} />
           <div className="field">
             <span style={{ display: 'flex', alignItems: 'center' }}>
               <span className="field-label" id="ss">
-                Stack size
+                {t('Stack size')}
               </span>
-              <Help label="stack size" text="Most items stack to 64. Ender pearls, eggs, snowballs, signs, banners and buckets of snow stack to 16. Tools, armor, potions and most buckets don’t stack (1)." />
+              <Help label={t('stack size')} text={t('Most items stack to 64. Ender pearls, eggs, snowballs, signs, banners and buckets of snow stack to 16. Tools, armor, potions and most buckets don’t stack (1).')} />
             </span>
             <Segmented
               labelledBy="ss"
@@ -52,25 +53,25 @@ export default function StackCalculator() {
           </div>
         </div>
         <div className="stats" aria-live="polite">
-          <Stat label="stacks" value={`${fmt(Math.floor(n / s))}${n % s ? ` + ${n % s}` : ''}`} />
-          <Stat label="shulker boxes" value={(n / perShulker).toFixed(2).replace(/\.00$/, '')} />
-          <Stat label="double chests" value={(n / perDouble).toFixed(2).replace(/\.00$/, '')} />
+          <Stat label={t('stacks')} value={`${fmt(Math.floor(n / s))}${n % s ? ` + ${n % s}` : ''}`} />
+          <Stat label={t('shulker boxes')} value={(n / perShulker).toFixed(2).replace(/\.00$/, '')} />
+          <Stat label={t('double chests')} value={(n / perDouble).toFixed(2).replace(/\.00$/, '')} />
         </div>
         <p className="note" style={{ color: 'var(--fg)' }}>
-          {parts.length ? parts.join(' + ') : 'nothing'}
+          {parts.length ? parts.join(' + ') : t('nothing')}
         </p>
       </Panel>
 
-      <Panel title="storage → items">
+      <Panel title={t('storage → items')}>
         <div className="fields">
-          <NumberField label="Shulker boxes" value={shulkers} onChange={setShulkers} min={0} />
-          <NumberField label="Stacks" value={stacks} onChange={setStacks} min={0} />
-          <NumberField label="Loose items" value={loose} onChange={setLoose} min={0} />
+          <NumberField label={t('Shulker boxes')} value={shulkers} onChange={setShulkers} min={0} />
+          <NumberField label={t('Stacks')} value={stacks} onChange={setStacks} min={0} />
+          <NumberField label={t('Loose items')} value={loose} onChange={setLoose} min={0} />
         </div>
         <div className="stats" aria-live="polite">
-          <Stat label="items" value={fmt(back)} />
+          <Stat label={t('items')} value={fmt(back)} />
         </div>
-        <p className="note">A shulker box and a single chest hold 27 slots; a double chest holds 54.</p>
+        <p className="note">{t('A shulker box and a single chest hold 27 slots; a double chest holds 54.')}</p>
       </Panel>
     </>
   );

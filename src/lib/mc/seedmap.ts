@@ -109,7 +109,7 @@ export class SeedMapEngine {
       for (let i = 0; i < this.jobs.length; i++) {
         const p = this.jobs[i].priority();
         if (p === null) {
-          this.jobs[i].reject(new Error('cancelled'));
+          this.jobs[i].reject(new Error('cancelled') /* i18n-ignore */);
           this.jobs.splice(i--, 1);
         } else if (p < bestP) {
           bestP = p;
@@ -155,7 +155,7 @@ export class SeedMapEngine {
 
   /** Drops everything still waiting (e.g. the seed changed). */
   clear() {
-    for (const j of this.jobs) j.reject(new Error('cancelled'));
+    for (const j of this.jobs) j.reject(new Error('cancelled') /* i18n-ignore */);
     this.jobs = [];
   }
 

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
 import { layerBoxes, pickLayer, snapAngle, snapCenter, type Layer, type LayerBox, type StickerAnim } from './compose';
 import { duplicate } from './Layers';
+import { t } from '../../../lib/i18n-core';
 
 type Drag =
   | { kind: 'move'; id: string; p0: P; c0: P }
@@ -168,7 +169,7 @@ export function Stage({
       onPointerUp={up}
       onPointerCancel={up}
       onKeyDown={key}
-      aria-label="GIF preview. Click a text or sticker to select it; drag to move, corners to resize, the round handle to turn."
+      aria-label={t('GIF preview. Click a text or sticker to select it; drag to move, corners to resize, the round handle to turn.')}
     >
       <canvas ref={canvas} className="gm-canvas" width={W} height={H} />
       <svg className="gm-handles" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">

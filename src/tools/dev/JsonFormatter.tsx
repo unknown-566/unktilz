@@ -3,6 +3,7 @@ import { CopyButton, Panel, Segmented, Toggle } from '../../components/ui';
 import { saveBlob } from '../../queue/download';
 import { Workbench } from '../../components/Workbench';
 import { Help } from '../../components/Help';
+import { fmtNum, t } from '../../lib/i18n-core';
 
 type Indent = '2' | '4' | 'tab' | 'min';
 
@@ -136,7 +137,7 @@ export default function JsonFormatter() {
   const status = (
     <div id="json-status" role="status">
       {result.ok ? (
-        input.trim() && <span className="note accent mono">✓ valid JSON</span>
+        input.trim() && <span className="note accent mono">{t('✓ valid JSON')}</span>
       ) : (
         <p className="error-text">
           {result.msg}
@@ -144,7 +145,7 @@ export default function JsonFormatter() {
             <>
               {' '}
               <button type="button" className="btn btn-sm mono" onClick={jump}>
-                go to line {result.at.line}:{result.at.col}
+                {t('go to line {line}:{col}', { line: result.at.line, col: result.at.col })}
               </button>
             </>
           )}
@@ -158,13 +159,13 @@ export default function JsonFormatter() {
 
   const output = (
     <Panel
-      title="output"
+      title={t('output')}
       actions={
         result.ok && result.out ? (
           <div className="seg">
             <CopyButton text={result.out} />
             <button type="button" className="btn btn-sm mono" onClick={() => saveBlob(new Blob([result.out], { type: 'application/json' }), 'formatted.json')}>
-              download
+              {t('download')}
             </button>
           </div>
         ) : undefined
@@ -176,22 +177,22 @@ export default function JsonFormatter() {
             {result.out}
           </pre>
           <p className="note mono">
-            {result.out.length.toLocaleString('en-US')} chars · {input.length.toLocaleString('en-US')} in
+            {t('{out} chars · {in} in', { out: fmtNum(result.out.length), in: fmtNum(input.length) })}
           </p>
         </>
       ) : (
-        <p className="note">{result.ok ? 'Paste JSON on the left.' : 'Fix the error on the left to see the output.'}</p>
+        <p className="note">{result.ok ? t('Paste JSON on the left.') : t('Fix the error on the left to see the output.')}</p>
       )}
     </Panel>
   );
 
   return (
     <>
-      <section className="panel" aria-label="Options">
+      <section className="panel" aria-label={t('Options')}>
         <div className="inline" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <div className="inline" style={{ alignItems: 'center' }}>
             <span className="opt-label" id="ind">
-              Indent
+              {t('Indent')}
             </span>
             <Segmented
               labelledBy="ind"
@@ -201,16 +202,16 @@ export default function JsonFormatter() {
               options={[
                 { value: '2', label: '2' },
                 { value: '4', label: '4' },
-                { value: 'tab', label: 'tab' },
-                { value: 'min', label: 'minify' },
+                { value: 'tab', label: t('tab') },
+                { value: 'min', label: t('minify') },
               ]}
             />
           </div>
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="opt-label" id="sortk">
-              Sort keys
+              {t('Sort keys')}
             </span>
-            <Help label="sort keys" text="Puts the keys of every object in alphabetical order, at every level. Handy for comparing two JSON files." />
+            <Help label={t('sort keys')} text={t('Puts the keys of every object in alphabetical order, at every level. Handy for comparing two JSON files.')} />
             <Toggle labelledBy="sortk" checked={sort} onChange={setSort} />
           </span>
         </div>
@@ -218,7 +219,7 @@ export default function JsonFormatter() {
       </section>
 
       <Workbench preview={output}>
-        <section className="panel" aria-label="Input">
+        <section className="panel" aria-label={t('Input')}>
           <div className="field">
             <label htmlFor="json-in">JSON</label>
             <textarea

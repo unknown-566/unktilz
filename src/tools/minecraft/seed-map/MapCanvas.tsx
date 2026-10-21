@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { SREGION, STRUCTURES, STRUCTURE_ICONS, TILE, scaleFor, worldKey, type SeedMapEngine, type World } from '../../../lib/mc/seedmap';
 import type { TileResult } from '../../../workers/seedmap.worker';
+import { t } from '../../../lib/i18n-core';
 
 export type View = { x: number; z: number; bpp: number };
 /** A spot on the map; `sx`/`sy` is where it is on screen (for the hover label). */
@@ -95,12 +96,12 @@ export function MapCanvas(p: Props) {
         const Y0 = Math.floor(sy(tz * T));
         const X1 = Math.floor(sx((tx + 1) * T));
         const Y1 = Math.floor(sy((tz + 1) * T));
-        const t = tiles.current.get(`${s}:${tx}:${tz}`);
-        if (t && t !== 'loading') {
-          g.drawImage(t.bitmap, X0, Y0, X1 - X0, Y1 - Y0);
+        const tt = tiles.current.get(`${s}:${tx}:${tz}`);
+        if (tt && tt !== 'loading') {
+          g.drawImage(tt.bitmap, X0, Y0, X1 - X0, Y1 - Y0);
           continue;
         }
-        if (!t) request(s, tx, tz);
+        if (!tt) request(s, tx, tz);
         // Until it arrives, stretch a coarser tile that's already here.
         for (let s2 = s * 4; s2 <= 256; s2 *= 4) {
           const T2 = TILE * s2;
@@ -269,9 +270,9 @@ export function MapCanvas(p: Props) {
     const T = TILE * s;
     props.current.engine
       .tile(props.current.world, s, tx, tz, () => (keyRef.current !== wk || scaleFor(view.current.bpp) !== s ? null : near(tx * T, tz * T, T)))
-      .then((t) => {
-        if (keyRef.current !== wk) return t.bitmap.close();
-        tiles.current.set(k, t);
+      .then((tt) => {
+        if (keyRef.current !== wk) return tt.bitmap.close();
+        tiles.current.set(k, tt);
         trim();
         redraw();
         biomesSoon();
@@ -308,15 +309,15 @@ export function MapCanvas(p: Props) {
     if (m.size <= 400) return;
     const { x, z } = view.current;
     const ranked = [...m.entries()]
-      .filter(([, t]) => t !== 'loading')
-      .map(([k, t]) => {
+      .filter(([, tt]) => tt !== 'loading')
+      .map(([k, tt]) => {
         const [s, tx, tz] = k.split(':').map(Number);
         const T = TILE * s;
-        return { k, t, d: Math.hypot(tx * T + T / 2 - x, tz * T + T / 2 - z) / T };
+        return { k, tt, d: Math.hypot(tx * T + T / 2 - x, tz * T + T / 2 - z) / T };
       })
       .sort((a, b) => b.d - a.d);
     for (const r of ranked.slice(0, m.size - 300)) {
-      (r.t as TileResult).bitmap.close();
+      (r.tt as TileResult).bitmap.close();
       m.delete(r.k);
     }
   };
@@ -339,13 +340,13 @@ export function MapCanvas(p: Props) {
       const T = TILE * s;
       for (let tz = Math.floor(top / T); tz <= Math.floor(bottom / T); tz++)
         for (let tx = Math.floor(left / T); tx <= Math.floor(right / T); tx++) {
-          const t = tiles.current.get(`${s}:${tx}:${tz}`);
-          if (!t || t === 'loading') continue;
+          const tt = tiles.current.get(`${s}:${tx}:${tz}`);
+          if (!tt || tt === 'loading') continue;
           const lx0 = Math.max(0, Math.floor((left - tx * T) / s));
           const lz0 = Math.max(0, Math.floor((top - tz * T) / s));
           const lx1 = Math.min(TILE, Math.ceil((right - tx * T) / s));
           const lz1 = Math.min(TILE, Math.ceil((bottom - tz * T) / s));
-          for (let lz = lz0; lz < lz1; lz++) for (let lx = lx0; lx < lx1; lx++) seen[t.ids[lz * TILE + lx]]++;
+          for (let lz = lz0; lz < lz1; lz++) for (let lx = lx0; lx < lx1; lx++) seen[tt.ids[lz * TILE + lx]]++;
         }
       const ids = [...seen.keys()].filter((i) => seen[i] > 0).sort((a, b) => seen[b] - seen[a]);
       props.current.onBiomesInView(ids);
@@ -394,8 +395,8 @@ export function MapCanvas(p: Props) {
       const T = TILE * s;
       const tx = Math.floor(bx / T);
       const tz = Math.floor(bz / T);
-      const t = tiles.current.get(`${s}:${tx}:${tz}`);
-      if (t && t !== 'loading') biome = t.ids[Math.floor((bz - tz * T) / s) * TILE + Math.floor((bx - tx * T) / s)];
+      const tt = tiles.current.get(`${s}:${tx}:${tz}`);
+      if (tt && tt !== 'loading') biome = tt.ids[Math.floor((bz - tz * T) / s) * TILE + Math.floor((bx - tx * T) / s)];
     }
     return { x: bx, z: bz, biome };
   };
@@ -411,7 +412,7 @@ export function MapCanvas(p: Props) {
   // New world: forget everything.
   useEffect(() => {
     keyRef.current = key;
-    for (const t of tiles.current.values()) if (t !== 'loading') t.bitmap.close();
+    for (const tt of tiles.current.values()) if (tt !== 'loading') tt.bitmap.close();
     tiles.current.clear();
     structs.current.clear();
     props.current.engine.clear();
@@ -506,14 +507,14 @@ export function MapCanvas(p: Props) {
       c.removeEventListener('pointercancel', up);
       c.removeEventListener('pointerleave', leave);
       c.removeEventListener('wheel', wheel);
-      for (const t of tiles.current.values()) if (t !== 'loading') t.bitmap.close();
+      for (const tt of tiles.current.values()) if (tt !== 'loading') tt.bitmap.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div ref={box} className="sm-map">
-      <canvas ref={cv} role="img" aria-label="Biome map. Drag to move, scroll to zoom, click for coordinates." />
+      <canvas ref={cv} role="img" aria-label={t('Biome map. Drag to move, scroll to zoom, click for coordinates.')} />
     </div>
   );
 }

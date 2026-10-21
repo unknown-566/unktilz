@@ -8,6 +8,7 @@ import type { MetaResult } from '../../../workers/seedmap.worker';
 import { MAX_BPP, MIN_BPP, MapCanvas, type Command, type Pick, type Pin, type View } from './MapCanvas';
 import { SavedPanel } from '../../../components/SavedPanel';
 import { useAutosave, useSaved } from '../../../lib/saved';
+import { t } from '../../../lib/i18n-core';
 
 type SavedSeed = { seed: string; version: string; large: boolean };
 type Place = SavedSeed & { x: number; y?: number; z: number };
@@ -29,12 +30,12 @@ async function copyText(text: string) {
   try {
     await navigator.clipboard.writeText(text);
   } catch {
-    const t = document.createElement('textarea');
-    t.value = text;
-    document.body.appendChild(t);
-    t.select();
+    const tt = document.createElement('textarea');
+    tt.value = text;
+    document.body.appendChild(tt);
+    tt.select();
     document.execCommand('copy');
-    t.remove();
+    tt.remove();
   }
 }
 
@@ -139,12 +140,12 @@ export default function SeedMap() {
 
   // Keep the address shareable: seed, version and where you're looking.
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       const next: Record<string, string> = { seed: world.seed, v: version, x: String(Math.round(view.x)), z: String(Math.round(view.z)), zoom: Math.log2(view.bpp).toFixed(2) };
       if (large) next.large = '1';
       setParams(next, { replace: true });
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [world.seed, version, large, view, setParams]);
 
   useEffect(() => setSelected(null), [world.seed, version, large]);
@@ -160,7 +161,7 @@ export default function SeedMap() {
     const key = hKey(p);
     const v = heights.current.get(key);
     if (typeof v === 'number') return Promise.resolve(v);
-    if (!engine) return Promise.reject(new Error('not ready'));
+    if (!engine) return Promise.reject(new Error(t('not ready')));
     heights.current.set(key, 'loading');
     return engine.standY(world, p.x, p.z).then(
       (y) => {
@@ -180,7 +181,7 @@ export default function SeedMap() {
     () => places.filter((p) => p.data.seed === world.seed && p.data.version === version && !!p.data.large === large).map((p) => ({ x: p.data.x, z: p.data.z, name: p.name })),
     [places, world.seed, version, large],
   );
-  const placeName = (p: Pick) => (p.pin ? p.pin : p.spawn ? 'World spawn' : p.structure !== undefined ? STRUCTURES[p.structure].name : 'Place');
+  const placeName = (p: Pick) => (p.pin ? p.pin : p.spawn ? t('World spawn') : p.structure !== undefined ? STRUCTURES[p.structure].name : t('Place'));
   // Work out the Y of a structure as soon as it's hovered, so the label can show it.
   useEffect(() => {
     if (hover && isPlace(hover) && !heights.current.has(hKey(hover))) standY(hover).catch(() => {});
@@ -192,8 +193,8 @@ export default function SeedMap() {
   }, [selected, engine, world]);
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(''), 2500);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setToast(''), 2500);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   /** Clicking a structure (or the spawn) copies its coordinates as "X Y Z". */
@@ -203,7 +204,7 @@ export default function SeedMap() {
     standY(p)
       .then((y) => `${p.x} ${y} ${p.z}`)
       .catch(() => `${p.x} ~ ${p.z}`)
-      .then((text) => copyText(text).then(() => setToast(`Copied ${text}`)));
+      .then((text) => copyText(text).then(() => setToast(t('Copied {text}', { text }))));
   };
   const coords = (p: { x: number; z: number }) => `${p.x} ${yOf(p) ?? '…'} ${p.z}`;
 
@@ -279,17 +280,17 @@ export default function SeedMap() {
       ) : (
         <div className="sm-map" />
       )}
-      <div className="sm-ctrl" role="group" aria-label="Map controls">
-        <button type="button" className="btn btn-sm" aria-label="Zoom in" onClick={() => setCommand({ n: Date.now(), kind: 'zoom', factor: 0.5 })}>
+      <div className="sm-ctrl" role="group" aria-label={t('Map controls')}>
+        <button type="button" className="btn btn-sm" aria-label={t('Zoom in')} onClick={() => setCommand({ n: Date.now(), kind: 'zoom', factor: 0.5 })}>
           +
         </button>
-        <button type="button" className="btn btn-sm" aria-label="Zoom out" onClick={() => setCommand({ n: Date.now(), kind: 'zoom', factor: 2 })}>
+        <button type="button" className="btn btn-sm" aria-label={t('Zoom out')} onClick={() => setCommand({ n: Date.now(), kind: 'zoom', factor: 2 })}>
           −
         </button>
-        <button type="button" className="btn btn-sm" title="Back to 0, 0" aria-label="Back to 0, 0" onClick={() => setCommand({ n: Date.now(), kind: 'goto', x: 0, z: 0 })}>
+        <button type="button" className="btn btn-sm" title={t('Back to 0, 0')} aria-label={t('Back to 0, 0')} onClick={() => setCommand({ n: Date.now(), kind: 'goto', x: 0, z: 0 })}>
           ⌂
         </button>
-        <button type="button" className="btn btn-sm" title={full ? 'Leave full screen (Esc)' : 'Full screen'} aria-label={full ? 'Leave full screen' : 'Full screen'} aria-pressed={full} onClick={toggleFull}>
+        <button type="button" className="btn btn-sm" title={full ? t('Leave full screen (Esc)') : t('Full screen')} aria-label={full ? t('Leave full screen') : t('Full screen')} aria-pressed={full} onClick={toggleFull}>
           {full ? '⤡' : '⤢'}
         </button>
       </div>
@@ -312,9 +313,9 @@ export default function SeedMap() {
       </div>
       <div className="sm-scale mono" aria-hidden="true">
         <span style={{ width: bar.px }} />
-        {fmt(bar.blocks)} blocks
+        {t('{n} blocks', { n: fmt(bar.blocks) })}
       </div>
-      {hiddenByZoom && <div className="sm-zoomnote mono">zoom in to see all structures</div>}
+      {hiddenByZoom && <div className="sm-zoomnote mono">{t('zoom in to see all structures')}</div>}
       {toast && (
         <div className="sm-toast mono" role="status">
           {toast}
@@ -324,23 +325,23 @@ export default function SeedMap() {
   );
 
   const sel = selected && (
-    <section className="panel sm-sel" aria-label="Selected spot">
+    <section className="panel sm-sel" aria-label={t('Selected spot')}>
       <div className="opt-row">
-        <h2 className="panel-title">// {isPlace(selected) ? placeName(selected).toLowerCase() : 'spot'}</h2>
+        <h2 className="panel-title">// {isPlace(selected) ? placeName(selected).toLowerCase() : t('spot')}</h2>
         <button type="button" className="btn btn-sm" onClick={() => setSelected(null)}>
-          close
+          {t('close')}
         </button>
       </div>
       <p className="mono sm-coords">
         {coords(selected)} <span className="muted">· {name(selected.biome)}</span>
       </p>
       <div className="seg">
-        <CopyButton text={`${selected.x} ${yOf(selected) ?? '~'} ${selected.z}`} label="copy X Y Z" />
-        <CopyButton text={`/tp @s ${selected.x} ${yOf(selected) ?? '~'} ${selected.z}`} label="copy /tp command" />
+        <CopyButton text={`${selected.x} ${yOf(selected) ?? '~'} ${selected.z}`} label={t('copy X Y Z')} />
+        <CopyButton text={`/tp @s ${selected.x} ${yOf(selected) ?? '~'} ${selected.z}`} label={t('copy /tp command')} />
       </div>
       <p className="note">
-        Y is where you’d stand: the ground there, or the water surface over the sea.
-        {selected.structure !== undefined && ' The position is where the structure starts generating; the buildings spread out around it, and underground ones (ancient cities, trial chambers) are below this.'}
+        {t('Y is where you’d stand: the ground there, or the water surface over the sea.')}
+        {selected.structure !== undefined && ` ${t('The position is where the structure starts generating; the buildings spread out around it, and underground ones (ancient cities, trial chambers) are below this.')}`}
       </p>
     </section>
   );
@@ -348,13 +349,13 @@ export default function SeedMap() {
   return (
     <div className="sm">
       <div className="sm-side">
-        <section className="panel" aria-label="World">
+        <section className="panel" aria-label={t('World')}>
           <div className="field">
             <span style={{ display: 'flex', alignItems: 'center' }}>
               <label htmlFor={seedId} className="field-label">
-                World seed
+                {t('World seed')}
               </label>
-              <Help label="World seed" text="Type /seed in the game to see it (needs cheats or operator). Words work too: the game turns a text seed into a number the same way." />
+              <Help label={t('World seed')} text={t('Type /seed in the game to see it (needs cheats or operator). Words work too: the game turns a text seed into a number the same way.')} />
             </span>
             <div className="inline">
               <input
@@ -364,10 +365,10 @@ export default function SeedMap() {
                 onChange={(e) => setSeedText(e.target.value)}
                 spellCheck={false}
                 autoComplete="off"
-                placeholder="e.g. -4172144997902289642"
+                placeholder={t('e.g. -4172144997902289642')}
               />
-              <button type="button" className="btn" title="Random seed" onClick={() => setSeedText(randomSeed())}>
-                random
+              <button type="button" className="btn" title={t('Random seed')} onClick={() => setSeedText(randomSeed())}>
+                {t('random')}
               </button>
             </div>
             {seed !== null && String(seed) !== seedText.trim() && <span className="note mono">= {String(seed)}</span>}
@@ -375,11 +376,11 @@ export default function SeedMap() {
           <div className="field">
             <span style={{ display: 'flex', alignItems: 'center' }}>
               <label htmlFor={verId} className="field-label">
-                Minecraft version
+                {t('Minecraft version')}
               </label>
               <Help
-                label="Minecraft version"
-                text="Java Edition. World generation changes between versions, so the same seed can give a different world: 1.18 rebuilt it completely, and newer drops add biomes and structures (pale garden, sulfur caves, dappled forest, abandoned camps). Pick the version the world was created in."
+                label={t('Minecraft version')}
+                text={t('Java Edition. World generation changes between versions, so the same seed can give a different world: 1.18 rebuilt it completely, and newer drops add biomes and structures (pale garden, sulfur caves, dappled forest, abandoned camps). Pick the version the world was created in.')}
               />
             </span>
             <select id={verId} className="select mono" value={version} onChange={(e) => setVersion(e.target.value)}>
@@ -393,33 +394,33 @@ export default function SeedMap() {
           <div className="opt-row">
             <span style={{ display: 'flex', alignItems: 'center' }}>
               <span className="opt-label" id="sm-large">
-                Large biomes
+                {t('Large biomes')}
               </span>
-              <Help label="Large biomes" text="Only if the world was created with the “Large Biomes” world type." />
+              <Help label={t('Large biomes')} text={t('Only if the world was created with the “Large Biomes” world type.')} />
             </span>
             <Toggle labelledBy="sm-large" checked={large} onChange={setLarge} />
           </div>
           <form className="field" onSubmit={go}>
-            <span className="field-label">Go to</span>
+            <span className="field-label">{t('Go to')}</span>
             <div className="inline sm-goto">
               <input className="input mono" aria-label="X" placeholder="X" inputMode="numeric" value={gx} onChange={(e) => setGx(e.target.value)} />
               <input className="input mono" aria-label="Z" placeholder="Z" inputMode="numeric" value={gz} onChange={(e) => setGz(e.target.value)} />
               <button type="submit" className="btn">
-                go
+                {t('go')}
               </button>
             </div>
           </form>
         </section>
 
-        <section className="panel" aria-label="Structures">
+        <section className="panel" aria-label={t('Structures')}>
           <div className="opt-row">
-            <h2 className="panel-title">// structures</h2>
+            <h2 className="panel-title">{t('// structures')}</h2>
             <span className="seg">
               <button type="button" className="btn btn-sm" onClick={() => setEnabled(STRUCTURES.map(() => true))}>
-                all
+                {t('all')}
               </button>
               <button type="button" className="btn btn-sm" onClick={() => setEnabled(STRUCTURES.map(() => false))}>
-                none
+                {t('none')}
               </button>
             </span>
           </div>
@@ -429,12 +430,12 @@ export default function SeedMap() {
               <span className="sm-spawn-icon" aria-hidden="true">
                 +
               </span>
-              <span>World spawn</span>
+              <span>{t('World spawn')}</span>
             </label>
             {STRUCTURES.map((s, i) => {
               const ok = inVersion(i, version);
               return (
-                <label key={s.key} className={`sm-struct${ok ? '' : ' off'}`} title={ok ? undefined : 'Not in this version'}>
+                <label key={s.key} className={`sm-struct${ok ? '' : ' off'}`} title={ok ? undefined : t('Not in this version')}>
                   <input type="checkbox" checked={enabled[i] && ok} disabled={!ok} onChange={(e) => setEnabled(enabled.map((v, j) => (j === i ? e.target.checked : v)))} />
                   <StructIcon i={i} />
                   <span>{s.name}</span>
@@ -442,25 +443,25 @@ export default function SeedMap() {
               );
             })}
           </div>
-          <p className="note">Only spots where the structure really generates are shown. Desert and jungle temples and mansions can rarely be missing in-game when the ground there is too uneven.</p>
+          <p className="note">{t('Only spots where the structure really generates are shown. Desert and jungle temples and mansions can rarely be missing in-game when the ground there is too uneven.')}</p>
         </section>
 
         <SavedPanel<SavedSeed>
           slug="seed-map"
-          title="my seeds"
-          help="Seeds you want to come back to, with their version."
+          title={t('my seeds')}
+          help={t('Seeds you want to come back to, with their version.')}
           suggestName={() => seedText.trim()}
           getData={() => (seed === null ? null : current)}
           onLoad={openSeed}
-          describe={(i) => `${VERSIONS.find((v) => v.id === i.data.version)?.label ?? i.data.version}${i.data.large ? ' · large biomes' : ''}`}
-          emptyText="No saved seeds yet."
+          describe={(i) => `${VERSIONS.find((v) => v.id === i.data.version)?.label ?? i.data.version}${i.data.large ? ` · ${t('large biomes')}` : ''}`}
+          emptyText={t('No saved seeds yet.')}
         />
         <SavedPanel<Place>
           slug="seed-map:places"
-          title="my places"
-          help="Click a spot or structure on the map, then save it here. Saved places show as white pins on the map; click one in the list to fly there."
-          saveLabel="save place"
-          loadLabel="Go to"
+          title={t('my places')}
+          help={t('Click a spot or structure on the map, then save it here. Saved places show as white pins on the map; click one in the list to fly there.')}
+          saveLabel={t('save place')}
+          loadLabel={t('Go to')}
           undoable={false}
           suggestName={() => (selected ? placeName(selected) : '')}
           getData={() => (selected ? { ...current, seed: world.seed, x: selected.x, y: yOf(selected), z: selected.z } : null)}
@@ -470,11 +471,11 @@ export default function SeedMap() {
             setSelected({ x: d.x, z: d.z, biome: null });
           }}
           describe={(i) => `${i.data.x} ${i.data.y ?? '~'} ${i.data.z}${i.data.seed === world.seed ? '' : ` · seed ${i.data.seed}`}`}
-          emptyText="No saved places. Click a spot on the map first."
+          emptyText={t('No saved places. Click a spot on the map first.')}
         />
         {inView.length > 0 && (
-          <section className="panel" aria-label="Biomes on the map">
-            <h2 className="panel-title">// biomes in view</h2>
+          <section className="panel" aria-label={t('Biomes on the map')}>
+            <h2 className="panel-title">{t('// biomes in view')}</h2>
             <ul className="sm-legend">
               {inView.slice(0, 24).map((id) => (
                 <li key={id}>

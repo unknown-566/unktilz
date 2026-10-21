@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Help } from './Help';
+import { t } from '../lib/i18n-core';
 
 export function Panel({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
   const id = useId();
@@ -28,7 +29,7 @@ export function Tabs<T extends string>({
 }: {
   tabs: TabDef<T>[];
   value: T;
-  onChange: (t: T) => void;
+  onChange: (tt: T) => void;
   label: string;
   idPrefix: string;
 }) {
@@ -40,20 +41,20 @@ export function Tabs<T extends string>({
   };
   return (
     <div className="tabs" role="tablist" aria-label={label}>
-      {tabs.map((t, i) => (
+      {tabs.map((tab, i) => (
         <button
-          key={t.id}
+          key={tab.id}
           ref={(el) => {
             refs.current[i] = el;
           }}
           type="button"
           role="tab"
           className="tab"
-          id={`${idPrefix}-tab-${t.id}`}
-          aria-selected={t.id === value}
-          aria-controls={`${idPrefix}-panel-${t.id}`}
-          tabIndex={t.id === value ? 0 : -1}
-          onClick={() => onChange(t.id)}
+          id={`${idPrefix}-tab-${tab.id}`}
+          aria-selected={tab.id === value}
+          aria-controls={`${idPrefix}-panel-${tab.id}`}
+          tabIndex={tab.id === value ? 0 : -1}
+          onClick={() => onChange(tab.id)}
           onKeyDown={(e) => {
             if (e.key === 'ArrowRight') move(i + 1);
             else if (e.key === 'ArrowLeft') move(i - 1);
@@ -63,8 +64,8 @@ export function Tabs<T extends string>({
             e.preventDefault();
           }}
         >
-          {t.label}
-          {t.dot && <span className="tab-dot" aria-label="(changed)"> ●</span>}
+          {tab.label}
+          {tab.dot && <span className="tab-dot" aria-label={t('(changed)')}> ●</span>}
         </button>
       ))}
     </div>
@@ -129,12 +130,12 @@ export function useCopy() {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      const t = document.createElement('textarea');
-      t.value = text;
-      document.body.appendChild(t);
-      t.select();
+      const tt = document.createElement('textarea');
+      tt.value = text;
+      document.body.appendChild(tt);
+      tt.select();
       document.execCommand('copy');
-      t.remove();
+      tt.remove();
     }
     setCopied(true);
     clearTimeout(timer.current);
@@ -143,11 +144,11 @@ export function useCopy() {
   return { copied, copy };
 }
 
-export function CopyButton({ text, label = 'copy', small = true }: { text: string; label?: string; small?: boolean }) {
+export function CopyButton({ text, label = t('copy'), small = true }: { text: string; label?: string; small?: boolean }) {
   const { copied, copy } = useCopy();
   return (
     <button type="button" className={`btn mono${small ? ' btn-sm' : ''}`} onClick={() => copy(text)} disabled={!text} aria-live="polite">
-      {copied ? 'copied' : label}
+      {copied ? t('copied') : label}
     </button>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NumberField, Panel, Stat, num } from '../../components/ui';
+import { t } from '../../lib/i18n-core';
 
 /** Total points needed to reach `level` from 0 (Java 1.8+). */
 export function pointsForLevel(level: number) {
@@ -38,28 +39,28 @@ export default function XpCalculator() {
 
   return (
     <>
-      <Panel title="levels → points">
+      <Panel title={t('levels → points')}>
         <div className="fields">
-          <NumberField label="From level" value={from} onChange={setFrom} min={0} />
-          <NumberField label="To level" value={to} onChange={setTo} min={0} />
+          <NumberField label={t('From level')} value={from} onChange={setFrom} min={0} />
+          <NumberField label={t('To level')} value={to} onChange={setTo} min={0} />
         </div>
         <div className="stats" aria-live="polite">
-          <Stat label="points needed" value={fmt(cost)} />
-          <Stat label={`total at level ${Math.max(a, b)}`} value={fmt(pointsForLevel(Math.max(a, b)))} />
-          <Stat label="bottles o’ enchanting" value={`~${fmt(cost / 7)}`} />
+          <Stat label={t('points needed')} value={fmt(cost)} />
+          <Stat label={t('total at level {v1}', { v1: Math.max(a, b) })} value={fmt(pointsForLevel(Math.max(a, b)))} />
+          <Stat label={t('bottles o’ enchanting')} value={`~${fmt(cost / 7)}`} />
         </div>
       </Panel>
 
-      <Panel title="points → level">
+      <Panel title={t('points → level')}>
         <div className="fields">
-          <NumberField label="Experience points" value={points} onChange={setPoints} min={0} />
+          <NumberField label={t('Experience points')} value={points} onChange={setPoints} min={0} />
         </div>
         <div className="stats" aria-live="polite">
-          <Stat label="level" value={lv.level} />
-          <Stat label="into next level" value={`${fmt(lv.into)} / ${fmt(lv.next)}`} />
-          <Stat label="bar" value={`${Math.floor((lv.into / lv.next) * 100)}%`} />
+          <Stat label={t('level')} value={lv.level} />
+          <Stat label={t('into next level')} value={`${fmt(lv.into)} / ${fmt(lv.next)}`} />
+          <Stat label={t('bar')} value={`${Math.floor((lv.into / lv.next) * 100)}%`} />
         </div>
-        <p className="note">Bottles drop 3–11 points each (7 on average). Dying keeps 7 × your level in orbs, at most 100 points.</p>
+        <p className="note">{t('Bottles drop 3–11 points each (7 on average). Dying keeps 7 × your level in orbs, at most 100 points.')}</p>
       </Panel>
     </>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { fmtNum, t } from '../../../lib/i18n-core';
 
 const GAP = 0.1;
-const round = (t: number) => Math.round(t * 10) / 10;
+const round = (tt: number) => Math.round(tt * 10) / 10;
 
 /**
  * When a layer shows, as a bar over the whole GIF with two handles (drag the middle to move both).
@@ -33,11 +34,11 @@ export function ShowRange({
     return () => clearInterval(id);
   }, [now, duration]);
 
-  if (duration <= 0) return <p className="note">Add a video or photos first.</p>;
+  if (duration <= 0) return <p className="note">{t('Add a video or photos first.')}</p>;
 
   const a = Math.min(from ?? 0, duration - GAP);
   const b = Math.max(Math.min(to ?? duration, duration), a + GAP);
-  const pct = (t: number) => `${(t / duration) * 100}%`;
+  const pct = (tt: number) => `${(tt / duration) * 100}%`;
 
   const set = (na: number, nb: number, what: 'from' | 'to' | 'both') => {
     if (what === 'both') {
@@ -74,9 +75,9 @@ export function ShowRange({
   const jump = (ev: PointerEvent) => {
     const el = bar.current;
     if (!el || drag.current) return;
-    const t = ((ev.clientX - el.getBoundingClientRect().left) / el.clientWidth) * duration;
-    if (Math.abs(t - a) < Math.abs(t - b)) set(t, b, 'from');
-    else set(a, t, 'to');
+    const tt = ((ev.clientX - el.getBoundingClientRect().left) / el.clientWidth) * duration;
+    if (Math.abs(tt - a) < Math.abs(tt - b)) set(tt, b, 'from');
+    else set(a, tt, 'to');
   };
   const keys = (what: 'from' | 'to') => (e: KeyboardEvent) => {
     const step = (e.shiftKey ? 1 : GAP) * (e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0);
@@ -91,15 +92,15 @@ export function ShowRange({
     <div className="gm-show">
       <div ref={bar} className="gm-show-bar" onPointerDown={jump} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         {now && <div ref={head} className="gm-show-now" aria-hidden="true" />}
-        <div className="gm-show-fill" style={{ left: pct(a), width: pct(b - a) }} onPointerDown={down('both')} title="Drag to move when it shows" />
+        <div className="gm-show-fill" style={{ left: pct(a), width: pct(b - a) }} onPointerDown={down('both')} title={t('Drag to move when it shows')} />
         {[
-          ['from', a, 'Shows from'],
-          ['to', b, 'Shows until'],
-        ].map(([what, t, label]) => (
+          ['from', a, t('Shows from')],
+          ['to', b, t('Shows until')],
+        ].map(([what, at, label]) => (
           <div
             key={what as string}
             className="gm-show-handle"
-            style={{ left: pct(t as number) }}
+            style={{ left: pct(at as number) }}
             onPointerDown={down(what as 'from' | 'to')}
             onKeyDown={keys(what as 'from' | 'to')}
             role="slider"
@@ -107,18 +108,18 @@ export function ShowRange({
             aria-label={label as string}
             aria-valuemin={0}
             aria-valuemax={duration}
-            aria-valuenow={t as number}
-            aria-valuetext={`${(t as number).toFixed(1)} seconds`}
+            aria-valuenow={at as number}
+            aria-valuetext={t('{s} seconds', { s: fmtNum(at as number, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) })}
           />
         ))}
       </div>
       <div className="gm-show-times mono">
         <span>0 s</span>
         <span className={whole ? 'muted' : ''}>
-          {whole ? 'the whole GIF' : `${a.toFixed(1)} s → ${b.toFixed(1)} s`}
+          {whole ? t('the whole GIF') : `${a.toFixed(1)} s → ${b.toFixed(1)} s`}
           {!whole && (
             <button type="button" className="btn btn-sm gm-show-reset" onClick={() => onChange(null, null)}>
-              whole GIF
+              {t('whole GIF')}
             </button>
           )}
         </span>

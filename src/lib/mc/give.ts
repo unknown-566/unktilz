@@ -13,6 +13,7 @@
 import { MC_COLORS } from './text';
 import { miniSegments, type MiniSeg } from './minimessage';
 import { entityNbt, type MobSpec } from './entity';
+import { t } from '../i18n-core';
 
 export type GiveVersion = '26.1' | '1.21.5' | '1.21.4' | '1.21.2' | '1.21' | '1.20.5';
 
@@ -294,7 +295,7 @@ export function itemComponents(spec: ItemSpec, v: GiveVersion): { parts: string[
   if (damage !== null) parts.push(`damage=${Math.max(0, Math.round(damage))}`);
   const maxDamage = num(spec.maxDamage);
   const maxStack = num(spec.maxStack);
-  if (maxDamage !== null && maxStack !== null && maxStack > 1) notes.push('An item can’t have both a max stack size above 1 and durability; the game rejects the command.');
+  if (maxDamage !== null && maxStack !== null && maxStack > 1) notes.push(t('An item can’t have both a max stack size above 1 and durability; the game rejects the command.'));
   if (maxDamage !== null) parts.push(`max_damage=${Math.max(1, Math.round(maxDamage))}`);
   if (maxStack !== null) parts.push(`max_stack_size=${Math.min(99, Math.max(1, Math.round(maxStack)))}`);
   if (spec.rarity) parts.push(`rarity=${q(spec.rarity)}`);
@@ -303,7 +304,7 @@ export function itemComponents(spec: ItemSpec, v: GiveVersion): { parts: string[
   if (model !== null) parts.push(atLeast(v, '1.21.4') ? `custom_model_data={floats:[${model}f]}` : `custom_model_data=${Math.round(model)}`);
   if (spec.itemModel.trim()) {
     if (atLeast(v, '1.21.2')) parts.push(`item_model=${q(spec.itemModel.trim())}`);
-    else notes.push('item_model only exists from 1.21.2; it was left out.');
+    else notes.push(t('item_model only exists from 1.21.2; it was left out.'));
   }
 
   // Attribute modifiers.
@@ -318,7 +319,7 @@ export function itemComponents(spec: ItemSpec, v: GiveVersion): { parts: string[
       parts.push(`attribute_modifiers=[${mods.join(',')}]`);
     } else {
       parts.push(`attribute_modifiers={modifiers:[${mods.join(',')}]${show('attributes')}}`);
-      if (!attrs.length) notes.push('In this version hiding the default attributes (like a sword’s attack damage) replaces them with none, so the item does 1 damage. From 1.21.5 they can be hidden without removing them.');
+      if (!attrs.length) notes.push(t('In this version hiding the default attributes (like a sword’s attack damage) replaces them with none, so the item does 1 damage. From 1.21.5 they can be hidden without removing them.'));
     }
   }
   if (modern && spec.hide.attributes) hidden.push('attribute_modifiers');

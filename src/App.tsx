@@ -8,6 +8,7 @@ import ToolPage from './pages/ToolPage';
 import Request from './pages/Request';
 import NotFound from './pages/NotFound';
 import { hasUnseenVersion } from './components/whatsNewSeen';
+import { t } from './lib/i18n-core';
 
 const Backup = lazy(() => import('./pages/Backup'));
 const Changelog = lazy(() => import('./pages/Changelog'));
@@ -66,7 +67,7 @@ export default function App() {
                   <Route
                     path="/changelog"
                     element={
-                      <Suspense fallback={<div className="wrap muted mono">loading…</div>}>
+                      <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
                         <Changelog />
                       </Suspense>
                     }
@@ -74,7 +75,7 @@ export default function App() {
                   <Route
                     path="/backup"
                     element={
-                      <Suspense fallback={<div className="wrap muted mono">loading…</div>}>
+                      <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
                         <Backup />
                       </Suspense>
                     }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from './i18n-core';
 
 export const APP_VERSION = __APP_VERSION__;
 
@@ -32,7 +33,7 @@ function cached(): UpdateInfo | null {
 /** Asks GitHub which version is the newest. Throws when offline. */
 export async function checkForUpdate(): Promise<UpdateInfo> {
   const res = await fetch(`${RAW}/package.json?t=${Date.now()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
+  if (!res.ok) throw new Error(t('GitHub answered {status}', { status: res.status }));
   const { version } = (await res.json()) as { version: string };
   const info = { latest: version, newer: compareVersions(version, APP_VERSION) > 0, checkedAt: Date.now() };
   try {
@@ -46,7 +47,7 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
 /** The newest changelog on GitHub, for showing what an update brings. */
 export async function remoteChangelog() {
   const res = await fetch(`${RAW}/CHANGELOG.md?t=${Date.now()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
+  if (!res.ok) throw new Error(t('GitHub answered {status}', { status: res.status }));
   return res.text();
 }
 

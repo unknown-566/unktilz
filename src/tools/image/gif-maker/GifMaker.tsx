@@ -18,6 +18,7 @@ import { holdMemory, memoryHeld, whenFree } from './hold';
 import { useQueue } from '../../../queue/store';
 import { getOutputs } from '../../../queue/blobs';
 import { Timeline } from './Timeline';
+import { fmtNum, plural, t, tx } from '../../../lib/i18n-core';
 
 const VIDEO_ACCEPTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.3gp', '.ts', '.mts', '.mpg', '.mpeg', '.ogv', '.gif'];
 /** GIFs bigger than this don't upload to Discord without Nitro, and load slowly everywhere. */
@@ -32,22 +33,24 @@ const DEFAULT_LINK: LinkPrefs = { on: true, lasts: 'forever' };
 type GifLink = { url: string; lasts: Lasts; size: number; w: number; h: number };
 type LinkState = { progress: number } | { url: string } | { error: string };
 const MAX_LINKS = 20;
-const lastsLabel = (lasts: Lasts) => LASTS.find((l) => l.value === lasts)?.label;
+const lastsLabel = (lasts: Lasts) => LASTS.find((l) => l.value === lasts)?.label ?? '';
 
+const EXPIRED = t('expired');
 /** "forever", "2 days left", "expired"… */
 function timeLeft(l: GifLink, at: number) {
   const ms = expiresAt(l.lasts, at) - Date.now();
-  if (!Number.isFinite(ms)) return 'forever';
-  if (ms <= 0) return 'expired';
+  if (!Number.isFinite(ms)) return t('forever');
+  if (ms <= 0) return EXPIRED;
   const h = ms / 3600_000;
-  if (h >= 24) return `${Math.round(h / 24)} day${Math.round(h / 24) === 1 ? '' : 's'} left`;
-  if (h >= 1) return `${Math.round(h)} h left`;
-  return `${Math.max(1, Math.round(ms / 60_000))} min left`;
+  if (h >= 24) return plural(Math.round(h / 24), ['{n} day left', '{n} days left'], ['zbývá {n} den', 'zbývají {n} dny', 'zbývá {n} dní']);
+  if (h >= 1) return t('{n} h left', { n: Math.round(h) });
+  return t('{n} min left', { n: Math.max(1, Math.round(ms / 60_000)) });
 }
 
-const opts = <T extends string>(list: [T, string][]) => list.map(([value, label]) => ({ value, label }));
-const CROPS = opts<Crop>([['original', 'original'], ['1:1', '1:1'], ['16:9', '16:9'], ['9:16', '9:16'], ['4:5', '4:5']]);
-const FILTERS = opts<Filter>([['none', 'none'], ['gray', 'black & white'], ['sepia', 'sepia'], ['contrast', 'punchy']]);
+/** Choices from [value, label] pairs; the labels are marked with tx() and shown translated. */
+const opts = <T extends string>(list: [T, string][]) => list.map(([value, label]) => ({ value, label: t(label) }));
+const CROPS = opts<Crop>([['original', tx('original')], ['1:1', '1:1'], ['16:9', '16:9'], ['9:16', '9:16'], ['4:5', '4:5']]);
+const FILTERS = opts<Filter>([['none', tx('filter|none')], ['gray', tx('black & white')], ['sepia', tx('sepia')], ['contrast', tx('punchy')]]);
 const SPEEDS = ['0.25', '0.5', '1', '1.5', '2', '4'];
 
 /**
@@ -142,11 +145,11 @@ export default function GifMaker() {
   stickersNow.current = { stickers, stickerRefs };
   useEffect(() => {
     if (![...stickers.keys()].some((k) => !stickerRefs.has(k))) return;
-    let t: ReturnType<typeof setTimeout>;
+    let tt: ReturnType<typeof setTimeout>;
     const sweep = () => {
       // A GIF waiting in the queue or being made may still draw them: look again a moment later.
       if (memoryHeld()) {
-        t = setTimeout(sweep, 2000);
+        tt = setTimeout(sweep, 2000);
         return;
       }
       const { stickers: now, stickerRefs: used } = stickersNow.current;
@@ -160,8 +163,8 @@ export default function GifMaker() {
       // The preview only draws stickers that layers use, so these can go right away.
       for (const [k, anim] of unused) forgetSticker(k, anim);
     };
-    t = setTimeout(sweep, 8000);
-    return () => clearTimeout(t);
+    tt = setTimeout(sweep, 8000);
+    return () => clearTimeout(tt);
   }, [stickers, stickerRefs]);
   useEffect(
     () => () => {
@@ -212,11 +215,11 @@ export default function GifMaker() {
       const ext = f.name.toLowerCase().match(/\.([a-z]+)$/)?.[1] ?? '';
       const mime = STICKER_TYPES[ext] ?? (f.type.startsWith('image/') ? f.type : '');
       if (!mime) {
-        setUploadError(`${f.name}: use a PNG, GIF or WebP picture.`);
+        setUploadError(t('{name}: use a PNG, GIF or WebP picture.', { name: f.name }));
         continue;
       }
       if (f.size > MAX_STICKER_BYTES) {
-        setUploadError(`${f.name} is too big for a sticker (max ${formatBytes(MAX_STICKER_BYTES)}).`);
+        setUploadError(t('{name} is too big for a sticker (at most {max}).', { name: f.name, max: formatBytes(MAX_STICKER_BYTES) }));
         continue;
       }
       try {
@@ -229,7 +232,7 @@ export default function GifMaker() {
         setStickers((m) => new Map(m).set(stickerKey({ type: 'mine', id: item.id }), anim));
         addLayer(newSticker({ type: 'mine', id: item.id }, name));
       } catch {
-        setUploadError(`${f.name} couldn’t be read as a picture.`);
+        setUploadError(t('{name} couldn’t be read as a picture.', { name: f.name }));
       }
     }
   };
@@ -250,7 +253,7 @@ export default function GifMaker() {
   }, []);
   const takeVideo = async (file: File) => {
     setError('');
-    setStatus('Opening the video…');
+    setStatus(t('Opening the video…'));
     try {
       const v = await openVideo(file, setStatus);
       if (!mounted.current) {
@@ -264,14 +267,14 @@ export default function GifMaker() {
       // Keep a saved start/end if it fits this video, otherwise the first few seconds.
       setS((o) => ({ ...o, mode: 'video', ...(o.end <= v.duration && o.end > o.start ? {} : { start: 0, end: Math.round(Math.min(v.duration, 4) * 100) / 100 }) }));
       setStatus('');
-      const t = await videoThumbs(v, 10, 48);
+      const tt = await videoThumbs(v, 10, 48);
       if (!mounted.current) {
-        t.forEach((u) => URL.revokeObjectURL(u));
+        tt.forEach((u) => URL.revokeObjectURL(u));
         return;
       }
       setThumbs((old) => {
         old.forEach(retire);
-        return t;
+        return tt;
       });
     } catch (e) {
       setStatus('');
@@ -282,7 +285,7 @@ export default function GifMaker() {
     setError('');
     set({ mode: 'photos' });
     for (const f of files) {
-      setStatus(`Loading ${f.name}…`);
+      setStatus(t('Loading {name}…', { name: f.name }));
       try {
         const bmp = await loadPhoto(f);
         if (!mounted.current) {
@@ -304,11 +307,11 @@ export default function GifMaker() {
     if (s.mode === 'video') {
       const v = files.find(isVideo);
       if (v) void takeVideo(v);
-      else setError('That isn’t a video. To make a GIF from pictures, switch to “from photos”.');
+      else setError(t('That isn’t a video. To make a GIF from pictures, switch to “from photos”.'));
     } else {
       const pics = files.filter((f) => !isVideo(f) || /\.gif$/i.test(f.name));
       if (pics.length) void takePhotos(pics);
-      else setError('Those aren’t pictures. To make a GIF from a video, switch to “from video”.');
+      else setError(t('Those aren’t pictures. To make a GIF from a video, switch to “from video”.'));
     }
   };
   const onDrop = (e: DragEvent) => {
@@ -322,9 +325,9 @@ export default function GifMaker() {
   live.current = { video, thumbs, photos };
   useEffect(
     () => () => {
-      const { video: v, thumbs: t, photos: p } = live.current;
+      const { video: v, thumbs: tt, photos: p } = live.current;
       if (v) URL.revokeObjectURL(v.url);
-      t.forEach((u) => URL.revokeObjectURL(u));
+      tt.forEach((u) => URL.revokeObjectURL(u));
       p.forEach((x) => URL.revokeObjectURL(x.thumb));
       // A GIF in the queue may still be made from the photos.
       whenFree(() => p.forEach((x) => x.bmp.close()));
@@ -381,15 +384,15 @@ export default function GifMaker() {
     // Frames outside the clip are kept for going back, but only up to about 150 MB.
     const spare = Math.floor(150e6 / (cache.w * cache.h * 4));
     const finish = () => {
-      setFrames(times.map((t) => fc.map.get(t)!));
+      setFrames(times.map((tt) => fc.map.get(tt)!));
       if (fc.map.size > times.length + spare) {
         const keep = new Set(times);
-        const drop = [...fc.map.entries()].filter(([t]) => !keep.has(t));
-        drop.forEach(([t]) => fc.map.delete(t));
+        const drop = [...fc.map.entries()].filter(([tt]) => !keep.has(tt));
+        drop.forEach(([tt]) => fc.map.delete(tt));
         closeLater(drop.map(([, b]) => b));
       }
     };
-    const missing = times.filter((t) => !fc.map.has(t));
+    const missing = times.filter((tt) => !fc.map.has(tt));
     if (!missing.length) {
       finish();
       return;
@@ -397,7 +400,7 @@ export default function GifMaker() {
     let cancelled = false;
     setFramesDone(0);
     setFrames(null);
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const f = await videoFrames(video, missing, cache.w, cache.h, setFramesDone, () => cancelled, (time, frame) => {
           if (fc.key === key) fc.map.set(time, frame);
@@ -405,12 +408,12 @@ export default function GifMaker() {
         });
         if (f && !cancelled && fc.key === key) finish();
       } catch (e) {
-        if (!cancelled) setError(`Couldn’t read the video’s frames (${e instanceof Error ? e.message : e}).`);
+        if (!cancelled) setError(t('Couldn’t read the video’s frames ({reason}).', { reason: e instanceof Error ? e.message : String(e) }));
       }
     }, 350);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [video, times, cache, tooMany]);
 
@@ -560,7 +563,7 @@ export default function GifMaker() {
       return;
     }
     if (job.status === 'error') {
-      setError(job.error ?? 'The GIF couldn’t be made.');
+      setError(job.error ?? t('The GIF couldn’t be made.'));
       setJobId(null);
     } else if (job.status === 'done') {
       const meta = pending.current;
@@ -577,14 +580,14 @@ export default function GifMaker() {
 
   // ---- layout ----
   const source = (
-    <section className="panel" aria-label="Source">
-      <Labeled label="Make it from">
+    <section className="panel" aria-label={t('Source')}>
+      <Labeled label={t('Make it from')}>
         <Segmented
-          label="Make it from"
+          label={t('Make it from')}
           value={s.mode}
           options={[
-            { value: 'video', label: 'a video' },
-            { value: 'photos', label: 'photos' },
+            { value: 'video', label: t('a video') },
+            { value: 'photos', label: t('photos') },
           ]}
           onChange={(mode) => set({ mode })}
         />
@@ -598,11 +601,11 @@ export default function GifMaker() {
         onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false)}
         onDrop={onDrop}
       >
-        <div className="drop-title">{isVideo ? (video ? 'Drop another video to swap it' : 'Drop a video here') : photos.length ? 'Drop more photos to add them' : 'Drop photos here'}</div>
+        <div className="drop-title">{isVideo ? (video ? t('Drop another video to swap it') : t('Drop a video here')) : photos.length ? t('Drop more photos to add them') : t('Drop photos here')}</div>
         <button type="button" className={(isVideo ? video : photos.length) ? 'btn' : 'btn btn-primary'} onClick={() => fileInput.current?.click()}>
-          {isVideo ? 'Choose a video' : 'Choose photos'}
+          {isVideo ? t('Choose a video') : t('Choose photos')}
         </button>
-        <div className="drop-sub">{isVideo ? 'mp4 mov webm mkv avi gif …' : 'jpg png webp gif heic …'}</div>
+        <div className="drop-sub">{isVideo ? t('mp4 mov webm mkv avi gif …') : t('jpg png webp gif heic …')}</div>
         <input
           ref={fileInput}
           type="file"
@@ -625,7 +628,7 @@ export default function GifMaker() {
         <>
           <p className="note mono">
             {video.name} · {video.w} × {video.h}
-            {video.converted && ' · converted to be shown here'}
+            {video.converted && ` · ${t('converted to be shown here')}`}
           </p>
           <Timeline duration={video.duration} start={start} end={end} thumbs={thumbs} onChange={(a, b) => set({ start: a, end: b })} now={videoTime} />
         </>
@@ -637,16 +640,16 @@ export default function GifMaker() {
               <li key={p.id}>
                 <img src={p.thumb} alt="" />
                 <span className="mono muted">{i + 1}</span>
-                <button type="button" className="icon-btn" aria-label={`Move ${p.name} earlier`} disabled={i === 0} onClick={() => setPhotos((l) => swap(l, i, i - 1))}>
+                <button type="button" className="icon-btn" aria-label={t('Move {name} earlier', { name: p.name })} disabled={i === 0} onClick={() => setPhotos((l) => swap(l, i, i - 1))}>
                   ↑
                 </button>
-                <button type="button" className="icon-btn" aria-label={`Move ${p.name} later`} disabled={i === photos.length - 1} onClick={() => setPhotos((l) => swap(l, i, i + 1))}>
+                <button type="button" className="icon-btn" aria-label={t('Move {name} later', { name: p.name })} disabled={i === photos.length - 1} onClick={() => setPhotos((l) => swap(l, i, i + 1))}>
                   ↓
                 </button>
                 <button
                   type="button"
                   className="icon-btn"
-                  aria-label={`Remove ${p.name}`}
+                  aria-label={t('Remove {name}', { name: p.name })}
                   onClick={() => {
                     whenFree(() => p.bmp.close());
                     URL.revokeObjectURL(p.thumb);
@@ -658,19 +661,19 @@ export default function GifMaker() {
               </li>
             ))}
           </ul>
-          <Row label="Each photo" help="How long each photo shows, before the speed setting.">
+          <Row label={t('Each photo')} help={t('How long each photo shows, before the speed setting.')}>
             <div className="range">
-              <input type="range" aria-label="Seconds per photo" min={0.1} max={3} step={0.1} value={s.photoSeconds} onChange={(e) => set({ photoSeconds: Number(e.target.value) })} />
+              <input type="range" aria-label={t('Seconds per photo')} min={0.1} max={3} step={0.1} value={s.photoSeconds} onChange={(e) => set({ photoSeconds: Number(e.target.value) })} />
               <output>{s.photoSeconds.toFixed(1)} s</output>
             </div>
           </Row>
-          <Row label="Between photos">
-            <Segmented label="Between photos" compact value={s.transition} options={opts([['none', 'cut'], ['fade', 'fade']])} onChange={(transition) => set({ transition })} />
+          <Row label={t('Between photos')}>
+            <Segmented label={t('Between photos')} compact value={s.transition} options={opts([['none', tx('cut')], ['fade', tx('fade')]])} onChange={(transition) => set({ transition })} />
           </Row>
-          <Row label="Fit" help="Fill: photos fill the GIF and edges of differently shaped photos are cut off. Whole photo: nothing is cut, with bars of the background color.">
+          <Row label={t('Fit')} help={t('Fill: photos fill the GIF and edges of differently shaped photos are cut off. Whole photo: nothing is cut, with bars of the background color.')}>
             <span className="inline">
-              <Segmented label="Fit" compact value={s.fit} options={opts([['cover', 'fill'], ['contain', 'whole photo']])} onChange={(fit) => set({ fit })} />
-              {s.fit === 'contain' && <input type="color" className="give-color" aria-label="Background color" value={s.background} onChange={(e) => set({ background: e.target.value })} />}
+              <Segmented label={t('Fit')} compact value={s.fit} options={opts([['cover', tx('fill')], ['contain', tx('whole photo')]])} onChange={(fit) => set({ fit })} />
+              {s.fit === 'contain' && <input type="color" className="give-color" aria-label={t('Background color')} value={s.background} onChange={(e) => set({ background: e.target.value })} />}
             </span>
           </Row>
         </>
@@ -679,49 +682,49 @@ export default function GifMaker() {
   );
 
   const picture = (
-    <Panel title="picture">
-      <Labeled label="Shape" help="Cuts the picture to this shape: square for chats and profile pictures, 9:16 for stories, 16:9 for widescreen.">
-        <Segmented label="Shape" value={s.crop} options={CROPS} onChange={(crop) => set({ crop, panX: 0.5, panY: 0.5 })} />
+    <Panel title={t('picture')}>
+      <Labeled label={t('Shape')} help={t('Cuts the picture to this shape: square for chats and profile pictures, 9:16 for stories, 16:9 for widescreen.')}>
+        <Segmented label={t('Shape')} value={s.crop} options={CROPS} onChange={(crop) => set({ crop, panX: 0.5, panY: 0.5 })} />
       </Labeled>
-      {isVideo && s.crop !== 'original' && <p className="note">Drag the preview to choose which part of the video is kept.</p>}
-      <Labeled label="Speed" help="How fast the GIF plays compared to the video: 2× is twice as fast (and half as long), 0.5× is slow motion.">
-        <Segmented label="Speed" value={String(s.speed)} options={SPEEDS.map((v) => ({ value: v, label: `${v}×` }))} onChange={(v) => set({ speed: Number(v) })} />
+      {isVideo && s.crop !== 'original' && <p className="note">{t('Drag the preview to choose which part of the video is kept.')}</p>}
+      <Labeled label={t('Speed')} help={t('How fast the GIF plays compared to the video: 2× is twice as fast (and half as long), 0.5× is slow motion.')}>
+        <Segmented label={t('Speed')} value={String(s.speed)} options={SPEEDS.map((v) => ({ value: v, label: `${v}×` }))} onChange={(v) => set({ speed: Number(v) })} />
       </Labeled>
-      <Row label="Backwards">
-        <Toggle label="Backwards" checked={s.reverse} onChange={(reverse) => set({ reverse })} />
+      <Row label={t('Backwards')}>
+        <Toggle label={t('Backwards')} checked={s.reverse} onChange={(reverse) => set({ reverse })} />
       </Row>
-      <Row label="Boomerang" help="Plays forwards, then backwards, over and over.">
-        <Toggle label="Boomerang" checked={s.boomerang} onChange={(boomerang) => set({ boomerang })} />
+      <Row label={t('Boomerang')} help={t('Plays forwards, then backwards, over and over.')}>
+        <Toggle label={t('Boomerang')} checked={s.boomerang} onChange={(boomerang) => set({ boomerang })} />
       </Row>
-      <Labeled label="Filter" help="Changes the colors of the whole GIF, texts and stickers included.">
-        <Segmented label="Filter" value={s.filter} options={FILTERS} onChange={(filter) => set({ filter })} />
+      <Labeled label={t('Filter')} help={t('Changes the colors of the whole GIF, texts and stickers included.')}>
+        <Segmented label={t('Filter')} value={s.filter} options={FILTERS} onChange={(filter) => set({ filter })} />
       </Labeled>
     </Panel>
   );
 
   const exportPanel = (
-    <Panel title="gif settings">
-      <Labeled label="Width (pixels)" help="How wide the GIF is; the height follows the shape. Wider looks sharper but makes a bigger file. Smaller videos are never stretched bigger.">
-        <Segmented label="Width (pixels)" value={String(s.width)} options={['240', '320', '480', '640'].map((v) => ({ value: v, label: `${v} px` }))} onChange={(v) => set({ width: Number(v) })} />
+    <Panel title={t('gif settings')}>
+      <Labeled label={t('Width (pixels)')} help={t('How wide the GIF is; the height follows the shape. Wider looks sharper but makes a bigger file. Smaller videos are never stretched bigger.')}>
+        <Segmented label={t('Width (pixels)')} value={String(s.width)} options={['240', '320', '480', '640'].map((v) => ({ value: v, label: t('{v} px', { v }) }))} onChange={(v) => set({ width: Number(v) })} />
       </Labeled>
-      <Labeled label="Frames per second" help="How many pictures the GIF shows each second. More is smoother but makes a bigger file; 10–15 is usual for GIFs.">
-        <Segmented label="Frames per second" value={String(s.fps)} options={['10', '15', '20', '25'].map((v) => ({ value: v, label: `${v} fps` }))} onChange={(v) => set({ fps: Number(v) })} />
+      <Labeled label={t('Frames per second')} help={t('How many pictures the GIF shows each second. More is smoother but makes a bigger file; 10–15 is usual for GIFs.')}>
+        <Segmented label={t('Frames per second')} value={String(s.fps)} options={['10', '15', '20', '25'].map((v) => ({ value: v, label: t('{v} fps', { v }) }))} onChange={(v) => set({ fps: Number(v) })} />
       </Labeled>
-      <Labeled label="Plays" help="How many times the GIF plays before it stops. “forever” loops it, like most GIFs.">
-        <Segmented label="Plays" value={s.loop} options={opts([['forever', 'forever'], ['once', 'once'], ['3', '3 times']])} onChange={(loop) => set({ loop })} />
+      <Labeled label={t('Plays')} help={t('How many times the GIF plays before it stops. “forever” loops it, like most GIFs.')}>
+        <Segmented label={t('Plays')} value={s.loop} options={opts([['forever', tx('forever')], ['once', tx('once')], ['3', tx('3 times')]])} onChange={(loop) => set({ loop })} />
       </Labeled>
-      <Row label="Colors" help="A GIF can have at most 256 colors. Fewer colors make a smaller file but can look blotchy.">
-        <Segmented label="Colors" compact value={String(s.colors)} options={['256', '128', '64', '32'].map((v) => ({ value: v, label: v }))} onChange={(v) => set({ colors: Number(v) })} />
+      <Row label={t('Colors')} help={t('A GIF can have at most 256 colors. Fewer colors make a smaller file but can look blotchy.')}>
+        <Segmented label={t('Colors')} compact value={String(s.colors)} options={['256', '128', '64', '32'].map((v) => ({ value: v, label: v }))} onChange={(v) => set({ colors: Number(v) })} />
       </Row>
     </Panel>
   );
 
   const preview = (
     <Panel
-      title="preview"
+      title={t('preview')}
       actions={
         <button type="button" className="btn btn-sm" onClick={() => setPlaying(!playing)} aria-pressed={!playing}>
-          {playing ? 'pause' : 'play'}
+          {playing ? t('pause') : t('play')}
         </button>
       }
     >
@@ -740,24 +743,26 @@ export default function GifMaker() {
             fontsVersion={fontsVersion}
           />
         ) : (
-          <span className="muted">{isVideo ? 'Pick a video to start.' : 'Pick some photos to start.'}</span>
+          <span className="muted">{isVideo ? t('Pick a video to start.') : t('Pick some photos to start.')}</span>
         )}
-        {isVideo && video && !frames && !tooMany && <span className="gm-loading mono">preparing frames… {Math.round(framesDone * 100)} %</span>}
+        {isVideo && video && !frames && !tooMany && <span className="gm-loading mono">{t('preparing frames… {n} %', { n: Math.round(framesDone * 100) })}</span>}
       </div>
       {size && (
         <p className="note mono">
-          {size.w} × {size.h} · {s.fps} fps · {duration.toFixed(1)} s · {refs.length} frames · ≈ {formatBytes(estimateBytes(size.w, size.h, refs.length, s.colors))}
+          {size.w} × {size.h} · {s.fps} fps · {fmtNum(duration, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} s · {plural(refs.length, ['{n} frame', '{n} frames'], ['{n} snímek', '{n} snímky', '{n} snímků'])} · ≈ {formatBytes(estimateBytes(size.w, size.h, refs.length, s.colors))}
         </p>
       )}
-      {stickersMissing && <p className="note mono">{stickerError || 'loading stickers…'}</p>}
+      {stickersMissing && <p className="note mono">{stickerError || t('loading stickers…')}</p>}
       {missingFonts.length > 0 && (
         <p className="note give-warn">
-          {missingFonts.join(', ')} couldn’t be loaded (no internet?), so {missingFonts.length === 1 ? 'that text uses' : 'those texts use'} a plain font for now.
+          {missingFonts.length === 1
+            ? t('{fonts} couldn’t be loaded (no internet?), so that text uses a plain font for now.', { fonts: missingFonts.join(', ') })
+            : t('{fonts} couldn’t be loaded (no internet?), so those texts use a plain font for now.', { fonts: missingFonts.join(', ') })}
         </p>
       )}
       {(tooMany || tooManyPhotos) && (
         <p className="note give-warn">
-          That’s more than {limit} frames for this size. Make it shorter, use fewer frames per second, a smaller width, or fewer photos.
+          {t('That’s more than {limit} frames for this size. Make it shorter, use fewer frames per second, a smaller width, or fewer photos.', { limit })}
         </p>
       )}
     </Panel>
@@ -766,17 +771,17 @@ export default function GifMaker() {
   const output = (
     <Panel title="gif">
       <button type="button" className="btn btn-primary" disabled={!ready || !!busy} onClick={create}>
-        {busy ? (busy.status === 'queued' ? 'In the queue…' : `Making the GIF… ${Math.round(busy.progress * 100)} %`) : 'Make GIF'}
+        {busy ? (busy.status === 'queued' ? t('In the queue…') : t('Making the GIF… {n} %', { n: Math.round(busy.progress * 100) })) : t('Make GIF')}
       </button>
-      {busy && <p className="note">It’s in the queue (left). You can leave this page; the GIF waits there when it’s done.</p>}
+      {busy && <p className="note">{t('It’s in the queue (left). You can leave this page; the GIF waits there when it’s done.')}</p>}
       <div className="gm-linkopts">
         <span className="switch-row">
-          <Toggle label="Make a link" checked={linkPrefs.on} onChange={(on) => setLinkPrefs({ ...linkPrefs, on })} />
-          <span className="opt-label">Make a link</span>
+          <Toggle label={t('Make a link')} checked={linkPrefs.on} onChange={(on) => setLinkPrefs({ ...linkPrefs, on })} />
+          <span className="opt-label">{t('Make a link')}</span>
         </span>
         {linkPrefs.on && (
           <label className="gm-lasts">
-            <span className="muted">works</span>
+            <span className="muted">{t('works')}</span>
             <select className="select" value={linkPrefs.lasts} onChange={(e) => setLinkPrefs({ ...linkPrefs, lasts: e.target.value as Lasts })}>
               {LASTS.map((l) => (
                 <option key={l.value} value={l.value}>
@@ -790,70 +795,70 @@ export default function GifMaker() {
       {linkPrefs.on && (
         <p className="note">
           {linkPrefs.lasts === 'forever'
-            ? 'The GIF is uploaded to catbox.moe. Anyone with the link can see it, and links that last forever can’t be deleted. Discord may show it as just a link: to post the GIF itself, drag it into Discord.'
-            : `The GIF is uploaded to litterbox (catbox.moe) and deleted by itself after ${lastsLabel(linkPrefs.lasts)}. Anyone with the link can see it until then.`}
+            ? t('The GIF is uploaded to catbox.moe. Anyone with the link can see it, and links that last forever can’t be deleted. Discord may show it as just a link: to post the GIF itself, drag it into Discord.')
+            : t('The GIF is uploaded to litterbox (catbox.moe) and deletes itself when its time is up ({lasts}). Anyone with the link can see it until then.', { lasts: lastsLabel(linkPrefs.lasts) })}
         </p>
       )}
       {result && (
         <>
-          <img className="gm-result" src={result.url} alt="The finished GIF" draggable onDragStart={(e) => dragOut(e, result)} title="Drag me into Discord or any chat" />
-          <p className="note">Drag the GIF into Discord (or any chat, or a folder) to send it as a file: that always shows.</p>
+          <img className="gm-result" src={result.url} alt={t('The finished GIF')} draggable onDragStart={(e) => dragOut(e, result)} title={t('Drag me into Discord or any chat')} />
+          <p className="note">{t('Drag the GIF into Discord (or any chat, or a folder) to send it as a file: that always shows.')}</p>
           <p className={`note mono${result.blob.size > BIG ? ' give-warn' : ''}`}>
-            {result.w} × {result.h} · {result.frames} frames · {formatBytes(result.blob.size)}
-            {result.blob.size > BIG && ' · big: lower the width, fps or colors to make it smaller'}
+            {result.w} × {result.h} · {plural(result.frames, ['{n} frame', '{n} frames'], ['{n} snímek', '{n} snímky', '{n} snímků'])} · {formatBytes(result.blob.size)}
+            {result.blob.size > BIG && ` · ${t('big: lower the width, fps or colors to make it smaller')}`}
           </p>
           <button type="button" className="btn" onClick={() => saveBlob(result.blob, result.name)}>
-            Download {result.name}
+            {t('Download {file}', { file: result.name })}
           </button>
-          {link && 'progress' in link && <p className="note mono">uploading… {Math.round(link.progress * 100)} %</p>}
+          {link && 'progress' in link && <p className="note mono">{t('uploading… {n} %', { n: Math.round(link.progress * 100) })}</p>}
           {link && 'url' in link && (
             <div className="gm-link">
-              <input className="input mono" readOnly aria-label="Link to the GIF" value={link.url} onFocus={(e) => e.currentTarget.select()} />
+              <input className="input mono" readOnly aria-label={t('Link to the GIF')} value={link.url} onFocus={(e) => e.currentTarget.select()} />
               <CopyButton text={link.url} />
               <a className="btn btn-sm" href={link.url} target="_blank" rel="noreferrer">
-                open
+                {t('open')}
               </a>
             </div>
           )}
-          {link && 'url' in link && autoCopied === link.url && <p className="note mono">The link is copied: paste it anywhere.</p>}
+          {link && 'url' in link && autoCopied === link.url && <p className="note mono">{t('The link is copied: paste it anywhere.')}</p>}
           {link && 'error' in link && (
             <p className="note give-warn" role="alert">
-              Couldn’t make a link: {link.error}{' '}
+              {t('Couldn’t make a link: {reason}', { reason: link.error })}{' '}
               <button type="button" className="btn btn-sm" onClick={() => void share(result, linkPrefs)}>
-                try again
+                {t('try again')}
               </button>
             </p>
           )}
           {!link && (
             <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => void share(result, linkPrefs)}>
-              make a link ({lastsLabel(linkPrefs.lasts)})
+              {t('make a link ({lasts})', { lasts: lastsLabel(linkPrefs.lasts) })}
             </button>
           )}
         </>
       )}
       {links.items.length > 0 && (
         <details className="gm-links">
-          <summary className="field-label">my links · {links.items.length}</summary>
+          <summary className="field-label">{t('my links · {n}', { n: links.items.length })}</summary>
           <ul>
             {links.items.map((i) => {
               const left = timeLeft(i.data, i.savedAt);
               return (
-                <li key={i.id} className={left === 'expired' ? 'expired' : ''}>
+                <li key={i.id} className={left === EXPIRED ? 'expired' : ''}>
                   <a className="mono" href={i.data.url} target="_blank" rel="noreferrer" title={i.data.url}>
                     {i.data.url.replace(/^https:\/\//, '')}
                   </a>
                   <span className="note mono">
                     {i.name} · {savedWhen(i.savedAt)} · {left}
                   </span>
-                  {left === 'expired' ? <span /> : <CopyButton text={i.data.url} />}
-                  <button type="button" className="icon-btn" aria-label={`Remove ${i.name} from my links`} onClick={() => void links.remove(i.id)}>
+                  {left === EXPIRED ? <span /> : <CopyButton text={i.data.url} />}
+                  <button type="button" className="icon-btn" aria-label={t('Remove {name} from my links', { name: i.name })} onClick={() => void links.remove(i.id)}>
                     ×
                   </button>
                 </li>
               );
             })}
           </ul>
-          <p className="note">Removing a link here only takes it off this list; the GIF stays online.</p>
+          <p className="note">{t('Removing a link here only takes it off this list; the GIF stays online.')}</p>
         </details>
       )}
     </Panel>
@@ -865,9 +870,9 @@ export default function GifMaker() {
       output={output}
     >
       {source}
-      <Panel title="add text & stickers">
+      <Panel title={t('add text & stickers')}>
         <button type="button" className="btn" style={{ alignSelf: 'flex-start' }} onClick={() => addLayer(newText())}>
-          + text
+          {t('+ text')}
         </button>
         <StickerPicker
           onAdd={(ref, name) => addLayer(newSticker(ref, name))}
@@ -878,7 +883,7 @@ export default function GifMaker() {
           uploadError={uploadError}
         />
       </Panel>
-      <Panel title="layers">
+      <Panel title={t('layers')}>
         <LayerList layers={s.layers} selected={selected} onSelect={setSelected} onChange={(layers) => set({ layers })} mineUrls={mineUrls} />
         {selectedLayer && (
           <LayerProps
@@ -893,13 +898,13 @@ export default function GifMaker() {
       {exportPanel}
       <SavedPanel<Settings>
         slug="gif-maker"
-        title="my gif styles"
-        help="Keeps your texts, speed, shape and GIF settings (not the video or photos) so you can use them again. Saved in this browser."
-        suggestName={() => s.layers.map((l) => (l.kind === 'text' ? l.text.split('\n')[0] : l.name)).find(Boolean) || 'My GIF style'}
+        title={t('my gif styles')}
+        help={t('Keeps your texts, speed, shape and GIF settings (not the video or photos) so you can use them again. Saved in this browser.')}
+        suggestName={() => s.layers.map((l) => (l.kind === 'text' ? l.text.split('\n')[0] : l.name)).find(Boolean) || t('My GIF style')}
         getData={() => s}
         onLoad={(d) => setS({ ...restore(d), mode: s.mode })}
         describe={(i) => `${i.data.layers?.length ?? 0} layer${i.data.layers?.length === 1 ? '' : 's'} · ${i.data.width} px · ${i.data.fps} fps`}
-        emptyText="Nothing saved yet."
+        emptyText={t('Nothing saved yet.')}
       />
     </Workbench>
   );

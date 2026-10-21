@@ -1,3 +1,5 @@
+import { t } from '../../../lib/i18n-core';
+
 /**
  * The downloader's options turned into yt-dlp arguments, the checks on extra arguments people type,
  * and reading yt-dlp's output. Pure, so both the page and the local server (scripts/downloader-server.ts)
@@ -127,10 +129,10 @@ export function checkExtra(text: string): { args: string[] } | { error: string }
   for (const a of args) {
     if (a.startsWith('--')) {
       const name = a.split('=')[0].toLowerCase();
-      if (BLOCKED.has(name)) return { error: `${name} isn't allowed here (it could run programs or write files elsewhere).` };
+      if (BLOCKED.has(name)) return { error: t('{name} isn\'t allowed here (it could run programs or write files elsewhere).', { name }) };
     } else if (/^-[a-zA-Z]+$/.test(a)) {
       const bad = [...a.slice(1)].find((c) => BLOCKED_SHORT.has(c));
-      if (bad) return { error: `-${bad} isn't allowed here (the download folder and program are set by the site).` };
+      if (bad) return { error: t('-{bad} isn\'t allowed here (the download folder and program are set by the site).', { bad }) };
     }
   }
   return { args };
@@ -214,7 +216,7 @@ export function trimInfo(j: Raw, asked: string): DlInfo {
   const entries = playlist
     ? ((j.entries as Raw[]) ?? []).filter(Boolean).map((e, i) => ({
         id: str(e.id) ?? String(i),
-        title: str(e.title) ?? `Item ${i + 1}`,
+        title: str(e.title) ?? t('Item {n}', { n: i + 1 }),
         url: str(e.url) ?? str(e.webpage_url) ?? '',
         duration: num(e.duration),
       }))
@@ -232,7 +234,7 @@ export function trimInfo(j: Raw, asked: string): DlInfo {
       tbr: num(f.tbr),
       note: str(f.format_note),
     }));
-  const thumbs = (j.thumbnails as Raw[] | undefined)?.filter((t) => str(t.url));
+  const thumbs = (j.thumbnails as Raw[] | undefined)?.filter((tt) => str(tt.url));
   return {
     title: str(j.title) ?? asked,
     uploader: str(j.uploader) ?? str(j.channel),

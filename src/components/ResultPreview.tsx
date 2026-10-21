@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Opts, Tool } from '../registry';
 import { formatBytes } from '../queue/download';
 import { Panel } from './ui';
+import { t } from '../lib/i18n-core';
 
 const HEIGHT = 340;
 /** Wait this long after the last change before making a new preview. */
@@ -15,7 +16,7 @@ const loadSize = (url: string) =>
   new Promise<{ w: number; h: number }>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-    img.onerror = () => reject(new Error('The preview couldn’t be shown.'));
+    img.onerror = () => reject(new Error(t('The preview couldn’t be shown.')));
     img.src = url;
   });
 
@@ -30,7 +31,7 @@ function useResult(tool: Tool, file: File | undefined, opts: Opts) {
     let alive = true;
     let url = '';
     setBusy(true);
-    const t = window.setTimeout(async () => {
+    const timer = window.setTimeout(async () => {
       try {
         const r = await tool.preview!(file, JSON.parse(key) as Opts);
         if (!alive) return;
@@ -53,7 +54,7 @@ function useResult(tool: Tool, file: File | undefined, opts: Opts) {
     }, DEBOUNCE);
     return () => {
       alive = false;
-      clearTimeout(t);
+      clearTimeout(timer);
       if (url) URL.revokeObjectURL(url);
     };
   }, [tool, file, key]);
@@ -112,7 +113,7 @@ export function ResultPreview({ tool, files, opts }: { tool: Tool; files: File[]
       <img
         className={`img-preview-pic${actual ? ' actual' : ''}${k > 2 ? ' pixelated' : ''}`}
         src={shown.url}
-        alt={comparing ? `Original ${file.name}` : `Preview of the result for ${file.name}`}
+        alt={comparing ? t('Original {name}', { name: file.name }) : t('Preview of the result for {name}', { name: file.name })}
         style={{ width: Math.max(1, shown.w * k), height: Math.max(1, shown.h * k) }}
         draggable={false}
       />
@@ -123,14 +124,14 @@ export function ResultPreview({ tool, files, opts }: { tool: Tool; files: File[]
 
   return (
     <Panel
-      title="preview"
+      title={t('preview')}
       actions={
         <span className="inline">
           {original && (
             <button
               type="button"
               className="btn btn-sm"
-              title="Hold to see the original"
+              title={t('Hold to see the original')}
               onPointerDown={() => setComparing(true)}
               onPointerUp={() => setComparing(false)}
               onPointerLeave={() => setComparing(false)}
@@ -138,21 +139,21 @@ export function ResultPreview({ tool, files, opts }: { tool: Tool; files: File[]
               onKeyUp={() => setComparing(false)}
               onBlur={() => setComparing(false)}
             >
-              hold: original
+              {t('hold: original')}
             </button>
           )}
-          <button type="button" className="btn btn-sm" aria-pressed={actual} title="Show the real pixels instead of fitting the picture in" onClick={() => setActual(!actual)}>
+          <button type="button" className="btn btn-sm" aria-pressed={actual} title={t('Show the real pixels instead of fitting the picture in')} onClick={() => setActual(!actual)}>
             100 %
           </button>
           {files.length > 1 && (
             <>
-              <button type="button" className="icon-btn" aria-label="Previous file" disabled={i === 0} onClick={() => setIndex(i - 1)}>
+              <button type="button" className="icon-btn" aria-label={t('Previous file')} disabled={i === 0} onClick={() => setIndex(i - 1)}>
                 ‹
               </button>
               <span className="mono muted" style={{ fontSize: 12 }}>
                 {i + 1} / {files.length}
               </span>
-              <button type="button" className="icon-btn" aria-label="Next file" disabled={i === files.length - 1} onClick={() => setIndex(i + 1)}>
+              <button type="button" className="icon-btn" aria-label={t('Next file')} disabled={i === files.length - 1} onClick={() => setIndex(i + 1)}>
                 ›
               </button>
             </>
@@ -162,14 +163,14 @@ export function ResultPreview({ tool, files, opts }: { tool: Tool; files: File[]
     >
       <div ref={box} className={`img-preview${actual ? ' scroll' : ''}`} style={{ height: HEIGHT }} aria-busy={busy}>
         {img}
-        {!result && !error && <span className="muted mono">making preview…</span>}
+        {!result && !error && <span className="muted mono">{t('making preview…')}</span>}
         {error && <span className="img-preview-error">{error}</span>}
-        {busy && result && <span className="img-preview-busy mono">updating…</span>}
+        {busy && result && <span className="img-preview-busy mono">{t('updating…')}</span>}
       </div>
       <p className="note mono">
         {file?.name}
         {info && ` → ${info}`}
-        {comparing && ' (showing the original)'}
+        {comparing && ` (${t('showing the original')})`}
       </p>
     </Panel>
   );

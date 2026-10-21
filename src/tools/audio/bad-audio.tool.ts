@@ -1,16 +1,17 @@
 import { defineTool } from '../../registry/types';
 import { ffmpegJob } from '../../lib/ffmpeg';
 import { badAudioCommand, badName, badOptions } from '../video/badArgs';
+import { t } from '../../lib/i18n-core';
 
 export default defineTool({
   slug: 'bad-audio',
-  name: 'Make audio bad',
+  name: t('Make audio bad'),
   category: 'audio',
   order: 2,
-  meta: 'earrape · bass boosted',
+  meta: t('earrape · bass boosted'),
   added: '2026-10-19',
   description:
-    'Ruin a sound on purpose for memes: crunchy low quality, bass boosted, earrape, phone call, underwater or robotic. Works on videos too (takes their sound). Comes out as a small MP3.',
+    t('Ruin a sound on purpose for memes: crunchy low quality, bass boosted, earrape, phone call, underwater or robotic. Works on videos too (takes their sound). Comes out as a small MP3.'),
   keywords: [
     'earrape', 'ear rape', 'bass boosted', 'low quality', 'bad quality', 'shitty', 'meme', 'distorted', 'loud', 'crunchy', 'phone call', 'underwater',
     'bitcrush', 'robot voice', 'compress audio', 'ruin audio',

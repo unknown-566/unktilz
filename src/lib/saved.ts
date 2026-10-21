@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createStore, entries, get, set } from 'idb-keyval';
+import { fmtDate, fmtTime, t } from './i18n-core';
 
 /**
  * Things people keep, per tool, in IndexedDB (store "unktilz-saved"):
@@ -106,8 +107,8 @@ export function useAutosave<T>(slug: string, value: T, restore: (v: T) => void, 
   }, [slug]);
   useEffect(() => {
     if (!ready) return;
-    const t = setTimeout(() => set(`auto:${slug}`, value, store).catch(() => {}), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => set(`auto:${slug}`, value, store).catch(() => {}), 300);
+    return () => clearTimeout(timer);
   }, [ready, slug, value]);
   return ready;
 }
@@ -145,13 +146,13 @@ export async function mergeSaved(backup: [string, unknown][]) {
 }
 
 /** "today 14:02", "yesterday", or a date. */
-export function savedWhen(t: number) {
-  const d = new Date(t);
+export function savedWhen(at: number) {
+  const d = new Date(at);
   const now = new Date();
-  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (d.toDateString() === now.toDateString()) return `today ${time}`;
+  const time = fmtTime(d);
+  if (d.toDateString() === now.toDateString()) return t('today {time}', { time });
   const y = new Date(now);
   y.setDate(now.getDate() - 1);
-  if (d.toDateString() === y.toDateString()) return `yesterday ${time}`;
-  return d.toLocaleDateString();
+  if (d.toDateString() === y.toDateString()) return t('yesterday {time}', { time });
+  return fmtDate(d);
 }

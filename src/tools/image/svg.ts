@@ -1,8 +1,10 @@
+import { t } from '../../lib/i18n-core';
+
 /** Size an SVG says it has: width/height, else its viewBox, else 512 px. */
 export function svgSize(text: string): { w: number; h: number } {
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   const svg = doc.documentElement;
-  if (svg.nodeName !== 'svg') throw new Error('This isn’t a valid SVG file.');
+  if (svg.nodeName !== 'svg') throw new Error(t('This isn’t a valid SVG file.'));
   const px = (v: string | null) => {
     const m = v?.trim().match(/^([\d.]+)(px)?$/);
     return m ? Number(m[1]) : 0;
@@ -32,14 +34,14 @@ export async function rasterizeSvg(file: File, scale: number): Promise<File> {
     const img = new Image(W, H);
     img.src = url;
     await img.decode().catch(() => {
-      throw new Error(`Couldn't draw ${file.name}. It may use fonts or images from elsewhere.`);
+      throw new Error(t('Couldn\'t draw {name}. It may use fonts or images from elsewhere.', { name: file.name }));
     });
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
     canvas.getContext('2d')!.drawImage(img, 0, 0, W, H);
     const png = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
-    if (!png) throw new Error(`Couldn't draw ${file.name}.`);
+    if (!png) throw new Error(t('Couldn\'t draw {name}.', { name: file.name }));
     return new File([png], file.name, { type: 'image/png' });
   } finally {
     URL.revokeObjectURL(url);

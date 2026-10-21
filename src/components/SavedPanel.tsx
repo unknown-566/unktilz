@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Help } from './Help';
 import { savedWhen, useSaved, type SavedItem } from '../lib/saved';
+import { t } from '../lib/i18n-core';
 
 /** A short-lived "Loaded X · undo" line. */
 export function UndoBar({ text, onUndo, onClose }: { text: string; onUndo: () => void; onClose: () => void }) {
   const close = useRef(onClose);
   close.current = onClose;
   useEffect(() => {
-    const t = setTimeout(() => close.current(), 15000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => close.current(), 15000);
+    return () => clearTimeout(timer);
   }, [text]);
   return (
     <div className="undo-bar" role="status">
@@ -21,9 +22,9 @@ export function UndoBar({ text, onUndo, onClose }: { text: string; onUndo: () =>
           onClose();
         }}
       >
-        undo
+        {t('undo')}
       </button>
-      <button type="button" className="undo-x" aria-label="Dismiss" onClick={onClose}>
+      <button type="button" className="undo-x" aria-label={t('Dismiss')} onClick={onClose}>
         ×
       </button>
     </div>
@@ -36,15 +37,15 @@ export function UndoBar({ text, onUndo, onClose }: { text: string; onUndo: () =>
  */
 export function SavedPanel<T>({
   slug,
-  title = 'saved',
+  title = t('saved'),
   help,
   suggestName,
   getData,
   onLoad,
   describe,
-  saveLabel = 'save',
-  emptyText = 'Nothing saved yet.',
-  loadLabel = 'Load',
+  saveLabel = t('save'),
+  emptyText = t('Nothing saved yet.'),
+  loadLabel = t('Load'),
   undoable = true,
 }: {
   slug: string;
@@ -71,16 +72,16 @@ export function SavedPanel<T>({
   const doSave = async () => {
     const data = getData();
     if (data === null) return;
-    const n = name.trim() || suggestName().trim() || 'Untitled';
+    const n = name.trim() || suggestName().trim() || t('Untitled');
     const existing = items.find((i) => i.name === n);
-    if (existing && !window.confirm(`Replace the saved “${n}”?`)) return;
+    if (existing && !window.confirm(t('Replace the saved “{n}”?', { n }))) return;
     await save(n, data, existing?.id);
     setName('');
   };
   const load = (item: SavedItem<T>) => {
     const prev = undoable ? getData() : null;
     onLoad(item.data, item);
-    if (prev !== null) setUndo({ text: `${loadLabel}ed “${item.name}”`, prev });
+    if (prev !== null) setUndo({ text: t('“{name}” loaded', { name: item.name }), prev });
   };
 
   return (
@@ -95,9 +96,9 @@ export function SavedPanel<T>({
       <div className="inline">
         <input
           className="input"
-          aria-label="Name to save under"
+          aria-label={t('Name to save under')}
           value={name}
-          placeholder={canSave ? suggestName() || 'name' : 'nothing to save yet'}
+          placeholder={canSave ? suggestName() || t('name') : t('nothing to save yet')}
           disabled={!canSave}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && doSave()}
@@ -115,7 +116,7 @@ export function SavedPanel<T>({
               {editing?.id === item.id ? (
                 <input
                   className="input"
-                  aria-label="New name"
+                  aria-label={t('New name')}
                   autoFocus
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
@@ -132,29 +133,29 @@ export function SavedPanel<T>({
                   }}
                 />
               ) : (
-                <button type="button" className="saved-name" title={`${loadLabel} “${item.name}”`} onClick={() => load(item)}>
+                <button type="button" className="saved-name" title={t('{action} “{name}”', { action: loadLabel, name: item.name })} onClick={() => load(item)}>
                   <span>{item.name}</span>
                   {describe && <span className="saved-desc">{describe(item)}</span>}
                 </button>
               )}
               <span className="saved-when mono">{savedWhen(item.savedAt)}</span>
               <span className="saved-actions">
-                <button type="button" title="Rename" aria-label={`Rename ${item.name}`} onClick={() => setEditing({ id: item.id, name: item.name })}>
+                <button type="button" title={t('Rename')} aria-label={t('Rename {name}', { name: item.name })} onClick={() => setEditing({ id: item.id, name: item.name })}>
                   ✎
                 </button>
                 <button
                   type="button"
-                  title="Replace with what you have now"
-                  aria-label={`Update ${item.name} with the current state`}
+                  title={t('Replace with what you have now')}
+                  aria-label={t('Update {name} with the current state', { name: item.name })}
                   disabled={!canSave}
                   onClick={() => {
                     const data = getData();
-                    if (data !== null && window.confirm(`Replace “${item.name}” with what you have now?`)) save(item.name, data, item.id);
+                    if (data !== null && window.confirm(t('Replace “{name}” with what you have now?', { name: item.name }))) save(item.name, data, item.id);
                   }}
                 >
                   ⤓
                 </button>
-                <button type="button" title="Delete" aria-label={`Delete ${item.name}`} onClick={() => window.confirm(`Delete “${item.name}”?`) && remove(item.id)}>
+                <button type="button" title={t('Delete')} aria-label={t('Delete {name}', { name: item.name })} onClick={() => window.confirm(t('Delete “{name}”?', { name: item.name })) && remove(item.id)}>
                   ×
                 </button>
               </span>

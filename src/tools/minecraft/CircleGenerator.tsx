@@ -5,6 +5,7 @@ import { Help } from '../../components/Help';
 import { Workbench } from '../../components/Workbench';
 import { FLAT_SHAPES, MAX_FLAT, MAX_SOLID, SOLID_SHAPES, buildVolume, is3d, layerGrid, type Fill, type Shape } from './circleShapes';
 import type { Layers } from './shapeFaces';
+import { t, tx } from '../../lib/i18n-core';
 
 // three.js only loads once a 3D shape is shown.
 const Shape3D = lazy(() => import('./Shape3D'));
@@ -19,17 +20,18 @@ const savedView = (): View => {
   }
 };
 
+// ("shape|": these words mean one shape here, not the QR maker's dot shapes.)
 const LABEL: Record<Shape, string> = {
-  circle: 'circle / oval',
-  polygon: 'polygon',
-  star: 'star',
-  heart: 'heart',
-  sphere: 'sphere',
-  dome: 'dome',
-  cylinder: 'cylinder',
-  cone: 'cone',
-  pyramid: 'pyramid',
-  torus: 'torus (donut)',
+  circle: tx('shape|circle / oval'),
+  polygon: tx('shape|polygon'),
+  star: tx('shape|star'),
+  heart: tx('shape|heart'),
+  sphere: tx('shape|sphere'),
+  dome: tx('shape|dome'),
+  cylinder: tx('shape|cylinder'),
+  cone: tx('shape|cone'),
+  pyramid: tx('shape|pyramid'),
+  torus: tx('shape|torus (donut)'),
 };
 
 const clampInt = (s: string, fallback: number, min: number, max: number) => Math.max(min, Math.min(max, Math.round(num(s, fallback))));
@@ -201,68 +203,72 @@ export default function CircleGenerator() {
 
   const guide = (
     <Panel
-      title="guide"
+      title={t('guide')}
       actions={
         solid ? (
           <Segmented
-            label="View"
+            label={t('View')}
             compact
             value={view}
             onChange={pickView}
             options={[
               { value: '3d', label: '3D' },
-              { value: 'layer', label: 'layer' },
+              { value: 'layer', label: t('layer') },
             ]}
           />
         ) : undefined
       }
     >
       <div className="stats">
-        <Stat label={solid ? 'this layer' : 'blocks'} value={cells.filter(Boolean).length} />
-        {solid && <Stat label="whole shape" value={total} />}
-        <Stat label="size" value={solid ? `${w} × ${h} × ${layers}` : `${w} × ${h}`} />
+        <Stat label={solid ? t('this layer') : t('blocks')} value={cells.filter(Boolean).length} />
+        {solid && <Stat label={t('whole shape')} value={total} />}
+        <Stat label={t('size')} value={solid ? `${w} × ${h} × ${layers}` : `${w} × ${h}`} />
       </div>
       <div ref={area}>
         <div ref={box} style={{ overflowX: 'auto', display: show3d ? 'none' : undefined }}>
-          <canvas ref={canvas} role="img" aria-label={`${LABEL[shape]} guide${solid ? `, layer ${layerIdx + 1} of ${layers}` : ''}, ${w} by ${h} blocks`} style={{ display: 'block', borderRadius: 6 }} />
+          <canvas ref={canvas} role="img" aria-label={
+              solid
+                ? t('{shape} guide, layer {layer} of {layers}, {w} by {h} blocks', { shape: t(LABEL[shape]), layer: layerIdx + 1, layers, w, h })
+                : t('{shape} guide, {w} by {h} blocks', { shape: t(LABEL[shape]), w, h })
+            } style={{ display: 'block', borderRadius: 6 }} />
         </div>
         {show3d && (
           <Suspense fallback={<div style={{ height: room3d }} />}>
             <Shape3D layers={shapeLayers} layer={layerIdx} height={room3d} />
           </Suspense>
         )}
-        {solid && <p className="note">Scroll over the guide to move through the layers ({layerIdx + 1} of {layers}).</p>}
+        {solid && <p className="note">{t('Scroll over the guide to move through the layers ({layer} of {layers}).', { layer: layerIdx + 1, layers })}</p>}
       </div>
     </Panel>
   );
 
   return (
     <Workbench preview={guide}>
-      <section className="panel" aria-label="Shape">
+      <section className="panel" aria-label={t('Shape')}>
         <div className="opt-row">
           <span className="opt-label" id="shape-flat">
-            Flat
+            {t('Flat')}
           </span>
-          <Segmented labelledBy="shape-flat" value={shape} onChange={pick} options={FLAT_SHAPES.map((s) => ({ value: s, label: LABEL[s] }))} />
+          <Segmented labelledBy="shape-flat" value={shape} onChange={pick} options={FLAT_SHAPES.map((s) => ({ value: s, label: t(LABEL[s]) }))} />
         </div>
         <div className="opt-row">
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <span className="opt-label" id="shape-3d">
               3D
             </span>
-            <Help label="3D shapes" text="Built layer by layer: scroll over the guide (or use the Layer slider) to see which blocks go on each layer. Layer 1 is the bottom." />
+            <Help label={t('3D shapes')} text={t('Built layer by layer: scroll over the guide (or use the Layer slider) to see which blocks go on each layer. Layer 1 is the bottom.')} />
           </span>
-          <Segmented labelledBy="shape-3d" value={shape} onChange={pick} options={SOLID_SHAPES.map((s) => ({ value: s, label: LABEL[s] }))} />
+          <Segmented labelledBy="shape-3d" value={shape} onChange={pick} options={SOLID_SHAPES.map((s) => ({ value: s, label: t(LABEL[s]) }))} />
         </div>
         <hr className="divider" />
         <div className="opt-row">
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <span className="opt-label" id="fill">
-              Fill
+              {t('Fill')}
             </span>
             <Help
-              label="fill"
-              text="Thin: one block wide, blocks only touch at the corners on curves. Thick: no diagonal gaps, so walls are watertight and look solid. Filled: the whole shape, solid. Hollow domes, cones and pyramids have no floor, and a hollow cylinder is an open tube (no lid, no floor)."
+              label={t('fill')}
+              text={t('Thin: one block wide, blocks only touch at the corners on curves. Thick: no diagonal gaps, so walls are watertight and look solid. Filled: the whole shape, solid. Hollow domes, cones and pyramids have no floor, and a hollow cylinder is an open tube (no lid, no floor).')}
             />
           </span>
           <Segmented
@@ -270,36 +276,36 @@ export default function CircleGenerator() {
             value={fill}
             onChange={setFill}
             options={[
-              { value: 'thin', label: 'thin' },
-              { value: 'thick', label: 'thick' },
-              { value: 'filled', label: 'filled' },
+              { value: 'thin', label: t('thin') },
+              { value: 'thick', label: t('thick') },
+              { value: 'filled', label: t('filled') },
             ]}
           />
         </div>
         <hr className="divider" />
         <div className="fields">
-          <NumberField label={shape === 'torus' ? 'Outer width' : 'Width'} value={width} onChange={setWidth} min={1} max={max} />
-          <NumberField label={shape === 'torus' ? 'Outer length' : 'Length'} value={length} onChange={setLength} min={1} max={max} />
+          <NumberField label={shape === 'torus' ? t('Outer width') : t('Width')} value={width} onChange={setWidth} min={1} max={max} />
+          <NumberField label={shape === 'torus' ? t('Outer length') : t('Length')} value={length} onChange={setLength} min={1} max={max} />
           {solid && shape !== 'torus' && (
             <NumberField
-              label="Height"
+              label={t('Height')}
               value={height}
               onChange={setHeight}
               min={1}
               max={MAX_SOLID}
-              help={shape === 'sphere' ? 'Width, length and height the same make a ball; different ones an egg or a lens.' : undefined}
+              help={shape === 'sphere' ? t('Width, length and height the same make a ball; different ones an egg or a lens.') : undefined}
             />
           )}
           {shape === 'torus' && (
-            <NumberField label="Tube thickness" value={tube} onChange={setTube} min={1} max={Math.max(1, Math.floor(Math.min(w, h) / 2))} help="How thick the ring is, in blocks. It's also how tall the donut is." />
+            <NumberField label={t('Tube thickness')} value={tube} onChange={setTube} min={1} max={Math.max(1, Math.floor(Math.min(w, h) / 2))} help={t('How thick the ring is, in blocks. It\'s also how tall the donut is.')} />
           )}
-          {shape === 'polygon' && <NumberField label="Sides" value={sides} onChange={setSides} min={3} max={12} help="3 = triangle, 4 = square, 5 = pentagon, 6 = hexagon, 8 = octagon." />}
-          {shape === 'star' && <NumberField label="Points" value={points} onChange={setPoints} min={3} max={12} />}
+          {shape === 'polygon' && <NumberField label={t('Sides')} value={sides} onChange={setSides} min={3} max={12} help={t('3 = triangle, 4 = square, 5 = pentagon, 6 = hexagon, 8 = octagon.')} />}
+          {shape === 'star' && <NumberField label={t('Points')} value={points} onChange={setPoints} min={3} max={12} />}
         </div>
         {shape === 'star' && (
           <div className="opt-row">
             <label className="opt-label" htmlFor="depth">
-              Point depth
+              {t('Point depth')}
               <span className="hint">{depth} %</span>
             </label>
             <div className="range">
@@ -310,9 +316,9 @@ export default function CircleGenerator() {
         {solid && (
           <div className="opt-row">
             <label className="opt-label" htmlFor="layer">
-              Layer
+              {t('Layer')}
               <span className="hint">
-                {layerIdx + 1} of {layers}, from the bottom
+                {t('{layer} of {layers}, from the bottom', { layer: layerIdx + 1, layers })}
               </span>
             </label>
             <div className="range">
@@ -322,7 +328,7 @@ export default function CircleGenerator() {
         )}
       </section>
 
-      <Panel title="blocks per row">
+      <Panel title={t('blocks per row')}>
         <pre className="code" style={{ maxHeight: 320, overflowY: 'auto' }}>
           {rowRuns.map((r, i) => `${String(i + 1).padStart(3)}  ${r}`).join('\n')}
         </pre>

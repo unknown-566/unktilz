@@ -125,7 +125,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           </div>
           {phase === 'uncover' && (
             <div className="bootlabel" aria-hidden="true">
-              › unktilz{slug ? `/${slug}` : ''}
+              {/* i18n-ignore */}› unktilz{slug ? `/${slug}` : ''}
               <span className="bootcaret" />
             </div>
           )}
