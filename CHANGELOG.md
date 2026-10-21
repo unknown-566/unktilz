@@ -2,6 +2,15 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.19.1] - 2026-10-21
+
+- Search in Czech works with or without háčky and čárky ("stahovani videa" finds Stahování videa)
+- Search in Czech knows more words for each tool ("spojit pdf", "odstranit pozadí", "zmenšit fotku"…)
+
+### Changed
+- Tool search ignores accents and letter case, in both languages: "stahovaní ViDea", "stahovani videa" and "STAHOVÁNÍ" all find the video downloader.
+- Every tool has its own Czech search words, with other word forms and other words for the same thing (sloučit / sloučení / spojit, odstranit pozadí / průhledné pozadí, kolik xp…), so a search doesn't have to use the exact tool name.
+
 ## [1.19.0] - 2026-10-21
 
 - Make video bad / Make audio bad: several sound effects at once

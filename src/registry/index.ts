@@ -53,7 +53,8 @@ export const groups = CATEGORIES.map((c) => ({ ...c, tools: tools.filter((tt) =>
 
 /**
  * What search looks in: the name, meta and category in the language shown, the slug and the English
- * keywords, and in Czech also the Czech keywords (dictionary entry "keywords:<slug>").
+ * keywords, and in Czech also the Czech search words (src/i18n/cs/keywords.ts). matches() ignores
+ * accents and letter case.
  */
 const haystack = (tool: Tool) =>
   [
@@ -65,13 +66,15 @@ const haystack = (tool: Tool) =>
     // i18n-ignore
     getLang() === 'cs' ? t(`keywords:${tool.slug}`) : '',
   ]
-    .join(' ')
-    .toLowerCase();
+    .join(' ');
+
+/** Lower case without accents, so "stahovani", "Stahování" and "stahovaní" all match. */
+const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 export function matches(tt: Tool, query: string) {
-  const q = query.trim().toLowerCase();
+  const q = fold(query.trim());
   if (!q) return true;
-  const h = haystack(tt);
+  const h = fold(haystack(tt));
   return q.split(/\s+/).every((word) => h.includes(word));
 }
 

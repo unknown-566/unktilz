@@ -211,6 +211,9 @@ for (const file of walk(src).filter((f) => !f.startsWith(dictDir))) {
 const missing = [...used].filter(([k]) => !dict.has(k) && !same.has(k));
 const vars = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
 const badVars = [...dict].filter(([en, cs]) => vars(en.replace(/^[\w-]+\|/, '')) !== vars(cs));
+// every tool needs Czech search words (src/i18n/cs/keywords.ts)
+const slugs = walk(src).filter((f) => f.endsWith('.tool.ts')).map((f) => readFileSync(f, 'utf8').match(/slug: '([^']+)'/)?.[1]).filter(Boolean);
+const noKeywords = slugs.filter((s) => !dict.has('keywords:' + s));
 const unused = [...dict.keys()].filter((k) => !used.has(k) && !k.startsWith('keywords:'));
 const byFile = (list) => {
   const m = new Map();
@@ -222,7 +225,8 @@ const byFile = (list) => {
 };
 
 console.log(`dictionary: ${dict.size} entries (+${same.size} the same in Czech) · texts in t(): ${used.size}`);
-console.log(`missing Czech: ${missing.length} · not in t(): ${flagged.length} · {vars} that don't match: ${badVars.length} · unused: ${unused.length}`);
+console.log(`missing Czech: ${missing.length} · not in t(): ${flagged.length} · {vars} that don't match: ${badVars.length} · unused: ${unused.length} · tools without Czech search words: ${noKeywords.length}`);
+for (const s of noKeywords) console.log(`  no search words  "keywords:${s}" (src/i18n/cs/keywords.ts)`);
 const only = argv.find((a) => !a.startsWith('--'));
 const mine = (at) => !only || at.includes(only.replace(/\\/g, '/'));
 if (args.has('--list')) {
@@ -235,4 +239,4 @@ if (args.has('--list')) {
 for (const [en, cs] of badVars) console.log(`  vars     ${JSON.stringify(en)} → ${JSON.stringify(cs)}`);
 if (args.has('--unused')) for (const k of unused) console.log(`  unused   ${JSON.stringify(k)}`);
 if (args.has('--suspects')) for (const x of suspectList) if (mine(x.at)) console.log(`  suspect  ${x.at}  ${JSON.stringify(x.s)}`);
-process.exitCode = missing.length || flagged.length || badVars.length ? 1 : 0;
+process.exitCode = missing.length || flagged.length || badVars.length || noKeywords.length ? 1 : 0;

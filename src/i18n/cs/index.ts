@@ -11,7 +11,8 @@ import mcWorld, { SAME as mcWorldSame } from './mcWorld';
 import mcGive, { SAME as mcGiveSame } from './mcGive';
 import mcText, { SAME as mcTextSame } from './mcText';
 import mcSkin, { SAME as mcSkinSame } from './mcSkin';
+import keywords from './keywords';
 
 const same = Object.fromEntries([...toolsSame, ...pdfSame, ...imageSame, ...videoSame, ...devqrSame, ...mcWorldSame, ...mcGiveSame, ...mcTextSame, ...mcSkinSame].map((s) => [s, s]));
-const all: Record<string, string> = { ...same, ...app, ...tools, ...pdf, ...image, ...video, ...devqr, ...mcWorld, ...mcGive, ...mcText, ...mcSkin };
+const all: Record<string, string> = { ...same, ...app, ...tools, ...pdf, ...image, ...video, ...devqr, ...mcWorld, ...mcGive, ...mcText, ...mcSkin, ...keywords };
 export default all;
