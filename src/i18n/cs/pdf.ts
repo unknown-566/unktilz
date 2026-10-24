@@ -71,8 +71,11 @@ export default {
   'page 1 of {numPages}: text stays as it is, pictures get smaller': 'stránka 1 z {numPages}: text zůstane, jak je, obrázky se zmenší',
   'page 1 of {numPages}': 'stránka 1 z {numPages}',
   'page {n} of {numPages}': 'stránka {n} z {numPages}',
-  'Everything stays on your computer.': 'Vše zůstává ve vašem počítači.',
-  'Drop a PDF here or click to choose it': 'Přetáhněte sem PDF nebo klikněte a vyberte ho',
+  'Several PDFs are joined one after another.': 'Víc PDF se spojí za sebe.',
+  'Drop a PDF here': 'Přetáhněte sem PDF',
+  'Choose PDFs': 'Vybrat PDF soubory',
+  'Choose a PDF': 'Vybrat PDF',
+  'Only PDF files go here; the other files were left out.': 'Sem patří jen PDF; ostatní soubory se vynechaly.',
   'File name': 'Název souboru',
   'Save PDF': 'Uložit PDF',
   '{file} is being made: it lands in the queue on the left.': '{file} se připravuje: najdete ho ve frontě vlevo.',
@@ -80,7 +83,7 @@ export default {
 
   // ---- Organize PDF ----
   'Opening…': 'Otevírám…',
-  'Drop a PDF here or click to choose one (several are put one after another)': 'Přetáhněte sem PDF nebo klikněte a vyberte ho (víc souborů se dá za sebe)',
+  'Drop PDFs here': 'Přetáhněte sem PDF soubory',
   'Page tools': 'Úpravy stránek',
   '{n} picked:': 'Vybráno {n}:',
   'Pick pages (Ctrl / Shift for more) or use the buttons on a page.': 'Vyberte stránky (Ctrl / Shift pro víc) nebo použijte tlačítka na stránce.',
@@ -160,8 +163,7 @@ export default {
   'This page in the PDF': 'Tato stránka v PDF',
   'photos · {n}': 'fotky · {n}',
   photos: 'fotky',
-  '+ add photos': '+ přidat fotky',
-  'Drop photos here or click to choose them': 'Přetáhněte sem fotky nebo klikněte a vyberte je',
+  'Add photos': 'Přidat fotky',
   'Photos of paper (homework, receipts, letters…) or any pictures: JPG, PNG, HEIC from an iPhone, WebP, TIFF. Each becomes a page.':
     'Fotky papírů (úkoly, účtenky, dopisy…) nebo jakékoli obrázky: JPG, PNG, HEIC z iPhonu, WebP, TIFF. Z každé bude jedna stránka.',
   'Page {n}: {name}': 'Stránka {n}: {name}',

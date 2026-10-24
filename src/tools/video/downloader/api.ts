@@ -116,20 +116,28 @@ export const liveDownloads = () => snapshot;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** What one download is: saved with its queue job, so it can be followed again after a reload. */
+export type DlJob = {
+  url: string;
+  options: DlOptions;
+  title: string;
+  /** Playlist item, from 1. */
+  item?: number;
+  /** The job on the server, once it's started. */
+  serverId?: string;
+};
+
 /**
- * One download from start to the finished files, for a queue task: starts yt-dlp, follows it, then
- * fetches the files and lets the server delete its copy. Stopping the task stops yt-dlp and aria2c.
+ * One download from start to the finished files, for a queue task: starts yt-dlp (or, with a
+ * `serverId`, follows the one already running), then fetches the files and lets the server delete
+ * its copy. Stopping the task stops yt-dlp and aria2c. `onStarted` gets the server's job id.
  */
-export async function download(
-  url: string,
-  options: DlOptions,
-  title: string,
-  item: number | undefined,
-  signal: AbortSignal,
-  onProgress: (p: number) => void,
-): Promise<{ name: string; blob: Blob }[]> {
-  const job = await startJob(url, options, item);
+export async function download(d: DlJob, signal: AbortSignal, onProgress: (p: number) => void, onStarted: (serverId: string) => void): Promise<{ name: string; blob: Blob }[]> {
+  const id = d.serverId ?? (await startJob(d.url, d.options, d.item)).id;
+  if (!d.serverId) onStarted(id);
+  const job = { id };
   const key = job.id;
+  const title = d.title;
   const stop = () => void cancelJob(job.id).catch(() => {});
   signal.addEventListener('abort', stop, { once: true });
   try {

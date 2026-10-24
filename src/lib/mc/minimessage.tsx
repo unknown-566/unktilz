@@ -184,9 +184,16 @@ function parse(input: string): Node[] {
   return root;
 }
 
-export type MStyle = Style & { shadow?: string | null; font?: string; title?: string };
-/** One visible character (or a whole keybind label). `keybind` / `head` remember what made it. */
-type Ch = { ch: string; style: MStyle; img?: string; keybind?: string; head?: string };
+/** What clicking, hovering or shift-clicking a piece of chat does (tellraw, books, signs). */
+export type MClick = { action: string; value: string };
+export type MStyle = Style & { shadow?: string | null; font?: string; title?: string; click?: MClick; hover?: string; insert?: string };
+/** Text the game fills in itself: a player's name, a score, a translated text. */
+export type MSpecial =
+  | { kind: 'selector'; selector: string }
+  | { kind: 'score'; name: string; objective: string }
+  | { kind: 'lang'; key: string; fallback?: string; args: string[] };
+/** One visible character (or a whole keybind label / special piece). `keybind` / `head` / `special` remember what made it. */
+type Ch = { ch: string; style: MStyle; img?: string; keybind?: string; head?: string; special?: MSpecial };
 
 const hex2 = (n: number) => Math.round(Math.min(255, Math.max(0, n))).toString(16).padStart(2, '0');
 const mix = (a: string, b: string, tt: number) => {
@@ -272,15 +279,21 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
         out.push({ ch: KEY_NAMES[a[0]] ?? prettyKey(a[0] ?? 'key'), style, keybind: a[0] ?? 'key.jump' });
         break;
       case 'lang':
-      case 'lang_or':
+      case 'lang_or': {
         // Real text comes from the player's language file; show the fallback or a readable key.
-        put(n.name === 'lang_or' && a[1] ? a[1] : prettyKey(a[0] ?? ''));
+        const fallback = n.name === 'lang_or' ? a[1] : undefined;
+        out.push({
+          ch: fallback || prettyKey(a[0] ?? ''),
+          style,
+          special: { kind: 'lang', key: a[0] ?? '', fallback, args: a.slice(n.name === 'lang_or' ? 2 : 1) },
+        });
         break;
+      }
       case 'selector':
-        put(a[0] ?? '@p');
+        out.push({ ch: a[0] ?? '@p', style, special: { kind: 'selector', selector: a[0] ?? '@p' } });
         break;
       case 'score':
-        put('0');
+        out.push({ ch: '0', style, special: { kind: 'score', name: a[0] ?? '@s', objective: a[1] ?? '' } });
         break;
       case 'nbt':
         put(`[${a[2] ?? 'nbt'}]`);
@@ -307,13 +320,13 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
         walk(n.children, { ...style, font: (a.length > 1 ? a.join(':') : a[0] ?? '').toLowerCase() }, out);
         break;
       case 'click':
-        walk(n.children, { ...style, title: `click: ${a[0] ?? ''} ${a.slice(1).join(':')}`.trim() }, out);
+        walk(n.children, { ...style, title: `click: ${a[0] ?? ''} ${a.slice(1).join(':')}`.trim(), click: { action: a[0] ?? '', value: a.slice(1).join(':') } }, out);
         break;
       case 'hover':
-        walk(n.children, { ...style, title: t('hover: {text}', { text: a.slice(1).join(':').replace(/<[^>]*>/g, '') }) }, out);
+        walk(n.children, { ...style, title: t('hover: {text}', { text: a.slice(1).join(':').replace(/<[^>]*>/g, '') }), hover: a.slice(1).join(':') }, out);
         break;
       case 'insert':
-        walk(n.children, { ...style, title: t('shift-click inserts: {text}', { text: a.join(':') }) }, out);
+        walk(n.children, { ...style, title: t('shift-click inserts: {text}', { text: a.join(':') }), insert: a.join(':') }, out);
         break;
       case 'center':
         walk(n.children, style, out);
@@ -364,7 +377,15 @@ function walk(nodes: Node[], style: MStyle, out: Ch[]) {
 }
 
 const same = (a: MStyle, b: MStyle) =>
-  a.color === b.color && a.shadow === b.shadow && a.font === b.font && a.title === b.title && MC_FORMATS.every((f) => !!a[f.key] === !!b[f.key]);
+  a.color === b.color &&
+  a.shadow === b.shadow &&
+  a.font === b.font &&
+  a.title === b.title &&
+  a.hover === b.hover &&
+  a.insert === b.insert &&
+  a.click?.action === b.click?.action &&
+  a.click?.value === b.click?.value &&
+  MC_FORMATS.every((f) => !!a[f.key] === !!b[f.key]);
 
 function styleFor(s: MStyle, defaultColor: string): CSSProperties {
   const css = segStyle(s, defaultColor, s.shadow !== null);
@@ -420,20 +441,22 @@ export function MiniText({ text, defaultColor = '#AAAAAA' }: { text: string; def
   return <>{parts}</>;
 }
 
-export type MiniSeg = { text: string; style: MStyle; keybind?: string; head?: string };
+export type MiniSeg = { text: string; style: MStyle; keybind?: string; head?: string; special?: MSpecial };
 
 /**
  * A MiniMessage string as runs of equally styled text (gradients become one run per color), for
  * turning it into a Minecraft text component. Keybinds and heads come out as runs of their own.
  */
-export function miniSegments(text: string): MiniSeg[] {
+export function miniSegments(text: string, opts: { specials?: boolean } = {}): MiniSeg[] {
   const chars: Ch[] = [];
   walk(parse(text), {}, chars);
   const segs: MiniSeg[] = [];
+  // Without specials (item names, lore) a player's name or score is just the text shown for it.
+  if (opts.specials === false) for (const c of chars) delete c.special;
   for (const c of chars) {
     const last = segs[segs.length - 1];
-    if (c.keybind || c.head) segs.push({ text: c.ch, style: c.style, keybind: c.keybind, head: c.head });
-    else if (last && !last.keybind && !last.head && same(last.style, c.style)) last.text += c.ch;
+    if (c.keybind || c.head || c.special) segs.push({ text: c.ch, style: c.style, keybind: c.keybind, head: c.head, special: c.special });
+    else if (last && !last.keybind && !last.head && !last.special && same(last.style, c.style)) last.text += c.ch;
     else segs.push({ text: c.ch, style: c.style });
   }
   return segs;

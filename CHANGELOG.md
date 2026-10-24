@@ -2,6 +2,74 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.20.0] - 2026-10-24
+
+- New tool: Crop image (any ratio, exact pixels, turn and mirror, round crop, several pictures at once)
+- The place to drop your files looks and works the same in every tool
+- Drag a finished file from the queue straight into another tool, or open it there with ↗
+- New tool: Encode, encrypt & hash (it replaces Base64 encode / decode)
+- Encodings: Base64, Base32, Base58, Base85, Base45, hex, binary, URL, HTML, Unicode, Punycode, Morse code…
+- Classic ciphers: Caesar, ROT13, Vigenère, Playfair, XOR and more, and you can chain them (XOR → Base64)
+- Hashes of text or files: MD5, SHA-1/2/3, BLAKE3, CRC32… with a "compare with" field for checksums
+- Password hashes: make or check bcrypt, Argon2, scrypt and PBKDF2
+- Real encryption with a password (AES-256-GCM), also OpenSSL compatible
+- New tool (beta): Summon command generator (like MCStacker): any mob or entity with a name, health, gear, effects and riders
+- Summon: villagers with your own trades, armor stands in a pose, charged creepers, floating text, TNT and more
+- Summon: tame a pet to a player, mobs that drop nothing, babies that never grow up, item frames, fireworks, thrown potions, effect clouds, minecarts and chest boats with items, arrows
+- Summon: display entities can be turned, moved, lit and given a glow color and shadow
+- New tool: Tellraw & title generator: colored chat messages, titles and action bar text with clickable links and commands, text on hover, player names and scores
+- New tool: Setblock & fill generator: block states, signs with clickable text, chests with items or loot, spawners with your own mob, command blocks, heads; big areas split automatically
+- Downloader: more formats: WAV, FLAC and OGG sound with a quality choice (320k, 192k…), MOV and AVI video, video without sound
+- Downloads keep going when you switch the language or reload the page
+- Long error messages in the queue no longer cover the jobs below them
+
+### Added
+- Finished files go on to other tools: drag one from the queue (the tiles on the left, or the results under a tool) into any tool that takes files, and the places that take it light up while you drag. Or press ↗ next to it in the queue and pick a tool from the list of those that take it: the tool opens with the file already in. One file can also be dragged out of the browser into a folder. Finished pictures show in their queue tile and have a copy button: copy, then Ctrl+V in Discord or any chat (the Discord app takes no files dragged out of a web page). A job with several files (split PDF parts) brings all of them.
+- "Crop image" in Image: drag the box (corners, edges, or draw a new one; arrow keys nudge it, double-click takes everything) or type X, Y, width and height in pixels. Lock a ratio (free, original, 1:1, 4:3, 3:2, 16:9, 21:9, 4:5, A4 or your own, turned with ⇄), turn and mirror, crop round (see-through PNG / WebP), keep the cropped size or save at an exact one (1080 × 1080…), as the same format, PNG, JPG, WebP or AVIF. Cropping uses the full picture, also from HEIC and TIFF. Several pictures at once, each with its own box or all with the same one; the results go to the queue.
+- "Encode, encrypt & hash" in Dev, with four tabs:
+  - **Encode & ciphers:** 15 encodings and 18 classic ciphers as steps you can chain; decoding runs them backwards. It guesses what a pasted text is (Base64, hex, Morse code, a JWT, a bcrypt hash, an MD5 hash…) and sets it with one click. For Caesar it lists every shift, so you just pick the line that reads well. Works on text and on files.
+  - **Hashes:** 28 hashes and checksums at once, of text or of a file of any size (with progress), as hex, HEX or Base64, optionally as HMAC with a key. Paste the checksum from a download page and the matching row turns green.
+  - **Password hashes:** make a bcrypt, Argon2id/i/d, scrypt or PBKDF2 hash (with the recommended settings), or check if a password matches a hash.
+  - **Encryption:** encrypt text or a file with a password (AES-256-GCM or XChaCha20-Poly1305, key from Argon2id), and only the password is needed to decrypt it; or OpenSSL compatible (`openssl enc -aes-256-cbc -pbkdf2`), both ways; or with your own key and IV (AES-GCM/CBC/CTR/ECB, ChaCha20, Salsa20, RC4…).
+- Everything runs in your browser; passwords and keys are never saved.
+- "Summon command generator" in Minecraft (beta: tell us what doesn't work in game): builds a `/summon` command for any of the game's 155 entities, not only mobs.
+  - **Entity:** name with colors (the same color and style bar as the give generator), health, speed, damage, size and other attributes, worn and held items (also items saved in the give generator, with their drop chance), effects, and No AI, silent, invulnerable, glowing, no gravity, never despawns, baby…
+  - **Position & motion:** where it appears (`~`, `^` or exact numbers, with "3 blocks up" / "in front of me" buttons), which way it faces, a starting push (launch TNT or arrows), burning, tags for `@e[tag=…]`.
+  - **Special:** what only some entities have: creeper charged, fuse and explosion size; villager job, biome look, level and your own trades (one or two price items, what it sells, how many uses); armor stand arms, small, invisible, no base plate, marker, locked, and a pose for each body part (with wave, point, walk, sit, zombie); wool color, wolf and cat breeds, horse coat and markings, tamed, saddle, chest; slime size; axolotl, parrot, rabbit (also the Killer Bunny), fox, frog, mooshroom, llama colors; TNT fuse and strength; falling block with block states; dropped items that never despawn or can't be picked up; XP orbs; text display with colored text, background, shadow, turning to face you and size; block and item displays.
+  - **Riders:** entities can ride each other, any number and as high as you like (a skeleton on a spider, a tower of mobs). The preview draws them stacked; click one to edit it.
+  - Ready to start from: boss zombie, spider jockey, charged creeper, shop villager, hologram, floating text, TNT rocket. Entities can be saved ("my entities", with their riders) and go into the backup.
+  - For Minecraft 1.20.5 up to 26.x; what a version can't do is left out with a note.
+  - Also checked against everything MCStacker's summon offers, then added what's used: **tamed by a player** (wolves, cats, parrots, horses, llamas, nautiluses, foxes that trust them; by name or UUID, also for offline-mode servers) with sitting and a collar color; for **any mob** drops nothing or another loot table, a team, tied to a fence with a lead, extra golden hearts; animal **babies that never grow up**; piglins and hoglins that don't turn into zombies in the Overworld; ghast and fireball explosion size; **item frames** (item, wall or floor, item turned, invisible, fixed, drop chance); **firework rockets** (a firework from "my items", when it explodes, flying the way it's pushed); thrown **splash and lingering potions**; **effect clouds** (potion, own effects, radius, how long, shrinking, color); **minecarts** with any block inside and command block minecarts with their command; **chest boats and minecarts** with items or a loot table; **arrows and tridents** (damage, piercing, critical, pick-up). **Display entities** got turning and moving (degrees and blocks), light, glow color, shadow, view distance and smooth movement; text displays got text opacity and the chat background; item displays how the item is shown.
+- "Tellraw & title generator" in Minecraft: chat messages (`/tellraw`), titles with a subtitle and how long they show, action bar text, and clearing the title.
+  - Text with the same color and style bar as the give generator (gradients, rainbow, any color, shadow, fonts, keybinds).
+  - A new bar for chat: select part of the text and make it **open a link, run a command, write into the chat box, copy something or turn a book page** when clicked, show **a bubble with (colored) text** when pointed at, or put text into the chat box on shift-click. And text the game fills in for each player: **a player's name** (`@p`…), **a score**, **a translated game text**.
+  - For whom: everyone, the nearest player, yourself, a random player or a player by name.
+  - A title gives all its commands in the right order (times, subtitle, title), each to copy, or all at once.
+  - Preview like in game: the chat line, or a bit of screen with the title or the action bar above the hotbar; clickable parts show what they do when pointed at.
+  - Notes when something won't work: a link without https://, clicking in a title, a score without its objective…
+  - Ready to start from: welcome with a Discord link, rules on hover, click to teleport, copy the server IP, a countdown title, coins in the action bar. Texts can be saved ("my texts").
+  - For Minecraft 1.20.5 up to 26.x: JSON text up to 1.21.4, SNBT from 1.21.5 (with `click_event` / `hover_event`).
+- "Setblock & fill generator" in Minecraft: one block (`/setblock`) or a whole area (`/fill`).
+  - Any block of the game, with its **block states** as lists (which way stairs face, top or bottom half, lit, age…; only what you pick goes into the command).
+  - Where: `~`, `^` or exact coordinates with quick buttons; for an area both corners, its size ("9 × 7 × 9 = 567 blocks") and ready areas (5×5 around me, the floor under me, 32×32×32).
+  - What happens to what's there: replace, break with drops, only into air, without block updates (`strict`, 1.21.5+), and for areas a hollow box, only the shell, or **only replace some blocks** (`dirt`, `#minecraft:logs`).
+  - **Big areas are split** into several `/fill` commands of at most 32,768 blocks that fill the whole area together.
+  - **What a block holds:** signs (4 lines front and back with colors, text color, glowing, waxed, lines that run a command when clicked), chests, barrels, shulker boxes, hoppers, dispensers and droppers (items, also from "my items", or a loot table, a name and a key lock), spawners (a mob, or one of "my entities" from the summon generator with all its gear and riders; how often, how many, how far), command blocks (command, always active, name), player heads, beacons (effects), jukeboxes (disc) and lecterns (a book from "my items").
+  - Preview: **a 3D view** you can turn and zoom: the block or area in its color (from its name), with you (a player figure with the game's proportions) standing in it for `~` (and an arrow for where you look for `^`), the length of each side in the middle of its edge, the ground grid, see-through areas for "only into air" or a filter, walls with a dashed inside for hollow and shell fills, red for clearing with air, and the pieces of a split fill in colors. Under it the block and its states, the area's size, a sign as in game, a chest's slots.
+  - Ready to start from: a chest full of diamonds, a sign with a clickable line, a zombie spawner, a repeating command block, a hollow glass box, clearing an area, replacing dirt with grass. Blocks can be saved ("my blocks").
+  - For Minecraft 1.20.5 up to 26.x (sign text and names as JSON or SNBT, the old and new container lock).
+- Downloader formats: sound only now also as OGG (Vorbis), WAV and FLAC (lossless), and MP3, M4A, Opus and OGG have a sound quality choice: best, 320, 256, 192 or 128 kbit/s. Video also as MOV (Apple devices, Premiere, Final Cut) and AVI (old players and TVs), both without re-encoding; their subtitles come as files. A "without sound" switch downloads only the picture.
+
+### Changed
+- The new tools (Crop image, Encode, encrypt & hash, the summon, tellraw & title and setblock & fill generators) carry the “new” tag for five days from this release; the summon generator is also marked beta.
+- The Base64 tool is now part of the new tool; old links to it open the new one with Base64 picked.
+- Every tool that starts from files has the same drop area: the icon, "Drop … here", one "Choose …" button and the formats it takes (converters, Crop image, Background remover, GIF maker, Map art, Organize / Split PDF, Images to PDF). Once files are in, it gets smaller.
+- Downloads carry on after the page reloads: switching the language (which reloads the page), F5 or closing the tab no longer turns them into "The page was closed…" errors. yt-dlp kept downloading anyway; now the queue picks the same download up again and gets the file, and downloads that were still waiting start as usual. If the site was restarted meanwhile, the job says so. Switching the language asks first when the queue has work that can't carry on (GIF maker, cropping…).
+- The spawn egg mob editor in the give generator now shares its code with the summon generator; spawn eggs give exactly the same commands as before.
+
+### Fixed
+- Long messages in the queue (like an error) stay on one line with "…" instead of running over the jobs below; the whole text shows when you point at it.
+
 ## [1.19.1] - 2026-10-21
 
 - Search in Czech works with or without háčky and čárky ("stahovani videa" finds Stahování videa)

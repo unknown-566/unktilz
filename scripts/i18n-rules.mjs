@@ -12,7 +12,7 @@ export const SHOW_CALLS = /^(window\.)?(confirm|alert|prompt)$|^set(Err|Error|Er
 export const PROP_DEFAULTS = new Set(['title', 'label', 'saveLabel', 'emptyText', 'loadLabel', 'placeholder', 'help', 'text', 'caption', 'empty', 'action']);
 
 /** Names that stay as they are. */
-export const NAMES = new Set(['unktilz', 'unknown_56', 'GitHub', 'YouTube', 'Minecraft', 'Discord', 'Base64', 'JSON', 'UUID', 'Google Fonts', 'Noto Emoji Animation', 'yt-dlp', 'aria2c', 'ffmpeg', 'bin', 'SponsorBlock', 'PATH', 'Litematica', 'Paper', 'Velocity', 'BungeeCord', 'AdvancedServerList']);
+export const NAMES = new Set(['unktilz', 'unknown_56', 'GitHub', 'YouTube', 'Minecraft', 'Discord', 'Base64', 'JSON', 'UUID', 'Google Fonts', 'Noto Emoji Animation', 'yt-dlp', 'aria2c', 'ffmpeg', 'bin', 'SponsorBlock', 'PATH', 'Litematica', 'Paper', 'Velocity', 'BungeeCord', 'AdvancedServerList', 'HMAC', 'hex', 'HEX', 'bcrypt', 'scrypt', 'Argon2i', 'Argon2d', 'Ascii85', 'XChaCha20-Poly1305', 'IV / nonce']);
 const FORMATS = new Set(['mp3', 'ogg', 'wav', 'flac', 'm4a', 'aac', 'opus', 'webm', 'mp4', 'mkv', 'mov', 'avi', 'gif', 'png', 'jpg', 'jpeg', 'webp', 'avif', 'bmp', 'tiff', 'tif', 'ico', 'svg', 'pdf', 'heic', 'heif', 'json', 'csv', 'txt', 'zip', 'srt', 'vtt', 'nbt', 'snbt', 'html', 'css', 'px', 'kb', 'mb', 'gb', 'fps', 'dpi', 'hz', 'khz', 'kbps', 'ms']);
 
 /** File formats, codes and units ('mp3', 'PNG', 'A4', '1080p'), names and HTML entities. */

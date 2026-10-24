@@ -12,14 +12,27 @@ export type Quality = 'best' | `${number}`;
 /** Subtitles go into the video, come as their own files next to it, or both. */
 export type SubsMode = 'embed' | 'file' | 'both';
 export type SubsFormat = 'srt' | 'vtt';
-export type Container = 'mp4' | 'mkv' | 'webm';
-export type AudioFormat = 'mp3' | 'm4a' | 'opus' | 'best';
+export const CONTAINERS = ['mp4', 'mkv', 'webm', 'mov', 'avi'] as const;
+export type Container = (typeof CONTAINERS)[number];
+// (yt-dlp's "aac" also makes an .m4a file, so it isn't offered on its own.)
+export const AUDIO_FORMATS = ['mp3', 'm4a', 'opus', 'ogg', 'wav', 'flac', 'best'] as const;
+export type AudioFormat = (typeof AUDIO_FORMATS)[number];
+/** kbit/s for the lossy formats; "best" is the encoder's top variable quality. */
+export const BITRATES = ['best', '320', '256', '192', '128'] as const;
+export type Bitrate = (typeof BITRATES)[number];
+/** Formats with no bitrate to pick: lossless, or the site's own file. */
+export const isLossless = (f: AudioFormat) => f === 'wav' || f === 'flac' || f === 'best';
+/** Containers subtitles can go into (yt-dlp's --embed-subs). */
+export const canEmbedSubs = (c: Container) => c === 'mp4' || c === 'mkv' || c === 'webm';
 
 export type DlOptions = {
   mode: Mode;
   quality: Quality;
   container: Container;
   audioFormat: AudioFormat;
+  audioBitrate: Bitrate;
+  /** Video: only the picture, no sound. */
+  noSound: boolean;
   /** Audio: put the cover picture and title / artist / album into the file. */
   embedMeta: boolean;
   /** Video: subtitles put into the file; empty = none. e.g. "en,cs". */
@@ -42,6 +55,8 @@ export const DEFAULT_OPTIONS: DlOptions = {
   quality: '1080',
   container: 'mp4',
   audioFormat: 'mp3',
+  audioBitrate: 'best',
+  noSound: false,
   embedMeta: true,
   subs: '',
   autoSubs: false,
@@ -52,28 +67,38 @@ export const DEFAULT_OPTIONS: DlOptions = {
   extra: '',
 };
 
+const oneOf = <T extends string>(v: unknown, list: readonly T[], fallback: T): T => (list.includes(v as T) ? (v as T) : fallback);
+
 /** The format choice for the settings (without the extra arguments). */
 export function optionArgs(o: DlOptions): string[] {
+  // (The options come from the page: anything odd falls back to the defaults.)
+  const container = oneOf(o.container, CONTAINERS, 'mp4');
+  const audioFormat = oneOf(o.audioFormat, AUDIO_FORMATS, 'mp3');
+  const bitrate = oneOf(o.audioBitrate, BITRATES, 'best');
   const args: string[] = [];
   if (o.mode === 'audio') {
     args.push('-f', o.format || 'ba/b', '-x');
-    if (o.audioFormat !== 'best') args.push('--audio-format', o.audioFormat);
-    // Best VBR quality for MP3; ignored by the others.
-    args.push('--audio-quality', '0');
-    if (o.embedMeta) args.push('--embed-thumbnail', '--embed-metadata');
+    // yt-dlp calls Ogg Vorbis "vorbis" (the file is .ogg).
+    if (audioFormat !== 'best') args.push('--audio-format', audioFormat === 'ogg' ? 'vorbis' : audioFormat);
+    // A bitrate for the lossy formats, or the best variable quality (0).
+    args.push('--audio-quality', bitrate === 'best' || isLossless(audioFormat) ? '0' : `${bitrate}K`);
+    // WAV can't hold a cover picture (yt-dlp fails), only the tags.
+    if (o.embedMeta) args.push(...(audioFormat === 'wav' ? [] : ['--embed-thumbnail']), '--embed-metadata');
   } else {
-    // (The options come from the page: anything odd falls back to the defaults.)
     const lim = /^\d{2,4}$/.test(o.quality) ? `[height<=${o.quality}]` : '';
-    args.push('-f', o.format || `bv*${lim}+ba/b${lim}`);
-    // MP4 should play everywhere: prefer H.264 video and AAC sound (YouTube has H.264 up to 1080p).
-    if (o.container === 'mp4' && !o.format) args.push('-S', 'vcodec:h264,res,acodec:m4a');
-    args.push('--merge-output-format', o.container);
-    if (o.container === 'mp4') args.push('--remux-video', 'mp4');
+    // Without sound: a picture-only stream (sites that only have both together keep their sound).
+    args.push('-f', o.format || (o.noSound ? `bv${lim}/bv*${lim}` : `bv*${lim}+ba/b${lim}`));
+    // MP4, MOV and AVI should open everywhere (phones, Discord, editors): prefer H.264 video and AAC
+    // sound (YouTube has H.264 up to 1080p).
+    if ((container === 'mp4' || container === 'mov' || container === 'avi') && !o.format) args.push('-S', 'vcodec:h264,res,acodec:m4a');
+    args.push('--merge-output-format', container);
+    if (container !== 'mkv' && container !== 'webm') args.push('--remux-video', container);
     const langs = o.subs.split(/[\s,]+/).filter(Boolean);
     if (langs.length) {
       args.push('--write-subs', '--sub-langs', langs.join(','));
       if (o.autoSubs) args.push('--write-auto-subs');
-      const mode = o.subsMode === 'file' || o.subsMode === 'both' ? o.subsMode : 'embed';
+      // MOV and AVI can't hold subtitles: they come as files.
+      const mode = !canEmbedSubs(container) ? 'file' : o.subsMode === 'file' || o.subsMode === 'both' ? o.subsMode : 'embed';
       if (mode !== 'embed') args.push('--convert-subs', o.subsFormat === 'vtt' ? 'vtt' : 'srt');
       if (mode !== 'file') args.push('--embed-subs');
       // With --write-subs yt-dlp keeps the files after putting them into the video; only wanted for "both".

@@ -225,8 +225,6 @@ export default {
   'link · Wi-Fi · contact · styles': 'odkaz · Wi-Fi · kontakt · styly',
   'Make a QR code for a link, text, Wi-Fi, a contact, an e-mail, an SMS, a place, an event or a payment, in any colours and shapes, with your logo and a frame. It checks that phones can still read it.':
     'Udělejte QR kód pro odkaz, text, Wi-Fi, kontakt, e-mail, SMS, místo, událost nebo platbu, v libovolných barvách a tvarech, s vaším logem a rámečkem. Sám zkontroluje, že ho telefony pořád přečtou.',
-  'Base64 encode / decode': 'Base64 kódování / dekódování',
-  'Encode text or files to Base64 and decode it back. Handles Unicode and the URL-safe alphabet.': 'Zakódujte text nebo soubory do Base64 a zase zpátky. Zvládá Unicode i abecedu bezpečnou pro URL.',
   'JSON formatter & validator': 'Formátování a kontrola JSON',
   'Pretty-print, minify or sort JSON, and see exactly where it breaks when it’s invalid.': 'Přehledně naformátujte, zmenšete nebo seřaďte JSON a uvidíte přesně, kde je chyba, když je neplatný.',
   'UUID generator': 'Generátor UUID',

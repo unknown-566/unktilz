@@ -9,6 +9,7 @@ import { useDoc, type SkinDoc } from './doc';
 import { decodeSkin, loadPlayer, type Loaded } from './load';
 import type { Settings, ToolId } from './paint';
 import { plural, t } from '../../../lib/i18n-core';
+import { filesFromDrop } from '../../../queue/dragFiles';
 
 export function Row({ id, label, help, children }: { id: string; label: string; help?: string; children: ReactNode }) {
   return (
@@ -73,7 +74,7 @@ export function OpenSkin({ slot, onLoaded, onCancel }: { slot: string; onLoaded:
           onDrop={(e: DragEvent) => {
             e.preventDefault();
             setOver(false);
-            file(e.dataTransfer.files[0]);
+            void filesFromDrop(e).then((f) => file(f[0]), () => {});
           }}
         >
           <span className="accent">

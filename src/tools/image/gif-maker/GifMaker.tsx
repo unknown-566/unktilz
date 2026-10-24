@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { DropZone } from '../../../components/DropZone';
 import { Help } from '../../../components/Help';
 import { SavedPanel } from '../../../components/SavedPanel';
 import { CopyButton, Panel, Segmented, Toggle } from '../../../components/ui';
@@ -6,7 +7,8 @@ import { Workbench } from '../../../components/Workbench';
 import { savedWhen, useAutosave, useSaved } from '../../../lib/saved';
 import { LASTS, expiresAt, uploadFile, type Lasts } from '../../../lib/upload';
 import { formatBytes, saveBlob } from '../../../queue/download';
-import { IMAGE_ACCEPTS } from '../formats';
+import { IMAGE_ACCEPTS, VIDEO_ACCEPTS } from '../formats';
+import { usePendingFiles } from '../../../queue/dragFiles';
 import { MAX_SECONDS, cropRect, defaultSettings, drawFrame, estimateBytes, fixLayer, frameLimit, frameOrder, outputSize, photoFrames, stickerKey, videoFrameTimes, type Crop, type Filter, type Layer, type Settings, type StickerAnim, type StickerRef } from './compose';
 import { loadPhoto, makeGif, openVideo, picsFor, videoFrames, videoThumbs, type FrameRef, type VideoSource } from './frames';
 import { loadFont } from './fontLoad';
@@ -20,7 +22,6 @@ import { getOutputs } from '../../../queue/blobs';
 import { Timeline } from './Timeline';
 import { fmtNum, plural, t, tx } from '../../../lib/i18n-core';
 
-const VIDEO_ACCEPTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.flv', '.wmv', '.3gp', '.ts', '.mts', '.mpg', '.mpeg', '.ogv', '.gif'];
 /** GIFs bigger than this don't upload to Discord without Nitro, and load slowly everywhere. */
 const BIG = 10 * 1024 * 1024;
 
@@ -99,16 +100,14 @@ function Row({ label, help, children }: { label: string; help?: string; children
 export default function GifMaker() {
   const [s, setS] = useState<Settings>(defaultSettings);
   const set = (p: Partial<Settings>) => setS((o) => ({ ...o, ...p }));
-  useAutosave<Settings>('gif-maker', s, (d) => setS(restore(d)));
+  const restored = useAutosave<Settings>('gif-maker', s, (d) => setS(restore(d)));
 
   const [video, setVideo] = useState<VideoSource | null>(null);
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const [over, setOver] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   // ---- stickers ----
   const mineStore = useSaved<MySticker>('gif-stickers');
@@ -314,11 +313,14 @@ export default function GifMaker() {
       else setError(t('Those aren’t pictures. To make a GIF from a video, switch to “from video”.'));
     }
   };
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setOver(false);
-    take(e.dataTransfer.files);
-  };
+  // "Open in…" from the queue: a video (not a GIF) switches to video, pictures to photos. Only after
+  // the saved settings are back, so they don't switch it again.
+  usePendingFiles(restored ? 'gif-maker' : null, (files) => {
+    const v = files.find((f) => !/\.gif$/i.test(f.name) && (VIDEO_ACCEPTS.some((x) => f.name.toLowerCase().endsWith(x)) || f.type.startsWith('video/')));
+    set({ mode: v ? 'video' : 'photos' });
+    if (v) void takeVideo(v);
+    else void takePhotos(files);
+  });
 
   // Free memory when leaving the page.
   const live = useRef({ video, thumbs, photos });
@@ -592,32 +594,16 @@ export default function GifMaker() {
           onChange={(mode) => set({ mode })}
         />
       </Labeled>
-      <div
-        className={`drop gm-drop${over ? ' over' : ''}`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setOver(true);
-        }}
-        onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false)}
-        onDrop={onDrop}
-      >
-        <div className="drop-title">{isVideo ? (video ? t('Drop another video to swap it') : t('Drop a video here')) : photos.length ? t('Drop more photos to add them') : t('Drop photos here')}</div>
-        <button type="button" className={(isVideo ? video : photos.length) ? 'btn' : 'btn btn-primary'} onClick={() => fileInput.current?.click()}>
-          {isVideo ? t('Choose a video') : t('Choose photos')}
-        </button>
-        <div className="drop-sub">{isVideo ? t('mp4 mov webm mkv avi gif …') : t('jpg png webp gif heic …')}</div>
-        <input
-          ref={fileInput}
-          type="file"
-          hidden
-          multiple={!isVideo}
-          accept={(isVideo ? VIDEO_ACCEPTS : IMAGE_ACCEPTS).join(',')}
-          onChange={(e) => {
-            take(e.target.files);
-            e.target.value = '';
-          }}
-        />
-      </div>
+      <DropZone
+        title={isVideo ? (video ? t('Drop another video to swap it') : t('Drop a video here')) : photos.length ? t('Drop more photos to add them') : t('Drop photos here')}
+        button={isVideo ? t('Choose a video') : t('Choose photos')}
+        accept={isVideo ? VIDEO_ACCEPTS : IMAGE_ACCEPTS}
+        multiple={!isVideo}
+        more={!!(isVideo ? video : photos.length)}
+        sub={isVideo ? t('mp4 mov webm mkv avi gif …') : t('jpg png webp gif heic …')}
+        onFiles={take}
+        claimPending={false}
+      />
       {status && <p className="note mono">{status}</p>}
       {error && (
         <p className="note give-warn" role="alert">

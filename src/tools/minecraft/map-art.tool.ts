@@ -9,6 +9,7 @@ export default defineTool({
   meta: t('image → .litematic'),
   description: t('Turn a picture into Minecraft map art: see it in map colors, get the block list, and download a .litematic or .nbt to build from.'),
   keywords: ['map', 'map art', 'pixel art', 'schematic', 'litematic', 'litematica', 'nbt', 'structure', 'blocks', 'staircase'],
+  accepts: ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif'],
   layout: 'workbench',
   component: lazyTool(() => import('./MapArt')),
 });

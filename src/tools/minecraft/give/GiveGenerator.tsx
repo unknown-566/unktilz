@@ -8,6 +8,7 @@ import { Workbench } from '../../../components/Workbench';
 import { GIVE_VERSIONS, atLeast, buildGive, eggEntity, emptySpec, itemKinds, type Attr, type Explosion, type GiveVersion, type HideKey, type ItemSpec } from '../../../lib/mc/give';
 import { defaultMob, type MobSpec } from '../../../lib/mc/entity';
 import { MiniToolbar } from '../MiniToolbar';
+import { TARGETS } from '../targets';
 import { ATTRIBUTES, BLOCKS, DYE_COLORS, ENCHANTS, FIREWORK_SHAPES, ITEMS, ITEM_BY_ID, MOB_BY_ID, POTIONS, SLOTS, TRIM_MATERIALS, TRIM_PATTERNS, enchantFits, label } from './data';
 import { EffectList, MobEditor } from './MobEditor';
 import { Combo, MultiPick } from './Pickers';
@@ -19,13 +20,6 @@ type Tab = 'item' | 'text' | 'enchants' | 'attributes' | 'special' | 'spawns' | 
 const OLD_STORE = 'unktilz-give';
 /** Since 1.20.5 enchantment levels in item components go from 1 to 255; the game rejects more. */
 const MAX_LEVEL = 255;
-const TARGETS = [
-  { value: '@p', label: t('@p · nearest player') },
-  { value: '@s', label: t('@s · yourself') },
-  { value: '@a', label: t('@a · every player') },
-  { value: '@r', label: t('@r · random player') },
-  { value: 'name', label: t('a specific player…') },
-];
 const ITEM_OPTIONS = ITEMS.map((i) => ({ id: i.id, name: i.name }));
 const BLOCK_OPTIONS = BLOCKS.map((b) => ({ id: b.id, name: b.name }));
 const ENCH_OPTIONS = ENCHANTS.map((e) => ({ id: e.id, name: e.name }));

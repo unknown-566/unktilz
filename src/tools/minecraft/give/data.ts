@@ -4,6 +4,7 @@ import effectsRaw from '../../../lib/mc/data/effects.json';
 import attributesRaw from '../../../lib/mc/data/attributes.json';
 import blocksRaw from '../../../lib/mc/data/blocks.json';
 import mobsRaw from '../../../lib/mc/data/mobs.json';
+import entitiesRaw from '../../../lib/mc/data/entities.json';
 import { t } from '../../../lib/i18n-core';
 
 export type ItemInfo = { id: string; name: string; stack: number; durability: number; cats: string[] };
@@ -22,6 +23,9 @@ export const BLOCK_BY_ID = new Map(BLOCKS.map((b) => [b.id, b]));
 /** Mobs a spawn egg (or later a spawner) can make; `baby`: has a baby form. */
 export const MOBS = (mobsRaw as [string, string, number][]).map(([id, name, baby]) => ({ id, name, baby: !!baby })).sort((a, b) => a.name.localeCompare(b.name));
 export const MOB_BY_ID = new Map(MOBS.map((m) => [m.id, m]));
+/** Everything /summon makes; `alive`: a mob (with health, gear and AI), not a boat or an arrow. */
+export const ENTITIES = (entitiesRaw as [string, string, number][]).map(([id, name, alive]) => ({ id, name, alive: !!alive })).sort((a, b) => a.name.localeCompare(b.name));
+export const ENTITY_BY_ID = new Map(ENTITIES.map((e) => [e.id, e]));
 
 const titleCase = (id: string) => id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 export const ATTRIBUTES = (attributesRaw as [string, number, number, number][])

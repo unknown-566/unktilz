@@ -42,6 +42,7 @@ export const ALIASES: Record<string, { to: string; opts: Opts }> = {
   'ogg-to-mp3': { to: 'audio-converter', opts: { format: 'mp3' } },
   'mp3-to-ogg': { to: 'audio-converter', opts: { format: 'ogg' } },
   'video-to-gif': { to: 'video-converter', opts: { format: 'gif' } },
+  base64: { to: 'encode-encrypt', opts: { method: 'base64' } },
 };
 
 export const fileTools = tools.filter((tt) => tt.run);
@@ -103,7 +104,7 @@ export function defaultOpts(tool: Tool): Opts {
 }
 
 export function acceptsFile(tool: Tool, file: File) {
-  if (!tool.accepts?.length) return true;
+  if (!tool.accepts?.length || tool.accepts.includes('*')) return true;
   const name = file.name.toLowerCase();
   return tool.accepts.some((ext) => name.endsWith(ext));
 }

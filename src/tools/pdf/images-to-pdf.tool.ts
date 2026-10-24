@@ -1,4 +1,5 @@
 import { defineTool, lazyTool } from '../../registry/types';
+import { IMAGE_ACCEPTS } from '../image/formats';
 import { t } from '../../lib/i18n-core';
 
 export default defineTool({
@@ -11,6 +12,7 @@ export default defineTool({
   description:
     t('Turn photos into a PDF, one per page. Photos of paper become clean scans: the sheet is found (or you drag its corners), straightened and made white, or only what’s written on it is put on a clean page inside the margins.'),
   keywords: ['jpg to pdf', 'png to pdf', 'image to pdf', 'scan', 'scanner', 'photos', 'document', 'paper', 'homework', 'receipt', 'camscanner', 'heic to pdf'],
+  accepts: IMAGE_ACCEPTS,
   layout: 'workbench',
   component: lazyTool(() => import('./scan/ScanToPdf')),
 });

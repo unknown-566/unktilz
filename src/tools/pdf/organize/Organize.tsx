@@ -6,6 +6,7 @@ import { openPdf, baseName, closePdf } from '../../../lib/pdfjs';
 import { useQueue } from '../../../queue/store';
 import type { PageRef } from '../../../workers/tasks/pdf';
 import { PageGrid } from '../pages/PageGrid';
+import { usePendingFiles } from '../../../queue/dragFiles';
 import { PdfDrop } from '../pages/PdfDrop';
 import { moveItems, newKey, pagesOf, pdfName, rotateItems, type GridItem } from '../pages/model';
 import { useThumbs } from '../pages/thumbs';
@@ -133,10 +134,13 @@ export default function Organize() {
     setSaved(file);
   };
 
+  // "Open in…" from the queue adds the PDFs, also when one is already open.
+  usePendingFiles('organize-pdf', (f) => void add(f));
+
   if (!sources.length)
     return (
       <Panel title="pdf">
-        <PdfDrop multiple onFiles={(f) => void add(f)} label={busy ? t('Opening…') : t('Drop a PDF here or click to choose one (several are put one after another)')} />
+        <PdfDrop multiple claimPending={false} onFiles={(f) => void add(f)} label={busy ? t('Opening…') : t('Drop PDFs here')} note={t('Several PDFs are joined one after another.')} />
         {error && <p className="error-text">{error}</p>}
       </Panel>
     );

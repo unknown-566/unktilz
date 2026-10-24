@@ -5,15 +5,8 @@ export const SAME = ['Wi-Fi', 'SMS', 'E-mail', 'WhatsApp', 'IBAN', 'WEP', 'geo:'
 export default {
   // ---- Base64 ----
   'That isn’t valid Base64.': 'Tohle není platné Base64.',
-  Mode: 'Režim',
-  encode: 'zakódovat',
-  decode: 'dekódovat',
   'Uses - and _ instead of + and /, and drops the = padding, so the result can go straight into URLs and file names.': 'Použije - a _ místo + a / a vynechá doplnění =, takže výsledek jde rovnou do URL a názvů souborů.',
-  'Decoded {size} of binary data.': 'Dekódováno {size} binárních dat.',
-  'download bytes': 'stáhnout bajty',
-  'file to base64': 'soubor do base64',
   'Choose a file': 'Vybrat soubor',
-  'download the whole Base64 ({size})': 'stáhnout celé Base64 ({size})',
 
   // ---- JSON ----
   '✓ valid JSON': '✓ platný JSON',

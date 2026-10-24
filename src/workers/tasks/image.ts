@@ -15,6 +15,13 @@ export type ImagePayload = {
   flip?: 'none' | 'h' | 'v';
   /** Icon sizes for .ico, in pixels. */
   icoSizes?: number[];
+  /**
+   * Crop image: the part to keep, in pixels of the picture after `rotate` and `flip`. With a crop the
+   * picture is turned first, then cut, then resized (`resize` applies to the cut part).
+   */
+  crop?: { x: number; y: number; w: number; h: number };
+  /** Cut to a circle (an ellipse when the crop isn't square); outside is see-through, or white for JPG / BMP. */
+  circle?: boolean;
 };
 
 const MIME: Record<Exclude<ImageFormat, 'keep'>, string> = {
@@ -121,14 +128,49 @@ async function icoBlob(src: OffscreenCanvas, sizes: number[]) {
   return encodeIco(pngs);
 }
 
+/** The picture turned, cut to `crop` (kept inside the picture), resized and maybe cut round. */
+function cropped(bmp: ImageBitmap, p: ImagePayload & { crop: NonNullable<ImagePayload['crop']> }, opaque: boolean) {
+  const turned = transform(drawScaled(bmp, bmp.width, bmp.height), p.rotate ?? 0, p.flip);
+  const x = Math.max(0, Math.min(turned.width - 1, Math.round(p.crop.x)));
+  const y = Math.max(0, Math.min(turned.height - 1, Math.round(p.crop.y)));
+  const cw = Math.max(1, Math.min(turned.width - x, Math.round(p.crop.w)));
+  const ch = Math.max(1, Math.min(turned.height - y, Math.round(p.crop.h)));
+  const piece = new OffscreenCanvas(cw, ch);
+  piece.getContext('2d')!.drawImage(turned, x, y, cw, ch, 0, 0, cw, ch);
+  const { w, h } = targetSize(cw, ch, p.resize);
+  const out = drawScaled(piece, w, h);
+  if (p.circle) {
+    const ctx = out.getContext('2d')!;
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath();
+    ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  if (!opaque) return out;
+  // JPG and BMP have no see-through: white under it.
+  const flat = new OffscreenCanvas(w, h);
+  const fc = flat.getContext('2d')!;
+  fc.fillStyle = '#ffffff';
+  fc.fillRect(0, 0, w, h);
+  fc.drawImage(out, 0, 0);
+  return flat;
+}
+
 export async function processImage(p: ImagePayload, report: Report): Promise<TaskOutput> {
   report(0.1);
   const bmp = await decode(p.file);
   report(0.4);
   const mime = p.format === 'keep' ? sameFormat(p.file) : MIME[p.format];
-  const { w, h } = targetSize(bmp.width, bmp.height, p.resize);
   const opaque = mime === 'image/jpeg' || mime === 'image/bmp';
-  const canvas = transform(drawScaled(bmp, w, h, opaque ? '#ffffff' : undefined), p.rotate ?? 0, p.flip);
+  let w: number, h: number, canvas: OffscreenCanvas;
+  if (p.crop) {
+    canvas = cropped(bmp, { ...p, crop: p.crop }, opaque);
+    ({ width: w, height: h } = canvas);
+  } else {
+    ({ w, h } = targetSize(bmp.width, bmp.height, p.resize));
+    canvas = transform(drawScaled(bmp, w, h, opaque ? '#ffffff' : undefined), p.rotate ?? 0, p.flip);
+  }
   bmp.close();
   report(0.7);
   let blob: Blob;
@@ -139,7 +181,7 @@ export async function processImage(p: ImagePayload, report: Report): Promise<Tas
     if (blob.type !== mime) throw new Error(t('This browser can’t save {format} images. Pick another format.', { format: EXT[mime]?.toUpperCase() ?? mime }));
   }
   const base = p.file.name.replace(/\.[^.]+$/, '') || 'image';
-  const suffix = p.resize ? `-${w}x${h}` : '';
+  const suffix = p.crop ? '-cropped' : p.resize ? `-${w}x${h}` : '';
   const same = p.file.name.toLowerCase().endsWith(`.${EXT[mime]}`) && !suffix;
   report(1);
   return [{ name: `${base}${suffix}${same ? '-converted' : ''}.${EXT[mime]}`, blob }];

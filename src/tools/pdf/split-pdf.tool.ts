@@ -10,6 +10,7 @@ export default defineTool({
   beta: true,
   description: t('Cut a PDF into several PDFs: click between pages where it should split, or split it into single pages, every few pages or in half. Or pick pages and save just those.'),
   keywords: ['split pdf', 'extract pages', 'separate pdf', 'cut pdf', 'pdf pages', 'single pages', 'divide pdf', 'save pages'],
+  accepts: ['.pdf'],
   layout: 'workbench',
   component: lazyTool(() => import('./split/Split')),
 });

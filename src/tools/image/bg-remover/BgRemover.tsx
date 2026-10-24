@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Panel, Segmented, Toggle } from '../../../components/ui';
 import { Help } from '../../../components/Help';
+import { DropZone } from '../../../components/DropZone';
+import { IMAGE_ACCEPTS } from '../formats';
 import { Workbench } from '../../../components/Workbench';
 import { computeValue } from '../../../lib/compute';
 import { saveBlob } from '../../../queue/download';
@@ -693,22 +695,15 @@ export default function BgRemover() {
 
   return (
     <Workbench preview={preview}>
-      <Panel title={t('picture')}>
-        <label
-          className="bgr-drop"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const f = e.dataTransfer.files[0];
-            if (f) void open(f);
-          }}
-        >
-          <input type="file" accept="image/*,.heic,.heif,.tif,.tiff" onChange={(e) => e.target.files?.[0] && void open(e.target.files[0])} hidden />
-          <b>{img ? img.name : t('Drop a picture here, click to choose one, or paste it (Ctrl+V)')}</b>
-          <span className="note">{t('PNG, JPG, WebP, HEIC (iPhone), TIFF… Big pictures are edited at up to {max} px.', { max: MAX_SIDE })}</span>
-        </label>
-        {loadError && <p className="error-text">{loadError}</p>}
-      </Panel>
+      <DropZone
+        title={img ? img.name : t('Drop a picture here')}
+        button={img ? t('Use another picture') : t('Choose a picture')}
+        accept={IMAGE_ACCEPTS}
+        more={!!img}
+        note={img ? undefined : `${t('or paste a picture (Ctrl+V)')} · ${t('Big pictures are edited at up to {max} px.', { max: MAX_SIDE })}`}
+        error={loadError}
+        onFiles={([f]) => void open(f)}
+      />
 
       {img && (
         <>

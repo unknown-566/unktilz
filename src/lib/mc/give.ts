@@ -149,10 +149,43 @@ const NAMED = new Map<string, string>(MC_COLORS.map((c) => [c.hex.toUpperCase(),
 const colorName = (hex: string) => NAMED.get(hex.toUpperCase()) ?? hex.toLowerCase();
 export const hexToInt = (hex: string) => parseInt(hex.replace('#', ''), 16) || 0;
 
-type Comp = Record<string, string | number | boolean | Comp[] | Record<string, string>>;
+type CompVal = string | number | boolean | Comp | CompVal[];
+export type Comp = { [key: string]: CompVal };
 
-function segToComp(s: MiniSeg, v: GiveVersion): Comp {
-  const c: Comp = s.keybind ? { keybind: s.keybind } : { text: s.text };
+/**
+ * What clicking a piece of text does. Until 1.21.4 every action has a `value` (and a command needs
+ * its /); from 1.21.5 each has its own field (url, command, page…) and the / is optional.
+ */
+function clickEvent(action: string, value: string, v: GiveVersion): [string, Comp] {
+  const a = action.toLowerCase();
+  if (!atLeast(v, '1.21.5')) {
+    const val = a === 'run_command' && !value.startsWith('/') ? `/${value}` : value;
+    return ['clickEvent', { action: a, value: val }];
+  }
+  const field: Record<string, string> = { open_url: 'url', open_file: 'path', run_command: 'command', suggest_command: 'command', change_page: 'page', copy_to_clipboard: 'value' };
+  const key = field[a] ?? 'value';
+  const val: CompVal = a === 'change_page' ? Math.max(1, Math.round(Number(value)) || 1) : a === 'run_command' ? value.replace(/^\//, '') : value;
+  return ['click_event', { action: a, [key]: val }];
+}
+
+/** The bubble shown when pointing at text: `contents` until 1.21.4, `value` from 1.21.5. */
+const hoverEvent = (mini: string, v: GiveVersion): [string, Comp] =>
+  atLeast(v, '1.21.5')
+    ? ['hover_event', { action: 'show_text', value: textComponent(mini, v, {}, { interactive: true }) }]
+    : ['hoverEvent', { action: 'show_text', contents: textComponent(mini, v, {}, { interactive: true }) }];
+
+/** The part's content: plain text, or what the game fills in (a key, a name, a score, a translation). */
+function content(s: MiniSeg, interactive: boolean): Comp {
+  if (s.keybind) return { keybind: s.keybind };
+  const sp = interactive ? s.special : undefined;
+  if (sp?.kind === 'selector') return { selector: sp.selector };
+  if (sp?.kind === 'score') return { score: { name: sp.name, objective: sp.objective } };
+  if (sp?.kind === 'lang') return { translate: sp.key, ...(sp.fallback ? { fallback: sp.fallback } : {}), ...(sp.args.length ? { with: sp.args.map((x) => ({ text: x })) } : {}) };
+  return { text: s.text };
+}
+
+function segToComp(s: MiniSeg, v: GiveVersion, interactive = false): Comp {
+  const c: Comp = content(s, interactive);
   const st = s.style;
   if (st.color) c.color = colorName(st.color);
   if (st.bold !== undefined) c.bold = st.bold;
@@ -170,21 +203,39 @@ function segToComp(s: MiniSeg, v: GiveVersion): Comp {
       c.shadow_color = ((a << 24) | rgb) | 0;
     }
   }
+  if (interactive) {
+    if (st.click?.action) {
+      const [k, ev] = clickEvent(st.click.action, st.click.value, v);
+      c[k] = ev;
+    }
+    if (st.hover) {
+      const [k, ev] = hoverEvent(st.hover, v);
+      c[k] = ev;
+    }
+    if (st.insert) c.insertion = st.insert;
+  }
   return c;
 }
 
+const CONTENT_KEYS = ['text', 'keybind', 'selector', 'score', 'translate'];
+
 /**
  * A text component for MiniMessage input. `base` styles the whole thing (e.g. italic:false for
- * names) and is put on a parent so the parts inherit it.
+ * names) and is put on a parent so the parts inherit it. `interactive` (chat: /tellraw, /title)
+ * keeps clicking, hovering and shift-clicking, and turns <selector>, <score> and <lang> into what
+ * the game fills in; item text leaves those out.
  */
-export function textComponent(mini: string, v: GiveVersion, base: Comp = {}): Comp {
+export function textComponent(mini: string, v: GiveVersion, base: Comp = {}, opts: { interactive?: boolean } = {}): Comp {
+  const interactive = !!opts.interactive;
   // <head:…> sprites aren't supported in item text here, so they're left out.
-  const segs = miniSegments(mini).filter((s) => !s.head && (s.text || s.keybind));
-  const parts = segs.map((s) => segToComp(s, v));
-  // Text (or keybind) first for readability; the part's own style still wins over the base.
+  const segs = miniSegments(mini, { specials: interactive }).filter((s) => !s.head && (s.text || s.keybind || s.special));
+  const parts = segs.map((s) => segToComp(s, v, interactive));
+  if (interactive && !parts.length) return { text: '', ...base };
+  // The content first for readability; the part's own style still wins over the base.
   if (parts.length === 1) {
     const p = parts[0];
-    return { ...('text' in p ? { text: p.text } : { keybind: p.keybind }), ...base, ...p };
+    const key = CONTENT_KEYS.find((k) => k in p) ?? 'text';
+    return { [key]: p[key], ...base, ...p };
   }
   return { text: '', ...base, extra: parts };
 }
@@ -211,8 +262,8 @@ function snbt(v: unknown): string {
 const jsonText = (c: Comp) => sq(JSON.stringify(c));
 
 /** MiniMessage as a text value the version understands: SNBT from 1.21.5, a JSON string before. */
-export function textValue(mini: string, v: GiveVersion, base: Comp = {}) {
-  const c = textComponent(mini, v, base);
+export function textValue(mini: string, v: GiveVersion, base: Comp = {}, opts: { interactive?: boolean } = {}) {
+  const c = textComponent(mini, v, base, opts);
   return atLeast(v, '1.21.5') ? snbtText(c) : jsonText(c);
 }
 

@@ -5,6 +5,7 @@ import { Help } from '../../../components/Help';
 import { Workbench } from '../../../components/Workbench';
 import { SavedPanel } from '../../../components/SavedPanel';
 import { useAutosave } from '../../../lib/saved';
+import { filesFromDrop } from '../../../queue/dragFiles';
 import { saveBlob } from '../../../queue/download';
 import { EMPTY, KINDS, coordsFrom, payloadOf, type Content, type Kind } from './payloads';
 import { renderSvg, type DotShape, type EyeBall, type EyeFrame, type Fill, type FrameKind, type Logo, type Matrix, type QrStyle } from './render';
@@ -785,7 +786,7 @@ export default function QrMaker() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                void pickLogo(e.dataTransfer.files[0]);
+                void filesFromDrop(e).then((f) => pickLogo(f[0]), () => {});
               }}
             >
               <input type="file" accept="image/*" className="sr-only" onChange={(e) => void pickLogo(e.target.files?.[0])} />

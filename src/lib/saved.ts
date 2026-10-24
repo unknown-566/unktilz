@@ -79,6 +79,17 @@ export function useSaved<T>(slug: string) {
   };
 }
 
+/**
+ * Saves under a name from outside a component (a queue task), replacing an item with that name,
+ * and keeps only the newest `max`.
+ */
+export async function pushSaved<T>(slug: string, name: string, data: T, max = Infinity) {
+  const list = await load(slug);
+  const same = list.find((i) => i.name === name);
+  const item: SavedItem<T> = { id: same?.id ?? crypto.randomUUID(), name, data, savedAt: Date.now() };
+  await write(slug, [item, ...list.filter((i) => i.id !== item.id)].slice(0, max));
+}
+
 // ---- work in progress ----
 
 /**

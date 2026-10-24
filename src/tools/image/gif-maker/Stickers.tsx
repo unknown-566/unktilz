@@ -4,6 +4,7 @@ import { Segmented } from '../../../components/ui';
 import type { StickerRef } from './compose';
 import { NOTO, NOTO_CATEGORIES, notoUrl, type MySticker } from './stickerData';
 import { t, tn, tx } from '../../../lib/i18n';
+import { filesFromDrop } from '../../../queue/dragFiles';
 
 const SHORT = [tx('Smileys'), tx('People'), tx('Animals'), tx('Food'), tx('Travel'), tx('Activities'), tx('Objects'), tx('Symbols'), tx('Flags')];
 const PAGE = 120;
@@ -74,7 +75,7 @@ export function StickerPicker({
   const drop = (e: DragEvent) => {
     e.preventDefault();
     setOver(false);
-    onUpload([...e.dataTransfer.files]);
+    void filesFromDrop(e).then(onUpload, () => {});
   };
 
   return (

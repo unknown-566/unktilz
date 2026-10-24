@@ -5,9 +5,10 @@ import { t } from '../lib/i18n-core';
  * Jobs that a tool page makes from things it has in memory (the GIF maker's video frames,
  * stickers…), which can't be saved to IndexedDB like files. The queue keeps the work to do here,
  * runs it in turn with the other jobs, and stores the outputs as usual. They don't survive the page
- * being closed (see the store's rehydrate).
+ * being closed (see the store's rehydrate), unless they say how to carry on (`resume`, see
+ * resume.ts): `keep(data)` updates what's saved for that while they run.
  */
-export type TaskRun = (signal: AbortSignal, onProgress: (p: number) => void) => Promise<Output[]>;
+export type TaskRun = (signal: AbortSignal, onProgress: (p: number) => void, keep: (data: unknown) => void) => Promise<Output[]>;
 
 type Task = { run: TaskRun; release?: () => void };
 

@@ -83,6 +83,13 @@ export const DownloadIcon = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
+export const CopyIcon = ({ size = 18 }: { size?: number }) => (
+  <svg {...base} width={size} height={size}>
+    <rect x="9" y="9" width="11" height="11" rx="2" />
+    <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+  </svg>
+);
+
 export const UploadIcon = () => (
   <svg {...base} width={32} height={32} strokeWidth={1.6}>
     <path d="M12 16V4" />

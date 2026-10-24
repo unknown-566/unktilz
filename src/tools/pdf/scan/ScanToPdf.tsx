@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { DropZone } from '../../../components/DropZone';
 import { Panel, Segmented, TextField, Toggle } from '../../../components/ui';
 import { Help } from '../../../components/Help';
 import { Workbench } from '../../../components/Workbench';
@@ -65,7 +66,6 @@ export default function ScanToPdf() {
   const set = (patch: Partial<Settings>) => setS((p) => ({ ...p, ...patch }));
   const [name, setName] = useState('');
   const [saved, setSaved] = useState('');
-  const [over, setOver] = useState(false);
 
   const photosRef = useRef(photos);
   photosRef.current = photos;
@@ -245,32 +245,15 @@ export default function ScanToPdf() {
   return (
     <Workbench preview={preview}>
       <Panel title={photos.length ? t('photos · {n}', { n: photos.length }) : t('photos')}>
-        <label
-          className={`pg-drop sc-drop${over ? ' over' : ''}${photos.length ? ' small' : ''}`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setOver(true);
-          }}
-          onDragLeave={() => setOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setOver(false);
-            void add([...e.dataTransfer.files]);
-          }}
-        >
-          <input
-            type="file"
-            accept={['image/*', ...IMAGE_ACCEPTS].join(',')}
-            multiple
-            hidden
-            onChange={(e) => {
-              void add([...(e.target.files ?? [])]);
-              e.target.value = '';
-            }}
-          />
-          <b>{photos.length ? t('+ add photos') : t('Drop photos here or click to choose them')}</b>
-          {!photos.length && <span className="note">{t('Photos of paper (homework, receipts, letters…) or any pictures: JPG, PNG, HEIC from an iPhone, WebP, TIFF. Each becomes a page.')}</span>}
-        </label>
+        <DropZone
+          title={photos.length ? t('Drop more photos to add them') : t('Drop photos here')}
+          button={photos.length ? t('Add photos') : t('Choose photos')}
+          accept={IMAGE_ACCEPTS}
+          multiple
+          more={photos.length > 0}
+          note={photos.length ? undefined : t('Photos of paper (homework, receipts, letters…) or any pictures: JPG, PNG, HEIC from an iPhone, WebP, TIFF. Each becomes a page.')}
+          onFiles={(f) => void add(f)}
+        />
         {photos.length > 0 && (
           <ul className="sc-photos">
             {photos.map((p, i) => (

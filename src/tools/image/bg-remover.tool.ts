@@ -1,4 +1,5 @@
 import { defineTool, lazyTool } from '../../registry/types';
+import { IMAGE_ACCEPTS } from './formats';
 import { t } from '../../lib/i18n-core';
 
 export default defineTool({
@@ -16,6 +17,7 @@ export default defineTool({
     'remove background', 'background remover', 'remove bg', 'transparent background', 'cut out', 'cutout', 'png transparent', 'erase background', 'white background',
     'green screen', 'chroma key', 'magic wand', 'ai', 'birefnet', 'product photo', 'sticker',
   ],
+  accepts: IMAGE_ACCEPTS,
   layout: 'workbench',
   component: lazyTool(() => import('./bg-remover/BgRemover')),
 });

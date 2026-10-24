@@ -4,6 +4,7 @@ import { Panel } from '../../../components/ui';
 import { computeValue } from '../../../lib/compute';
 import { baseName, closePdf, openPdf } from '../../../lib/pdfjs';
 import { useQueue } from '../../../queue/store';
+import { usePendingFiles } from '../../../queue/dragFiles';
 import { PageGrid } from '../pages/PageGrid';
 import { PdfDrop } from '../pages/PdfDrop';
 import { cutsEvery, pagesOf, partsFromCuts, pdfName, rangeLabel, type GridItem } from '../pages/model';
@@ -47,10 +48,13 @@ export default function Split() {
     }
   };
 
+  // "Open in…" from the queue opens the PDF, also when another one is open.
+  usePendingFiles('split-pdf', (f) => void open(f));
+
   if (!source)
     return (
       <Panel title="pdf">
-        <PdfDrop onFiles={(f) => void open(f)} label={t('Drop a PDF here or click to choose it')} />
+        <PdfDrop claimPending={false} onFiles={(f) => void open(f)} label={t('Drop a PDF here')} />
         {error && <p className="error-text">{error}</p>}
       </Panel>
     );

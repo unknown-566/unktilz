@@ -24,11 +24,12 @@ export default {
   // ---- image ----
   'keywords:image-converter': 'převést obrázek obrázků převádění převodník konvertor konvertovat konverze fotka fotku fotky formát ikona změnit formát',
   'keywords:resize-image': 'změnit velikost zmenšit zvětšit zmenšení zvětšení obrázek fotku fotky rozlišení pixely menší soubor',
+  'keywords:crop-image': 'oříznout oříznutí ořez ořezat výřez vyříznout oříznout fotku obrázek fotka čtverec kruh kulatý profilovka profilový obrázek avatar poměr stran otočit zrcadlit převrátit screenshot instagram',
   'keywords:bg-remover': 'odstranit pozadí smazat pozadí odebrat pozadí bez pozadí průhledné pozadí průhlednost vyříznout fotka fotku obrázek umělá inteligence',
   'keywords:gif-maker': 'vytvořit gif udělat gif gify animace animovaný obrázek z videa z fotek fotky popisek text meme',
 
   // ---- dev ----
-  'keywords:base64': 'zakódovat dekódovat kódování převod textu kódovaný text obrázek na text',
+  'keywords:encode-encrypt': 'šifra šifry šifrování zašifrovat šifrovat rozšifrovat dešifrovat dešifrování kódování zakódovat dekódovat heslo hesla hash hashe kontrolní součet otisk souboru tajná zpráva tajné písmo morseovka morseova abeceda caesarova šifra posun písmen převod na binárku dvojková soustava šestnáctková ověřit stažený soubor klíč',
   'keywords:json-formatter': 'formátovat zformátovat formátování kontrola zkontrolovat ověřit validace chyba odsazení zmenšit minifikace',
   'keywords:uuid-generator': 'vygenerovat vytvořit generovat náhodné id identifikátor unikátní guid',
 
@@ -41,6 +42,9 @@ export default {
   'keywords:circle-generator': 'kruh kruhy koule kopule tvar tvary elipsa válec stavba stavění',
   'keywords:color-codes': 'barvy barva barevný text barva textu formátování textu chat tučné kurzíva přechod duha',
   'keywords:give-generator': 'příkaz dát předmět předměty očarování očarovaný meč nástroj brnění generátor příkazů',
+  'keywords:summon-generator': 'vyvolat příkaz entita entity mob moby jezdec jezdci vesničan obchod obchody armor stand póza hologram plovoucí text creeper boss generátor příkazů',
+  'keywords:tellraw-generator': 'zpráva zprávy chat titulek nadpis podnadpis action bar barevný text klikací odkaz najetí myší json text příkaz generátor příkazů',
+  'keywords:setblock-generator': 'položit blok bloky vyplnit oblast cedule truhla spawner command block hlava stavy bloku vyplnění generátor příkazů',
   'keywords:map-art': 'mapa mapy obrázek na mapu obraz převést obrázek stavba schematic',
   'keywords:motd-generator': 'zpráva serveru popis serveru uvítací text barevný text',
   'keywords:nether-portal': 'portál portály souřadnice přepočet propojit portály spojit portály výpočet',

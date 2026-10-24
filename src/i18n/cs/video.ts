@@ -79,8 +79,13 @@ export default {
   "The best the site has up to this height. If it doesn't have that much, you get the best there is.": 'To nejlepší, co web má, až do této výšky. Pokud tolik nemá, dostanete nejlepší dostupné.',
   best: 'nejlepší',
   format: 'formát',
-  "MP4 plays everywhere (phones, Discord, Windows); on YouTube that means up to 1080p. MKV and WebM keep the best quality (4K, HDR) as the site has it, but don't play everywhere.":
-    'MP4 hraje všude (telefony, Discord, Windows); na YouTube to znamená nejvýš 1080p. MKV a WebM zachovají nejlepší kvalitu (4K, HDR), jak ji web má, ale nehrají všude.',
+  "MP4 plays everywhere (phones, Discord, Windows); on YouTube that means up to 1080p. MKV and WebM keep the best quality (4K, HDR) as the site has it, but don't play everywhere. MOV is for Apple devices and video editors (Premiere, Final Cut), AVI for old players and TVs; neither can hold subtitles, so they come as files.":
+    'MP4 hraje všude (telefony, Discord, Windows); na YouTube to znamená nejvýš 1080p. MKV a WebM zachovají nejlepší kvalitu (4K, HDR), jak ji web má, ale nehrají všude. MOV je pro zařízení Apple a střihové programy (Premiere, Final Cut), AVI pro staré přehrávače a televize; ani jeden neumí titulky uvnitř, takže přijdou jako soubory.',
+  'Without sound': 'Bez zvuku',
+  'without sound': 'bez zvuku',
+  'Only the picture, e.g. as background footage for editing. Sites that only have picture and sound together keep the sound.':
+    'Jen obraz, třeba jako záběry na pozadí do střihu. Weby, které mají obraz a zvuk jen dohromady, zvuk nechají.',
+  '{format} can’t hold subtitles, so they come as files next to the video.': '{format} neumí titulky uvnitř, takže přijdou jako soubory vedle videa.',
   Subtitles: 'Titulky',
   subtitles: 'titulky',
   'Pick the languages you want; below, choose whether they go into the video or come as .srt / .vtt files. Automatic ones are made by the site from the speech (or machine-translated), so they can have mistakes.':
@@ -112,7 +117,12 @@ export default {
   'subtitle files': 'soubory titulků',
   "SRT works almost everywhere (players, video editors). VTT is the web's format and keeps a little more styling.": 'SRT funguje skoro všude (přehrávače, video editory). VTT je formát webu a zachová o něco víc formátování.',
   'audio format': 'formát zvuku',
-  "MP3 plays everywhere. M4A and Opus are smaller for the same quality. Original keeps the site's own file without converting.": 'MP3 hraje všude. M4A a Opus jsou při stejné kvalitě menší. Původní ponechá soubor webu bez převodu.',
+  "MP3 plays everywhere. M4A (AAC) and Opus are smaller for the same quality; OGG is the open Vorbis format some games use. WAV and FLAC are lossless: big files, for editing or burning a CD (they can’t be better than what the site has). Original keeps the site's own file without converting.":
+    'MP3 hraje všude. M4A (AAC) a Opus jsou při stejné kvalitě menší; OGG je otevřený formát Vorbis, který používají některé hry. WAV a FLAC jsou bezztrátové: velké soubory na střih nebo vypálení CD (lepší než zvuk na webu ale nebudou). Původní ponechá soubor webu bez převodu.',
+  'Sound quality': 'Kvalita zvuku',
+  'sound quality': 'kvalita zvuku',
+  'Best picks the top variable quality (about 245 kbit/s for MP3). A fixed bitrate makes the size predictable: 320 is the most MP3 can do, 128 is half the size and still fine for speech. YouTube’s own sound is about 130–160 kbit/s, so more than that only makes the file bigger.':
+    'Nejlepší zvolí nejvyšší proměnnou kvalitu (u MP3 asi 245 kbit/s). Pevný datový tok dá předvídatelnou velikost: 320 je maximum MP3, 128 je poloviční velikost a na mluvené slovo pořád stačí. Vlastní zvuk YouTube má asi 130–160 kbit/s, takže víc jen zvětší soubor.',
   'Cover and tags': 'Obal a štítky',
   'cover and tags': 'obal a štítky',
   'Puts the thumbnail in as cover art, and the title, artist and album into the file, so music players show them.': 'Vloží náhledový obrázek jako obal a do souboru zapíše název, interpreta a album, aby je přehrávače hudby ukázaly.',

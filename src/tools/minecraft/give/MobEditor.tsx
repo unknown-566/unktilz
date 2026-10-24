@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Help } from '../../../components/Help';
 import { useSaved } from '../../../lib/saved';
 import type { Effect, ItemSpec } from '../../../lib/mc/give';
-import { EQUIP_SLOTS, babyIsPermanent, type Equip, type EquipSlot, type MobSpec } from '../../../lib/mc/entity';
+import { EQUIP_SLOTS, babyIsPermanent, isAlive, type Equip, type EquipSlot, type MobSpec } from '../../../lib/mc/entity';
 import { ATTRIBUTES, EFFECTS, ITEMS, ITEM_BY_ID, MOBS, MOB_BY_ID } from './data';
 import { Combo } from './Pickers';
 import { t } from '../../../lib/i18n-core';
@@ -31,15 +31,16 @@ const SLOT_HINT: Partial<Record<EquipSlot, string>> = {
   body: t('horse / wolf / llama armor'),
 };
 
-const FLAGS: { key: keyof MobSpec; label: string; help: string }[] = [
-  { key: 'noAI', label: t('No AI'), help: t('Stands still, never attacks or moves on its own. Can still be pushed.') },
+/** `mob`: only for living things (an arrow or a boat has no AI). */
+const FLAGS: { key: keyof MobSpec; label: string; help: string; mob?: boolean }[] = [
+  { key: 'noAI', label: t('No AI'), help: t('Stands still, never attacks or moves on its own. Can still be pushed.'), mob: true },
   { key: 'silent', label: t('Silent'), help: t('Makes no sounds.') },
   { key: 'invulnerable', label: t('Invulnerable'), help: t('Takes no damage, except from /kill and players in creative.') },
   { key: 'glowing', label: t('Glowing'), help: t('Outlined and visible through walls.') },
   { key: 'noGravity', label: t('No gravity'), help: t('Floats where it spawned.') },
-  { key: 'persistent', label: t('Never despawns'), help: t('Stays even when no player is near.') },
-  { key: 'pickUp', label: t('Picks up items'), help: t('Grabs armor and weapons lying on the ground (zombies, skeletons, piglins…).') },
-  { key: 'leftHanded', label: t('Left handed'), help: t('Holds its weapon in the left hand.') },
+  { key: 'persistent', label: t('Never despawns'), help: t('Stays even when no player is near.'), mob: true },
+  { key: 'pickUp', label: t('Picks up items'), help: t('Grabs armor and weapons lying on the ground (zombies, skeletons, piglins…).'), mob: true },
+  { key: 'leftHanded', label: t('Left handed'), help: t('Holds its weapon in the left hand.'), mob: true },
 ];
 
 /** A list of status effects, shared by potions and mobs. */
@@ -102,14 +103,32 @@ function Stat({ id, label, value, onChange, placeholder, help }: { id: string; l
   );
 }
 
+type Option = { id: string; name: string };
+
 /**
- * What a spawn egg spawns: the mob, its name, stats, gear, effects and behaviour.
- * The name field comes from the parent so the MiniMessage toolbar there can edit it.
+ * What a spawn egg spawns (or /summon makes): the mob, its name, stats, gear, effects and behaviour.
+ * The name field comes from the parent so the MiniMessage toolbar there can edit it. Things that
+ * aren't alive (boats, TNT…) only get the name and the flags every entity has.
  */
-export function MobEditor({ mob, onChange, nameInput }: { mob: MobSpec; onChange: (p: Partial<MobSpec>) => void; nameInput: ReactNode }) {
+export function MobEditor({
+  mob,
+  onChange,
+  nameInput,
+  options = MOB_OPTIONS,
+  pickLabel = t('Spawns'),
+  pickHelp = t('Any mob, whatever egg it comes from: the egg keeps its own look. You can also type an id that isn\'t in the list.'),
+}: {
+  mob: MobSpec;
+  onChange: (p: Partial<MobSpec>) => void;
+  nameInput: ReactNode;
+  options?: Option[];
+  pickLabel?: string;
+  pickHelp?: string;
+}) {
   const saved = useSaved<ItemSpec>('give-generator');
   const info = MOB_BY_ID.get(mob.entity);
-  const canBaby = !!info?.baby || babyIsPermanent(mob.entity);
+  const alive = isAlive(mob.entity);
+  const canBaby = alive && (!!info?.baby || babyIsPermanent(mob.entity));
 
   const setEquip = (slot: EquipSlot, p: Partial<Equip> | null) => {
     const next = { ...mob.equipment };
@@ -123,10 +142,10 @@ export function MobEditor({ mob, onChange, nameInput }: { mob: MobSpec; onChange
     <>
       <div className="field">
         <span style={{ display: 'flex', alignItems: 'center' }}>
-          <span className="field-label">{t('Spawns')}</span>
-          <Help label={t('Spawns')} text={t('Any mob, whatever egg it comes from: the egg keeps its own look. You can also type an id that isn\'t in the list.')} />
+          <span className="field-label">{pickLabel}</span>
+          <Help label={pickLabel} text={pickHelp} />
         </span>
-        <Combo label={t('Spawns')} options={MOB_OPTIONS} value={mob.entity} onPick={(id) => onChange({ entity: id })} placeholder={t('search mobs…')} allowCustom />
+        <Combo label={pickLabel} options={options} value={mob.entity} onPick={(id) => onChange({ entity: id })} placeholder={options === MOB_OPTIONS ? t('search mobs…') : t('search entities…')} allowCustom />
       </div>
       {nameInput}
       <label className="check">
@@ -134,6 +153,54 @@ export function MobEditor({ mob, onChange, nameInput }: { mob: MobSpec; onChange
         {t('name always visible (not only when looking at it)')}
       </label>
 
+      {alive && <MobParts mob={mob} onChange={onChange} saved={saved.items} setEquip={setEquip} setAttr={setAttr} />}
+
+      <hr className="divider" />
+      <Section title={t('Behaviour')} />
+      <div className="check-grid">
+        {FLAGS.filter((f) => alive || !f.mob).map((f) => (
+          <label key={f.key} className="check" title={f.help}>
+            <input type="checkbox" checked={!!mob[f.key]} onChange={(e) => onChange({ [f.key]: e.target.checked })} />
+            {f.label}
+          </label>
+        ))}
+        {canBaby && (
+          <label className="check" title={babyIsPermanent(mob.entity) ? t('Stays a baby forever.') : t('Grows up after 20 minutes, like a bred baby.')}>
+            <input type="checkbox" checked={mob.baby} onChange={(e) => onChange({ baby: e.target.checked })} />
+            {t('Baby')}
+          </label>
+        )}
+      </div>
+      {canBaby && mob.baby && babyIsPermanent(mob.entity) && <p className="note">{t('This one stays a baby forever.')}</p>}
+      {canBaby && mob.baby && !babyIsPermanent(mob.entity) && (
+        <label className="check" title={t('Animals grow up after 20 minutes, like bred babies.')}>
+          <input type="checkbox" checked={!!mob.babyForever} onChange={(e) => onChange({ babyForever: e.target.checked })} />
+          {t('never grows up')}
+        </label>
+      )}
+    </>
+  );
+}
+
+type Saved = ReturnType<typeof useSaved<ItemSpec>>['items'];
+
+/** Stats, attributes, gear and effects: only for living things. */
+function MobParts({
+  mob,
+  onChange,
+  saved: savedItems,
+  setEquip,
+  setAttr,
+}: {
+  mob: MobSpec;
+  onChange: (p: Partial<MobSpec>) => void;
+  saved: Saved;
+  setEquip: (slot: EquipSlot, p: Partial<Equip> | null) => void;
+  setAttr: (i: number, p: Partial<MobSpec['attributes'][number]>) => void;
+}) {
+  const saved = { items: savedItems };
+  return (
+    <>
       <hr className="divider" />
       <Section title={t('Health & stats')} />
       <div className="fields">
@@ -243,24 +310,6 @@ export function MobEditor({ mob, onChange, nameInput }: { mob: MobSpec; onChange
       <Section title={t('Effects')} />
       <EffectList effects={mob.effects} onChange={(effects) => onChange({ effects })} />
       <p className="note">{t('Seconds −1 lasts forever. Level 1 is the normal strength.')}</p>
-
-      <hr className="divider" />
-      <Section title={t('Behaviour')} />
-      <div className="check-grid">
-        {FLAGS.map((f) => (
-          <label key={f.key} className="check" title={f.help}>
-            <input type="checkbox" checked={!!mob[f.key]} onChange={(e) => onChange({ [f.key]: e.target.checked })} />
-            {f.label}
-          </label>
-        ))}
-        {canBaby && (
-          <label className="check" title={babyIsPermanent(mob.entity) ? t('Stays a baby forever.') : t('Grows up after 20 minutes, like a bred baby.')}>
-            <input type="checkbox" checked={mob.baby} onChange={(e) => onChange({ baby: e.target.checked })} />
-            {t('Baby')}
-          </label>
-        )}
-      </div>
-      {canBaby && mob.baby && <p className="note">{babyIsPermanent(mob.entity) ? t('This one stays a baby forever.') : t('Animals grow up after 20 minutes, like bred babies.')}</p>}
     </>
   );
 }

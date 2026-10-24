@@ -1,7 +1,7 @@
 // Minecraft: text tools (AdvancedServerList profiles, MOTD generator, colour codes and MiniMessage,
 // the formatting toolbar). Colour and format names, tags and codes stay as the game writes them.
 
-export const SAME = ['Notch', 'halloween.png', 'MiniMessage', 'server.properties', 'minimessage', 'hex', 'Minecraft Server'];
+export const SAME = ['Notch', 'halloween.png', 'MiniMessage', 'server.properties', 'minimessage', 'hex', 'Minecraft Server', 'text → /tellraw /title', 'chat (/tellraw)', 'action bar'];
 
 export default {
   // ---- AdvancedServerList: live values, audiences ----
@@ -221,4 +221,81 @@ export default {
   'my MOTDs': 'moje MOTD',
   'Keep MOTDs for later (events, maintenance…). Saved in this browser.': 'Uložte si MOTD na později (akce, údržba…). Uloženo v tomto prohlížeči.',
   'No saved MOTDs yet.': 'Zatím žádná uložená MOTD.',
+
+  // ---- /tellraw and /title (src/tools/minecraft/tellraw, src/lib/mc/tellraw.ts) ----
+  'Tellraw & title generator': 'Generátor /tellraw a /title',
+  'Colored chat messages, titles and action bar text, with links and commands that run when clicked, text that shows when pointed at, player names and scores. Copy the /tellraw or /title command.':
+    'Barevné zprávy do chatu, titulky a text v action baru, s odkazy a příkazy, které se spustí po kliknutí, textem, který se ukáže po najetí myší, jmény hráčů a skóre. Pak zkopírujte příkaz /tellraw nebo /title.',
+  title: 'titulek',
+  'clear title': 'smazat titulek',
+  'Welcome + Discord link': 'Uvítání + odkaz na Discord',
+  'Rules on hover': 'Pravidla po najetí myší',
+  'Click to teleport': 'Klikni a teleportuj se',
+  'Copy the server IP': 'Kopírování IP serveru',
+  'Countdown title': 'Odpočet titulkem',
+  'Coins in the action bar': 'Mince v action baru',
+  'The title on screen goes away.': 'Titulek z obrazovky zmizí.',
+  'The title goes away, and the subtitle and times are forgotten.': 'Titulek zmizí a zapomene se i podnadpis a časy.',
+  'Underlined dots mean the text can be clicked or pointed at: point at it here to see what it does.': 'Tečkované podtržení znamená, že na text jde kliknout nebo najet myší: najeďte na něj tady a uvidíte, co dělá.',
+  commands: 'příkazy',
+  'Run them in this order (in command blocks: a chain). The title command shows the title with the subtitle and times set before it.':
+    'Spusťte je v tomto pořadí (v command blocích jako řetěz). Příkaz title ukáže titulek s podnadpisem a časy nastavenými před ním.',
+  "Up to 1.21.4 the text is JSON; from 1.21.5 it's SNBT, and clicking and hovering are written differently.": 'Do 1.21.4 je text v JSON, od 1.21.5 v SNBT a kliknutí a najetí myší se zapisují jinak.',
+  'Text editor': 'Editor textu',
+  Where: 'Kam',
+  'Who sees it': 'Kdo to uvidí',
+  'Click into the title or the subtitle, then pick a color or style.': 'Klikněte do titulku nebo podnadpisu a pak vyberte barvu nebo styl.',
+  'Select part of the text, then pick a color or style.': 'Označte část textu a pak vyberte barvu nebo styl.',
+  'Colors and styles as MiniMessage tags, e.g. <red>, <bold>, <gradient:gold:red>. The bars above add them for you.': 'Barvy a styly jako tagy MiniMessage, např. <red>, <bold>, <gradient:gold:red>. Panely nad textem je doplní za vás.',
+  'Enter starts a new line in chat.': 'Enter v chatu začne nový řádek.',
+  Subtitle: 'Podnadpis',
+  'smaller text under the title (optional)': 'menší text pod titulkem (nepovinné)',
+  'How long (seconds)': 'Jak dlouho (sekundy)',
+  "Fade in, stay and fade out. Empty uses the game's 0.5, 3.5 and 1 second. They stay set for that player until changed or reset.":
+    'Objevení, zobrazení a zmizení. Prázdné použije herní 0,5, 3,5 a 1 sekundu. Hráči zůstanou nastavené, dokud se nezmění nebo neresetují.',
+  stay: 'zobrazení',
+  'fade out': 'zmizení',
+  What: 'Co',
+  'take the title away': 'odstranit titulek',
+  'also reset subtitle and times': 'i resetovat podnadpis a časy',
+  'Keep messages and titles you made and load them again later. Saved in this browser; Backup (bottom of the page) copies them to another computer.':
+    'Uložte si zprávy a titulky, které jste vytvořili, a později je znovu načtěte. Ukládají se v tomto prohlížeči; Záloha (dole na stránce) je přenese na jiný počítač.',
+  'No saved texts yet. Write one and press save.': 'Zatím žádné uložené texty. Napište nějaký a stiskněte uložit.',
+  'open a link': 'otevřít odkaz',
+  'run a command': 'spustit příkaz',
+  'write in chat': 'napsat do chatu',
+  'go to book page': 'přejít na stránku knihy',
+  'on click': 'po kliknutí',
+  'on hover': 'po najetí myší',
+  'shift-click': 'shift+klik',
+  score: 'skóre',
+  'translated text': 'přeložený text',
+  'Clicks & more': 'Kliknutí a další',
+  Insert: 'Vložit',
+  'Select part of the text, pick what it does and press the button. On click: open a link, run a command, write into the chat box or copy. On hover: a bubble with text when pointing at it. Player name, score and translated text are filled in by the game for each player.':
+    'Označte část textu, vyberte, co má dělat, a stiskněte tlačítko. Po kliknutí: otevře odkaz, spustí příkaz, napíše něco do chatu nebo zkopíruje text. Po najetí myší: bublina s textem. Jméno hráče, skóre a přeložený text doplní hra každému hráči zvlášť.',
+  'Player name, score and translated text are filled in by the game for each player.': 'Jméno hráče, skóre a přeložený text doplní hra každému hráči zvlášť.',
+  'What to add': 'Co přidat',
+  'What clicking does': 'Co kliknutí udělá',
+  'Link, command or text': 'Odkaz, příkaz nebo text',
+  'Text in the bubble': 'Text v bublině',
+  'e.g. <gray>Click to join': 'např. <gray>Klikni a připoj se',
+  'Text shift-click puts into the chat box': 'Text, který shift+klik vloží do chatu',
+  'text for the chat box': 'text do chatu',
+  Who: 'Kdo',
+  '@p nearest player, @s who runs it, @a everyone, @e[type=zombie] entities…': '@p nejbližší hráč, @s kdo příkaz spustí, @a všichni, @e[type=zombie] entity…',
+  'Whose score': 'Čí skóre',
+  Objective: 'Cíl (objective)',
+  'objective, e.g. kills': 'cíl, např. kills',
+  'Translation key': 'Klíč překladu',
+  'A key from the game’s language files; every player sees it in their own language (item.minecraft.diamond → Diamant).':
+    'Klíč z jazykových souborů hry; každý hráč ho uvidí ve svém jazyce (item.minecraft.diamond → Diamant).',
+  "Titles and the action bar can't be clicked or pointed at: clicking, hovering and shift-click only work in chat.": 'Na titulky a action bar nejde kliknout ani najet myší: kliknutí, najetí a shift+klik fungují jen v chatu.',
+  'A link must start with https:// or http:// (“{url}”), or the game rejects the command.': 'Odkaz musí začínat https:// nebo http:// („{url}“), jinak hra příkaz odmítne.',
+  '“Change page” only works in books.': '„Přejít na stránku“ funguje jen v knihách.',
+  "“{action}” isn't a click action the game knows.": '„{action}“ není akce kliknutí, kterou hra zná.',
+  'A score needs the objective’s name: <score:@s:kills>.': 'Skóre potřebuje název cíle: <score:@s:kills>.',
+  'Write the message first.': 'Nejdřív napište zprávu.',
+  'Write the text first.': 'Nejdřív napište text.',
+  'Write the title first.': 'Nejdřív napište titulek.',
 } as Record<string, string>;

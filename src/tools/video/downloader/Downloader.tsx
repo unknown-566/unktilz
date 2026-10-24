@@ -5,8 +5,9 @@ import { SavedPanel } from '../../../components/SavedPanel';
 import { savedWhen, useAutosave, useSaved } from '../../../lib/saved';
 import { useQueue } from '../../../queue/store';
 import { formatBytes } from '../../../queue/download';
-import { DEFAULT_OPTIONS, checkExtra, fitQuality, heightsOf, isWebUrl, type DlFormat, type DlInfo, type DlOptions, type Phase, type Quality } from './args';
-import { NoServerError, download, getInfo, getStatus, install, liveDownloads, subscribeLive, serverText, updateYtdlp, type Status } from './api';
+import { AUDIO_FORMATS, BITRATES, CONTAINERS, DEFAULT_OPTIONS, canEmbedSubs, checkExtra, isLossless, fitQuality, heightsOf, isWebUrl, type DlFormat, type DlInfo, type DlOptions, type Phase, type Quality } from './args';
+import { HISTORY, runDownload, type DlTask, type HistoryItem } from './task';
+import { NoServerError, getInfo, getStatus, install, liveDownloads, subscribeLive, serverText, updateYtdlp, type Status } from './api';
 import { plural, t, tn, tx } from '../../../lib/i18n';
 
 /** Playlists longer than this start with nothing picked. */
@@ -14,7 +15,6 @@ const BIG_PLAYLIST = 50;
 /** Items shown in the list at most. */
 const SHOW_ITEMS = 2000;
 
-type HistoryItem = { url: string; title: string; size: number; mode: DlOptions['mode'] };
 
 const PHASE: Record<Phase, string> = {
   starting: tx('starting'),
@@ -210,7 +210,7 @@ export default function Downloader() {
   const [o, setO] = useState<DlOptions>(DEFAULT_OPTIONS);
   useAutosave<DlOptions>('downloader', { ...o, format: '' }, (d) => setO({ ...DEFAULT_OPTIONS, ...d, format: '' }));
   const set = (patch: Partial<DlOptions>) => setO((p) => ({ ...p, ...patch }));
-  const history = useSaved<HistoryItem>('downloader-history');
+  const history = useSaved<HistoryItem>(HISTORY);
   const live = useSyncExternalStore(subscribeLive, liveDownloads);
 
   const ready = !!status && !!status.versions.ytdlp && !!status.versions.ffmpeg && !status.install.running;
@@ -262,15 +262,16 @@ export default function Downloader() {
     const items = info.playlist ? info.entries.map((e, n) => ({ e, n })).filter(({ n }) => picked.has(n)) : [null];
     for (const it of items) {
       const title = it ? it.e.title : info.title;
-      useQueue.getState().addTask({ slug: 'downloader', name: 'Downloader' /* i18n-ignore: the queue shows the tool's name */, category: 'video', file: title }, async (signal, onProgress) => {
-        const files = await download(info.url, opts, title, it ? it.n + 1 : undefined, signal, onProgress);
-        const size = files.reduce((n, f) => n + f.blob.size, 0);
-        // Remembered in the history (the last 50).
-        const list = history.items;
-        void history.save(title, { url: it?.e.url || info.url, title, size, mode: opts.mode });
-        for (const old of list.slice(49)) void history.remove(old.id);
-        return files;
-      });
+      // Saved with the job, so the download carries on after a reload (see src/queue/resume.ts).
+      const data: DlTask = { url: info.url, options: opts, title, item: it ? it.n + 1 : undefined, link: it?.e.url || info.url };
+      useQueue
+        .getState()
+        .addTask(
+          { slug: 'downloader', name: 'Downloader' /* i18n-ignore: the queue shows the tool's name */, category: 'video', file: title },
+          (signal, onProgress, keep) => runDownload(data, signal, onProgress, keep),
+          undefined,
+          { kind: 'downloader', data },
+        );
     }
   };
 
@@ -410,19 +411,24 @@ export default function Downloader() {
                 </span>
                 <Help
                   label={t('format')}
-                  text={t('MP4 plays everywhere (phones, Discord, Windows); on YouTube that means up to 1080p. MKV and WebM keep the best quality (4K, HDR) as the site has it, but don\'t play everywhere.')}
+                  text={t('MP4 plays everywhere (phones, Discord, Windows); on YouTube that means up to 1080p. MKV and WebM keep the best quality (4K, HDR) as the site has it, but don\'t play everywhere. MOV is for Apple devices and video editors (Premiere, Final Cut), AVI for old players and TVs; neither can hold subtitles, so they come as files.')}
                 />
               </span>
               <Segmented
                 labelledBy="dl-c"
                 value={o.container}
                 onChange={(container) => set({ container })}
-                options={[
-                  { value: 'mp4', label: 'mp4' },
-                  { value: 'mkv', label: 'mkv' },
-                  { value: 'webm', label: 'webm' },
-                ]}
+                options={CONTAINERS.map((c) => ({ value: c, label: c }))}
               />
+            </div>
+            <div className="opt-row">
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                <span className="opt-label" id="dl-nosound">
+                  {t('Without sound')}
+                </span>
+                <Help label={t('without sound')} text={t('Only the picture, e.g. as background footage for editing. Sites that only have picture and sound together keep the sound.')} />
+              </span>
+              <Toggle labelledBy="dl-nosound" checked={o.noSound} onChange={(noSound) => set({ noSound })} />
             </div>
             {info && !info.playlist ? (
               <SubtitlePicker info={info} value={o.subs} onChange={(subs, autoSubs) => set({ subs, autoSubs })} />
@@ -450,25 +456,29 @@ export default function Downloader() {
             )}
             {o.subs.trim() && (
               <>
-                <div className="opt-row">
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                    <span className="opt-label" id="dl-subs-mode">
-                      {t('Subtitles go')}
+                {canEmbedSubs(o.container) ? (
+                  <div className="opt-row">
+                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className="opt-label" id="dl-subs-mode">
+                        {t('Subtitles go')}
+                      </span>
+                      <Help label={t('subtitles go')} text={t('In the video: the player can turn them on. As files: separate .srt / .vtt files next to the video (for editors, or players that want a file). Both: in the video and as files.')} />
                     </span>
-                    <Help label={t('subtitles go')} text={t('In the video: the player can turn them on. As files: separate .srt / .vtt files next to the video (for editors, or players that want a file). Both: in the video and as files.')} />
-                  </span>
-                  <Segmented
-                    labelledBy="dl-subs-mode"
-                    value={o.subsMode}
-                    onChange={(subsMode) => set({ subsMode })}
-                    options={[
-                      { value: 'embed', label: t('in the video') },
-                      { value: 'file', label: t('as files') },
-                      { value: 'both', label: t('both') },
-                    ]}
-                  />
-                </div>
-                {o.subsMode !== 'embed' && (
+                    <Segmented
+                      labelledBy="dl-subs-mode"
+                      value={o.subsMode}
+                      onChange={(subsMode) => set({ subsMode })}
+                      options={[
+                        { value: 'embed', label: t('in the video') },
+                        { value: 'file', label: t('as files') },
+                        { value: 'both', label: t('both') },
+                      ]}
+                    />
+                  </div>
+                ) : (
+                  <p className="note">{t('{format} can’t hold subtitles, so they come as files next to the video.', { format: o.container.toUpperCase() })}</p>
+                )}
+                {(o.subsMode !== 'embed' || !canEmbedSubs(o.container)) && (
                   <div className="opt-row">
                     <span style={{ display: 'flex', alignItems: 'center' }}>
                       <span className="opt-label" id="dl-subs-fmt">
@@ -497,20 +507,34 @@ export default function Downloader() {
                 <span className="opt-label" id="dl-a">
                   {t('Format')}
                 </span>
-                <Help label={t('audio format')} text={t('MP3 plays everywhere. M4A and Opus are smaller for the same quality. Original keeps the site\'s own file without converting.')} />
+                <Help
+                  label={t('audio format')}
+                  text={t('MP3 plays everywhere. M4A (AAC) and Opus are smaller for the same quality; OGG is the open Vorbis format some games use. WAV and FLAC are lossless: big files, for editing or burning a CD (they can’t be better than what the site has). Original keeps the site\'s own file without converting.')}
+                />
               </span>
               <Segmented
                 labelledBy="dl-a"
                 value={o.audioFormat}
                 onChange={(audioFormat) => set({ audioFormat })}
-                options={[
-                  { value: 'mp3', label: 'mp3' },
-                  { value: 'm4a', label: 'm4a' },
-                  { value: 'opus', label: 'opus' },
-                  { value: 'best', label: t('original') },
-                ]}
+                options={AUDIO_FORMATS.map((f) => ({ value: f, label: f === 'best' ? t('original') : f }))}
               />
             </div>
+            {!isLossless(o.audioFormat) && (
+              <div className="opt-row">
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <span className="opt-label" id="dl-br">
+                    {t('Sound quality')}
+                  </span>
+                  <Help label={t('sound quality')} text={t('Best picks the top variable quality (about 245 kbit/s for MP3). A fixed bitrate makes the size predictable: 320 is the most MP3 can do, 128 is half the size and still fine for speech. YouTube’s own sound is about 130–160 kbit/s, so more than that only makes the file bigger.')} />
+                </span>
+                <Segmented
+                  labelledBy="dl-br"
+                  value={o.audioBitrate}
+                  onChange={(audioBitrate) => set({ audioBitrate })}
+                  options={BITRATES.map((b) => ({ value: b, label: b === 'best' ? t('best') : `${b}k` }))}
+                />
+              </div>
+            )}
             <div className="opt-row">
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 <span className="opt-label" id="dl-meta">

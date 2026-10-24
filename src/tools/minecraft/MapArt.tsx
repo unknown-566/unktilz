@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, Segmented, Toggle } from '../../components/ui';
 import { Workbench } from '../../components/Workbench';
 import { Help } from '../../components/Help';
-import { UploadIcon } from '../../components/icons';
+import { DropZone } from '../../components/DropZone';
 import { computeValue } from '../../lib/compute';
 import { saveBlob } from '../../queue/download';
 import { SUPPORT_BLOCK, baseById } from '../../lib/mc/mapColors';
@@ -54,8 +54,6 @@ export default function MapArt() {
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState('');
   const [error, setError] = useState('');
-  const [over, setOver] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const run = useRef(0);
 
@@ -282,42 +280,16 @@ export default function MapArt() {
     </>
   ) : undefined;
 
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setOver(false);
-    take(e.dataTransfer.files[0]);
-  };
-
   return (
     <Workbench preview={preview} output={output}>
-      <div
-        className={`drop${over ? ' over' : ''}`}
-        style={{ padding: file ? '20px 24px' : undefined }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setOver(true);
-        }}
-        onDragLeave={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
-        }}
-        onDrop={onDrop}
-      >
-        {!file && (
-          <span className="accent">
-            <UploadIcon />
-          </span>
-        )}
-        <div className="drop-title">{file ? file.name : t('Drop a picture here')}</div>
-        <button type="button" className={file ? 'btn' : 'btn btn-primary'} onClick={() => input.current?.click()}>
-          {file ? t('Use another picture') : t('Choose a picture')}
-        </button>
-        {error && (
-          <p className="drop-error" role="alert">
-            {error}
-          </p>
-        )}
-        <input ref={input} type="file" accept="image/*" hidden onChange={(e) => take(e.target.files?.[0])} />
-      </div>
+      <DropZone
+        title={file ? file.name : t('Drop a picture here')}
+        button={file ? t('Use another picture') : t('Choose a picture')}
+        accept={['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif']}
+        more={!!file}
+        error={error}
+        onFiles={([f]) => take(f)}
+      />
 
       <section className="panel" aria-label={t('Settings')}>
         <OptRow id="ma-w" label={t('Maps wide')} help={t('How many maps side by side. Each map is 128 × 128 blocks.')}>

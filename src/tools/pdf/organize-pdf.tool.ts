@@ -12,6 +12,7 @@ export default defineTool({
   description:
     t('See every page of a PDF and fix it: drag pages into a new order, turn the ones that are sideways, delete or duplicate pages, add empty pages, or put pages of several PDFs together.'),
   keywords: ['organize pdf', 'reorder pages', 'rearrange pdf', 'rotate pdf', 'rotate page', 'delete pages', 'remove pages', 'duplicate page', 'blank page', 'sort pages', 'move pages'],
+  accepts: ['.pdf'],
   layout: 'workbench',
   component: lazyTool(() => import('./organize/Organize')),
 });

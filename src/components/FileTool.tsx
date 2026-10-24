@@ -6,7 +6,9 @@ import { useStaging } from '../queue/staging';
 import { getOutputs } from '../queue/blobs';
 import { downloadJob, formatBytes } from '../queue/download';
 import { Panel, Segmented, Toggle } from './ui';
-import { DownloadIcon, UploadIcon } from './icons';
+import { CopyIcon, DownloadIcon } from './icons';
+import { DropZone } from './DropZone';
+import { copyPicture, endOutputDrag, isPictureJob, prepareOutputs, startOutputDrag } from '../queue/dragFiles';
 import { Help } from './Help';
 import { ResultPreview } from './ResultPreview';
 import { prefersReducedMotion } from '../lib/theme';
@@ -136,12 +138,16 @@ function Thumb({ job }: { job: Job }) {
 function ResultRow({ job }: { job: Job }) {
   const remove = useQueue((s) => s.remove);
   const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
   const pct = Math.round((job.status === 'done' ? 1 : job.progress) * 100);
   const size = job.outputs?.reduce((n, o) => n + o.size, 0);
   const outName = job.outputs?.length === 1 ? job.outputs[0].name : job.outputs ? plural(job.outputs.length, ['{n} file', '{n} files'], ['{n} soubor', '{n} soubory', '{n} souborů']) : job.file;
+  const done = job.status === 'done';
+  // A finished result can be dragged into another tool (or out of the browser).
+  const drag = done ? { draggable: true, onDragStart: (e: DragEvent) => startOutputDrag(e, job), onDragEnd: endOutputDrag, onMouseEnter: () => void prepareOutputs(job), title: t('Drag it into another tool, or out to a folder') } : {};
   return (
-    <li className="result">
-      {job.status === 'done' && <Thumb job={job} />}
+    <li className={`result${done ? ' can-drag' : ''}`} {...drag}>
+      {done && <Thumb job={job} />}
       <div className="result-body">
         <div className="job-row">
           <span className="job-name" style={{ textDecoration: 'none' }} title={outName}>
@@ -162,6 +168,25 @@ function ResultRow({ job }: { job: Job }) {
           </div>
         )}
       </div>
+      {isPictureJob(job) && (
+        <button
+          type="button"
+          className="btn btn-sm"
+          title={t('Copy the picture (then Ctrl+V in Discord or a chat)')}
+          onClick={() =>
+            copyPicture(job).then(
+              () => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2500);
+              },
+              (e: Error) => setErr(e.message),
+            )
+          }
+        >
+          <CopyIcon size={16} />
+          {copied ? t('copied') : t('copy')}
+        </button>
+      )}
       {job.status === 'done' && (
         <button type="button" className="btn btn-sm" onClick={() => downloadJob(job).catch((e: Error) => setErr(e.message))}>
           <DownloadIcon size={16} />
@@ -225,9 +250,7 @@ export function FileTool({ tool }: { tool: Tool }) {
   const location = useLocation();
   // An old address (e.g. /t/ogg-to-mp3) arrives here with the options it stood for.
   const [opts, setOpts] = useState<Opts>(() => ({ ...defaultOpts(tool), ...(location.state as { opts?: Opts } | null)?.opts }));
-  const [over, setOver] = useState(false);
   const [error, setError] = useState('');
-  const input = useRef<HTMLInputElement>(null);
   const prevTool = useRef(tool);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -282,12 +305,6 @@ export function FileTool({ tool }: { tool: Tool }) {
   const files = plural(staged.length, ['{n} file', '{n} files'], ['{n} soubor', '{n} soubory', '{n} souborů']);
   const runLabel = !staged.length ? t('Run') : tool.batch ? t('Run · {files} → 1 result', { files }) : t('Run · {files}', { files });
 
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setOver(false);
-    take(e.dataTransfer.files);
-  };
-
   const exts = tool.accepts ?? [];
   const kinds = exts.join(' / ');
   const dropTitle =
@@ -305,45 +322,16 @@ export function FileTool({ tool }: { tool: Tool }) {
 
   return (
     <>
-      <div
-        className={`drop${over ? ' over' : ''}`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setOver(true);
-        }}
-        onDragLeave={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
-        }}
-        onDrop={onDrop}
-      >
-        <span className="accent">
-          <UploadIcon />
-        </span>
-        <div className="drop-title">{dropTitle}</div>
-        <button type="button" className={staged.length ? 'btn' : 'btn btn-primary'} onClick={() => input.current?.click()}>
-          {staged.length ? t('Add files') : t('Choose files')}
-        </button>
-        <div className="drop-sub">
-          {exts.join(' ')}
-          {tool.batch && ` · ${t('all files become one job')}`}
-        </div>
-        {error && (
-          <p className="drop-error" role="alert">
-            {error}
-          </p>
-        )}
-        <input
-          ref={input}
-          type="file"
-          hidden
-          multiple
-          accept={exts.join(',')}
-          onChange={(e) => {
-            take(e.target.files);
-            e.target.value = '';
-          }}
-        />
-      </div>
+      <DropZone
+        title={dropTitle}
+        button={staged.length ? t('Add files') : t('Choose files')}
+        accept={exts}
+        multiple
+        more={staged.length > 0}
+        sub={tool.batch ? `${exts.join(' ')} · ${t('all files become one job')}` : undefined}
+        error={error}
+        onFiles={take}
+      />
 
       {staged.length > 0 && <StagedList tool={tool} files={staged} set={(f) => setStaged(tool.slug, f)} />}
 

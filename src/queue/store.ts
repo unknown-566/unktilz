@@ -27,7 +27,11 @@ export type Job = {
   createdAt: number;
   /** Made by a tool page from what it has in memory (see tasks.ts), not from saved files. */
   task?: boolean;
+  /** How a task carries on after the page reloads (see resume.ts); saved with the job. */
+  resume?: Resume;
 };
+
+export type Resume = { kind: string; data: unknown };
 
 /** What the queue shows for a task. */
 export type TaskInfo = { slug: string; name: string; category: Category; file: string };
@@ -37,7 +41,7 @@ type QueueState = {
   hydrated: boolean;
   add: (tool: Tool, files: File[], opts: Opts) => void;
   /** Queues work a tool page does itself; `release` runs once it's over (done, failed or removed). Returns the job id. */
-  addTask: (info: TaskInfo, run: TaskRun, release?: () => void) => string;
+  addTask: (info: TaskInfo, run: TaskRun, release?: () => void, resume?: Resume) => string;
   remove: (id: string) => void;
   clearDone: () => void;
   patch: (id: string, patch: Partial<Job>) => void;
@@ -79,10 +83,10 @@ export const useQueue = create<QueueState>()(
         setState({ jobs: [...getState().jobs, ...jobs] });
       },
 
-      addTask: (info, run, release) => {
+      addTask: (info, run, release, resume) => {
         const id = newId();
         putTask(id, run, release);
-        setState({ jobs: [...getState().jobs, { ...info, id, status: 'queued', progress: 0, opts: {}, createdAt: Date.now(), task: true }] });
+        setState({ jobs: [...getState().jobs, { ...info, id, status: 'queued', progress: 0, opts: {}, createdAt: Date.now(), task: true, resume }] });
         return id;
       },
 
@@ -119,11 +123,11 @@ export const useQueue = create<QueueState>()(
       },
       onRehydrateStorage: () => () => {
         // A job that was running when the tab closed starts over; a task can't (what it was made
-        // from was only in memory).
+        // from was only in memory), unless it says how to carry on (a download: see resume.ts).
         useQueue.setState((s) => ({
           hydrated: true,
           jobs: s.jobs.map((j) =>
-            j.task && (j.status === 'running' || j.status === 'queued')
+            j.task && !j.resume && (j.status === 'running' || j.status === 'queued')
               ? { ...j, status: 'error', error: TASK_GONE }
               : j.status === 'running'
                 ? { ...j, status: 'queued', progress: 0 }

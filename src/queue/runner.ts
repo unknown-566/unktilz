@@ -2,6 +2,7 @@ import { ALIASES, defaultOpts, getTool } from '../registry';
 import { controllers, dropInputs, getInputs, putOutputs, type Output } from './blobs';
 import { useQueue, type Job } from './store';
 import { TASK_GONE, dropTask, getTask } from './tasks';
+import { resumer } from './resume';
 import { t } from '../lib/i18n-core';
 
 // Jobs run one at a time, in the order they were added, whatever page is open.
@@ -36,9 +37,14 @@ async function run(job: Job) {
   try {
     const outputs: Output[] = [];
     if (job.task) {
-      const task = getTask(job.id);
-      if (!task) throw new Error(TASK_GONE);
-      outputs.push(...(await task.run(controller.signal, progress)));
+      // After a reload the work is gone from memory; a task that can carry on is made again.
+      const work = getTask(job.id)?.run ?? (job.resume ? await resumer(job.resume) : undefined);
+      if (!work) throw new Error(TASK_GONE);
+      const keep = (data: unknown) => {
+        const cur = useQueue.getState().jobs.find((j) => j.id === job.id);
+        if (cur?.resume) patch(job.id, { resume: { ...cur.resume, data } });
+      };
+      outputs.push(...(await work(controller.signal, progress, keep)));
     } else {
       // Jobs saved under an old address run in the tool that replaced it.
       const alias = ALIASES[job.slug];
@@ -62,6 +68,7 @@ async function run(job: Job) {
       status: 'done',
       progress: 1,
       outputs: outputs.map((o) => ({ name: o.name, size: o.blob.size, type: o.blob.type })),
+      resume: undefined,
     });
     void dropInputs(job.id);
   } catch (e) {

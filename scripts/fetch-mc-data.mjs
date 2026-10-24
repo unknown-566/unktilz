@@ -58,4 +58,37 @@ write(
   'mobs.json',
   entities.filter((e) => MOB_TYPES.has(e.type)).map((e) => [e.name, e.displayName, e.metadataKeys?.includes('baby') ? 1 : 0]),
 );
+// Block states: { shapes: [[name, values, default index]…], blocks: { id: shape index } }; blocks with
+// the same states and defaults share one shape. The default comes from the block's default state
+// id: the last state changes fastest, booleans go true, false.
+{
+  const shapes = [];
+  const index = new Map();
+  const byBlock = {};
+  for (const b of blocks) {
+    if (!b.states?.length) continue;
+    const props = b.states.map((s) => ({ name: s.name, values: s.type === 'bool' ? ['true', 'false'] : s.values.map(String) }));
+    let rest = b.defaultState - b.minStateId;
+    const defaults = new Array(props.length);
+    for (let i = props.length - 1; i >= 0; i--) {
+      defaults[i] = rest % props[i].values.length;
+      rest = Math.floor(rest / props[i].values.length);
+    }
+    const shape = props.map((p, i) => [p.name, p.values, defaults[i]]);
+    const key = JSON.stringify(shape);
+    if (!index.has(key)) {
+      index.set(key, shapes.length);
+      shapes.push(shape);
+    }
+    byBlock[b.name] = index.get(key);
+  }
+  writeFileSync(join(out, 'blockStates.json'), JSON.stringify({ shapes, blocks: byBlock }));
+  console.log(`blockStates.json: ${Object.keys(byBlock).length} blocks, ${shapes.length} shapes`);
+}
+// Everything /summon takes (not the player or fishing bobber): [id, name, alive (1) or not (0)]
+const NOT_SUMMONABLE = new Set(['player', 'fishing_bobber']);
+write(
+  'entities.json',
+  entities.filter((e) => !NOT_SUMMONABLE.has(e.name)).map((e) => [e.name, e.displayName, MOB_TYPES.has(e.type) ? 1 : 0]),
+);
 writeFileSync(join(out, 'VERSION'), `${VERSION}\n`);
