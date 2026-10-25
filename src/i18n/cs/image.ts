@@ -361,6 +361,9 @@ export default {
   'stretched to fit': 'roztažené, aby sedělo',
   Crop: 'Oříznout',
   'Crop all ({n})': 'Oříznout všechny ({n})',
+  'reset settings': 'obnovit výchozí',
+  'Default settings, no turning, the boxes where they started': 'Výchozí nastavení, bez otočení, rámečky tam, kde začínaly',
+  'Settings reset': 'Nastavení obnoveno',
   'Sent to the queue: {name}': 'Posláno do fronty: {name}',
   'Same crop for all pictures': 'Stejný výřez pro všechny obrázky',
   'The box (and turning) of the picture you edit goes to all of them, at the same place relative to each picture’s size. Handy for screenshots.':

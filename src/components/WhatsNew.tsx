@@ -51,7 +51,7 @@ export default function WhatsNew({ onClose }: { onClose: () => void }) {
               <h3 className="mono">
                 {s.version} <span className="muted">{s.date}</span>
               </h3>
-              <Markdown text={s.body} />
+              <Markdown text={s.summary} />
             </div>
           ))}
         </div>

@@ -267,21 +267,23 @@ export function MiniToolbar({
       </div>
       )}
 
-      <select
-        className="select mono"
-        aria-label={t('Insert a live value')}
-        value=""
-        onChange={(e) => {
-          if (e.target.value) onInsert(e.target.value);
-        }}
-      >
-        <option value="">{t('+ insert a live value (player name, players online…)')}</option>
-        {placeholders.map((p) => (
-          <option key={p.value} value={p.value}>
-            {p.label} · {p.value}
-          </option>
-        ))}
-      </select>
+      {placeholders.length > 0 && (
+        <select
+          className="select mono"
+          aria-label={t('Insert a live value')}
+          value=""
+          onChange={(e) => {
+            if (e.target.value) onInsert(e.target.value);
+          }}
+        >
+          <option value="">{t('+ insert a live value (player name, players online…)')}</option>
+          {placeholders.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label} · {p.value}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

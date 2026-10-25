@@ -1,32 +1,10 @@
 import { Link, NavLink } from 'react-router-dom';
-import { useTheme } from '../lib/theme';
 import { useLaunch } from './Transition';
 import { APP_VERSION, useUpdateStatus } from '../lib/updates';
-import { getLang, plural, setLang, t, tc } from '../lib/i18n';
-import { useQueue } from '../queue/store';
-
-/**
- * Switching the language reloads the page. Downloads carry on after it, but work made from what a
- * page holds in memory (GIF maker, crop…) would stop, so that asks first.
- */
-function switchLang(to: 'en' | 'cs') {
-  const lost = useQueue.getState().jobs.filter((j) => j.task && !j.resume && (j.status === 'running' || j.status === 'queued')).length;
-  if (
-    lost &&
-    !window.confirm(
-      plural(
-        lost,
-        ['Changing the language reloads the page and stops {n} job that is being made. Change it anyway?', 'Changing the language reloads the page and stops {n} jobs that are being made. Change it anyway?'],
-        ['Změna jazyka obnoví stránku a zastaví {n} rozdělanou úlohu. Přesto změnit?', 'Změna jazyka obnoví stránku a zastaví {n} rozdělané úlohy. Přesto změnit?', 'Změna jazyka obnoví stránku a zastaví {n} rozdělaných úloh. Přesto změnit?'],
-      ),
-    )
-  )
-    return;
-  setLang(to);
-}
+import { getLang, t } from '../lib/i18n';
+import { switchLang } from '../lib/switchLang';
 
 export function Header() {
-  const [theme, toggle] = useTheme();
   const launch = useLaunch();
   const update = useUpdateStatus();
   const lang = getLang();
@@ -54,12 +32,12 @@ export function Header() {
           <NavLink to="/request" onClick={(e) => launch(e, '/request')}>
             {t('Request a tool')}
           </NavLink>
-          <button type="button" className="theme-btn" onClick={toggle} aria-label={theme === 'dark' ? t('Switch to the light theme') : t('Switch to the dark theme')}>
-            {t('theme: {theme}', { theme: theme === 'dark' ? tc('theme', 'dark') : tc('theme', 'light') })}
-          </button>
           <button type="button" className="theme-btn" onClick={() => switchLang(lang === 'en' ? 'cs' : 'en')} aria-label={other.label} title={other.label}>
             {t('lang: en')}
           </button>
+          <NavLink to="/settings" className="theme-btn" title={t('Theme, language, version and updates')} onClick={(e) => launch(e, '/settings')}>
+            {t('settings')}
+          </NavLink>
         </nav>
       </div>
     </header>

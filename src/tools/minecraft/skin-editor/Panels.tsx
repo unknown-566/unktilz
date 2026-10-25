@@ -169,7 +169,7 @@ const ICON_PATHS: Record<ToolId, ReactNode> = {
   ),
 };
 
-function ToolIcon({ tool }: { tool: ToolId }) {
+export function ToolIcon({ tool }: { tool: ToolId }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {ICON_PATHS[tool]}

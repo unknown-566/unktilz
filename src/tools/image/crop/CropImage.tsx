@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, Segmented } from '../../../components/ui';
 import { Help } from '../../../components/Help';
 import { DropZone } from '../../../components/DropZone';
+import { UndoBar } from '../../../components/SavedPanel';
 import { Workbench } from '../../../components/Workbench';
 import { computeValue } from '../../../lib/compute';
 import { fmtNum, plural, t } from '../../../lib/i18n-core';
@@ -98,6 +99,8 @@ export default function CropImage() {
   const picker = useRef<HTMLInputElement>(null);
   useAutosave<Settings>('crop-image', s, (v) => setS({ ...DEFAULTS, ...v, custom: { ...DEFAULTS.custom, ...v.custom }, size: { ...DEFAULTS.size, ...v.size } }));
   const set = (patch: Partial<Settings>) => setS((old) => ({ ...old, ...patch }));
+  // What "reset" replaced, so it can be brought back.
+  const [undo, setUndo] = useState<{ s: Settings; boxes: Map<number, Pick<Item, 'orient' | 'rect'>> } | null>(null);
 
   usePendingFiles('crop-image', (f) => void add(f));
 
@@ -105,8 +108,13 @@ export default function CropImage() {
   const dims = (it: Item) => turnedSize(it.W, it.H, it.orient);
   const ratioFor = useCallback((it: Item) => ratioOf(s.ratio, s.swapped, dims(it).w, dims(it).h, s.custom), [s.ratio, s.swapped, s.custom]);
 
-  // A new ratio reshapes every box around its middle.
+  // A new ratio reshapes every box around its middle (not when undo brings back boxes as they were).
+  const keepBoxes = useRef(false);
   useEffect(() => {
+    if (keepBoxes.current) {
+      keepBoxes.current = false;
+      return;
+    }
     setItems((list) => list.map((it) => ({ ...it, rect: fitRatio(it.rect, ratioFor(it), dims(it).w, dims(it).h) })));
   }, [ratioFor]);
 
@@ -209,6 +217,22 @@ export default function CropImage() {
     setSent(list.length === 1 ? t('Sent to the queue: {name}', { name: list[0].file.name }) : plural(list.length, ['{n} picture sent to the queue', '{n} pictures sent to the queue'], ['{n} obrázek poslán do fronty', '{n} obrázky poslány do fronty', '{n} obrázků posláno do fronty']));
   };
 
+  /** Back to the starting settings: no ratio, no turning, each box where it started. */
+  const reset = () => {
+    setUndo({ s, boxes: new Map(items.map((it) => [it.id, { orient: it.orient, rect: it.rect }])) });
+    setSent('');
+    setS(DEFAULTS);
+    setItems((list) => list.map((it) => ({ ...it, orient: { rotate: 0, mirror: false }, rect: startBox(null, it.W, it.H) })));
+  };
+  const undoReset = () => {
+    if (!undo) return;
+    // Only skip when the ratio really changes (else the effect doesn't run and would skip the next one).
+    keepBoxes.current = undo.s.ratio !== s.ratio || undo.s.swapped !== s.swapped || undo.s.custom !== s.custom;
+    setS(undo.s);
+    setItems((list) => list.map((it) => ({ ...it, ...(undo.boxes.get(it.id) ?? {}) })));
+    setUndo(null);
+  };
+
   const ratio = item ? ratioFor(item) : null;
   const d = item ? dims(item) : { w: 0, h: 0 };
   const r = item ? rounded(item.rect, d.w, d.h) : { x: 0, y: 0, w: 0, h: 0 };
@@ -264,7 +288,15 @@ export default function CropImage() {
     );
 
   const settings = (
-    <Panel title={t('crop')}>
+    <Panel
+      title={t('crop')}
+      actions={
+        <button type="button" className="btn btn-sm" title={t('Default settings, no turning, the boxes where they started')} onClick={reset}>
+          {t('reset settings')}
+        </button>
+      }
+    >
+      {undo && <UndoBar text={t('Settings reset')} onUndo={undoReset} onClose={() => setUndo(null)} />}
       <div className="field">
         <span className="field-label">{t('Aspect ratio')}</span>
         <div className="crop-ratios">

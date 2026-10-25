@@ -51,12 +51,21 @@ export async function remoteChangelog() {
   return res.text();
 }
 
-/** Splits a changelog into its "## [x.y.z] - date" sections. */
-export function changelogSections(md: string) {
+export type ChangelogSection = { version: string; date: string; body: string; summary: string; details: string };
+
+/**
+ * Splits a changelog into its "## [x.y.z] - date" sections. `summary` is the short list before the
+ * first "###" heading and `details` the Added / Changed / Fixed part; an entry without a short list
+ * (older ones) has its whole text as the summary.
+ */
+export function changelogSections(md: string): ChangelogSection[] {
   const parts = md.split(/^## /m).slice(1);
   return parts.map((p) => {
     const m = p.match(/^\[?([\d.]+)\]?(?:\s*-\s*(.*))?/);
-    return { version: m?.[1] ?? '', date: m?.[2]?.trim() ?? '', body: p.slice(p.indexOf('\n') + 1).trim() };
+    const body = p.slice(p.indexOf('\n') + 1).trim();
+    const cut = body.search(/^### /m);
+    const summary = cut < 0 ? body : body.slice(0, cut).trim();
+    return { version: m?.[1] ?? '', date: m?.[2]?.trim() ?? '', body, summary: summary || body, details: summary && cut >= 0 ? body.slice(cut).trim() : '' };
   });
 }
 

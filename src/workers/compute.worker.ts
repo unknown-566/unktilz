@@ -3,6 +3,8 @@ import type { ImagePayload, PreviewPayload, PreviewResult } from './tasks/image'
 import type { CompressImagesPayload } from './tasks/pdfImages';
 import type { MapExportPayload, MapGridPayload, MapGridResult } from './tasks/mapArt';
 import type { BuildPdfPayload, JpgsToPdfPayload, MergePdfPayload } from './tasks/pdf';
+import type { JarAssetsPayload, JarAssetsResult } from './tasks/mcJar';
+import type { PanoramaPayload, PanoramaResult } from './tasks/mcPanorama';
 import type { PagesToPdfPayload, PreparePagePayload, PreparedPage, ScanDetectPayload, ScanDetectResult } from './tasks/scanPdf';
 import { applyLang, type Lang } from '../lib/i18n-core';
 
@@ -21,6 +23,8 @@ type Tasks = {
   'pages-to-pdf': [PagesToPdfPayload, TaskOutput];
   'map-grid': [MapGridPayload, MapGridResult];
   'map-export': [MapExportPayload, TaskOutput];
+  'mc-jar-assets': [JarAssetsPayload, JarAssetsResult];
+  'mc-panorama': [PanoramaPayload, PanoramaResult];
 };
 export type TaskName = keyof Tasks;
 export type TaskPayload<T extends TaskName> = Tasks[T][0];
@@ -43,6 +47,8 @@ const tasks: Record<TaskName, () => Promise<Handler>> = {
   'pages-to-pdf': () => import('./tasks/scanPdf').then((m) => m.pagesToPdf as Handler),
   'map-grid': () => import('./tasks/mapArt').then((m) => m.mapGrid as Handler),
   'map-export': () => import('./tasks/mapArt').then((m) => m.mapExport as Handler),
+  'mc-jar-assets': () => import('./tasks/mcJar').then((m) => m.jarAssets as Handler),
+  'mc-panorama': () => import('./tasks/mcPanorama').then((m) => m.makePanorama as Handler),
 };
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;

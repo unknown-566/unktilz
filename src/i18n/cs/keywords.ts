@@ -52,6 +52,7 @@ export default {
   'keywords:seed-map': 'mapa světa seed biomy struktury vesnice najít vesnici svět',
   'keywords:server-properties': 'nastavení serveru konfigurace upravit vlastnosti',
   'keywords:server-status': 'je server online ping hráči online zjistit kontrola serveru stav',
+  'keywords:resource-pack': 'resource pack texture pack balíček zdrojů balíček textur textury textura vlastní textury upravit textury předělat bloky itemy hd pixel art vytvořit pack zvuky zvuk vyměnit zvuky vlastní itemy přejmenovat itemy texty překlad pozadí menu panorama hlavní menu splash nápisy',
   'keywords:skin-editor': 'upravit skin kreslit skin vytvořit skin malovat postava',
   'keywords:skin-viewer': 'stáhnout skin stažení skinu zobrazit skin náhled skinu prohlížeč hráč',
   'keywords:slime-chunks': 'sliz slizy farma najít hledat seed',

@@ -19,9 +19,25 @@ const pass = (target: string, path: string): ProxyOptions => ({
       req.removeHeader('cookie');
     }),
 });
+// The resource pack maker's sounds, other languages and the menu panorama are Minecraft's asset
+// objects (resources.download.minecraft.net/<2 hex>/<sha1>), which send no CORS headers. The page
+// checks each file's SHA-1, so only Mojang's own files are accepted.
+const minecraftAssets: ProxyOptions = {
+  target: 'https://resources.download.minecraft.net',
+  changeOrigin: true,
+  rewrite: (path) => path.replace(/^\/mc-assets/, ''),
+  configure: (p) =>
+    p.on('proxyReq', (req) => {
+      req.removeHeader('origin');
+      req.removeHeader('referer');
+      req.removeHeader('cookie');
+    }),
+};
+
 const proxy: Record<string, ProxyOptions> = {
   '/upload/catbox': pass('https://catbox.moe', '/user/api.php'),
   '/upload/litterbox': pass('https://litterbox.catbox.moe', '/resources/internals/api.php'),
+  '^/mc-assets/[0-9a-f]{2}/[0-9a-f]{40}$': minecraftAssets,
 };
 
 /**

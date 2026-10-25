@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
 import { QueueRail } from './components/QueueRail';
@@ -8,10 +8,23 @@ import ToolPage from './pages/ToolPage';
 import Request from './pages/Request';
 import NotFound from './pages/NotFound';
 import { hasUnseenVersion } from './components/whatsNewSeen';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { PageError } from './components/PageError';
 import { t } from './lib/i18n-core';
+
+/** A page that fails while drawing shows an error instead of blanking the site; another page starts fresh. */
+function PageBoundary({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return (
+    <ErrorBoundary resetKey={pathname} fallback={(reset, error) => <PageError error={error} onRetry={reset} />}>
+      {children}
+    </ErrorBoundary>
+  );
+}
 
 const Backup = lazy(() => import('./pages/Backup'));
 const Changelog = lazy(() => import('./pages/Changelog'));
+const Settings = lazy(() => import('./pages/Settings'));
 const WhatsNew = lazy(() => import('./components/WhatsNew'));
 
 /** The "what's new" popup, once per new version (loaded only then). */
@@ -60,28 +73,38 @@ export default function App() {
             <QueueRail />
             <div className="scroll" id="scroll">
               <main>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/t/:slug" element={<ToolPage />} />
-                  <Route path="/request" element={<Request />} />
-                  <Route
-                    path="/changelog"
-                    element={
-                      <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
-                        <Changelog />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/backup"
-                    element={
-                      <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
-                        <Backup />
-                      </Suspense>
-                    }
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <PageBoundary>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/t/:slug" element={<ToolPage />} />
+                    <Route path="/request" element={<Request />} />
+                    <Route
+                      path="/changelog"
+                      element={
+                        <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
+                          <Changelog />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
+                          <Settings />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/backup"
+                      element={
+                        <Suspense fallback={<div className="wrap muted mono">{t('loading…')}</div>}>
+                          <Backup />
+                        </Suspense>
+                      }
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </PageBoundary>
               </main>
               <Footer />
             </div>

@@ -2,26 +2,39 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.21.0] - 2026-10-25
+
+- New tool (beta): Resource pack maker: textures with a 3D preview and animations, your own items for /give, one-click tweaks, sounds, texts, menu background
+- Themes: 8 color themes (Midnight, Terminal, Paper, Purple night…) or the same as your system
+- New Settings page: theme, language, your version and the update check
+- The changelog is easier to read: each version shows its main points, the rest is under "details"
+- Crop image: a "reset settings" button (with undo)
+- A tool that runs into an error shows a message instead of an empty page
+
+### Added
+- "Resource pack maker" in Minecraft (beta): pick a version (its textures are downloaded from Mojang once, or read from your own game file) and change any block, item, mob, GUI or particle texture: paint it pixel by pixel, put in your own picture (also HD 32–128 px), or change hue, brightness, contrast or tint, also for many textures at once (every wool, every ore). Animated textures are edited frame by frame (add, copy, move or delete frames, speed, smooth blending), and any square texture can become an animation. A 3D preview shows the texture on its block or as an item. One-click changes: lower fire, clear glass, clearer water, see-through pumpkin, no dark screen corners, softer enchantment glint, lower shield. Your own items: a name, the item they're made from and their own texture, with the /give command (item_model, or custom_model_data for versions before 1.21.2) and a button that puts them into the give generator's "my items". Sounds: search the game's 1,900 sound events by name or subtitle, hear them, and put in your own (any audio file, cut and with a volume; converted to mono Ogg so the game can place it; several play at random). Texts: change any text of the game in any of its 143 languages (item names, buttons, messages), and the splash lines on the title screen (added to the game's or instead of them). Menu background: from one 360° photo or six pictures, with a preview that turns like the title screen. The parts are in tabs. Name, colored description and icon as shown in the game's pack list; download as .zip, open an existing pack to change it, save packs in "my packs".
+- Settings (the "settings" button at the top, where the theme button was): pick a theme, switch the language, check for updates, and see your version, where your saved things are kept (with a link to the backup) and the Ctrl+K shortcut.
+- Themes: Follow system (dark or light like your computer), Dark, Light, Midnight, Terminal (all in a monospace font), Paper, Purple night, Polar (light and icy) and High contrast. Each one shows a small preview in its colors; the 3D previews and the page transition use the theme too.
+- Crop image: "reset settings" next to the crop settings puts everything back to the start: free ratio, no turning or mirroring, rectangle, the size as cropped, the same format, quality 90, and each picture's box where it started. "Undo" brings back exactly what was there.
+
+### Changed
+- The changelog page and the "what's new" window show each version's short list; the longer description is folded under "details".
+- With no theme picked, the site now follows the system (before it was always dark). A theme picked before stays.
+
+### Fixed
+- When a tool runs into an error while drawing, the page shows what happened with "Reload page", "Try again" and "All tools" instead of going completely empty; the header, the queue and the rest of the site keep working, and another page opens normally.
+- The color bar for names and texts (give, summon, tellraw, setblock) no longer shows an empty "insert a live value" list.
+
 ## [1.20.0] - 2026-10-24
 
 - New tool: Crop image (any ratio, exact pixels, turn and mirror, round crop, several pictures at once)
-- The place to drop your files looks and works the same in every tool
-- Drag a finished file from the queue straight into another tool, or open it there with ↗
-- New tool: Encode, encrypt & hash (it replaces Base64 encode / decode)
-- Encodings: Base64, Base32, Base58, Base85, Base45, hex, binary, URL, HTML, Unicode, Punycode, Morse code…
-- Classic ciphers: Caesar, ROT13, Vigenère, Playfair, XOR and more, and you can chain them (XOR → Base64)
-- Hashes of text or files: MD5, SHA-1/2/3, BLAKE3, CRC32… with a "compare with" field for checksums
-- Password hashes: make or check bcrypt, Argon2, scrypt and PBKDF2
-- Real encryption with a password (AES-256-GCM), also OpenSSL compatible
-- New tool (beta): Summon command generator (like MCStacker): any mob or entity with a name, health, gear, effects and riders
-- Summon: villagers with your own trades, armor stands in a pose, charged creepers, floating text, TNT and more
-- Summon: tame a pet to a player, mobs that drop nothing, babies that never grow up, item frames, fireworks, thrown potions, effect clouds, minecarts and chest boats with items, arrows
-- Summon: display entities can be turned, moved, lit and given a glow color and shadow
-- New tool: Tellraw & title generator: colored chat messages, titles and action bar text with clickable links and commands, text on hover, player names and scores
-- New tool: Setblock & fill generator: block states, signs with clickable text, chests with items or loot, spawners with your own mob, command blocks, heads; big areas split automatically
-- Downloader: more formats: WAV, FLAC and OGG sound with a quality choice (320k, 192k…), MOV and AVI video, video without sound
+- New tool: Encode, encrypt & hash: encodings, classic ciphers, hashes, password hashes and encryption (it replaces Base64)
+- New tool (beta): Summon command generator, like MCStacker: any entity with gear, effects, riders, trades, poses and more
+- New tool: Tellraw & title generator: colored chat, titles and action bar text with clickable links and commands
+- New tool: Setblock & fill generator: block states, signs, chests, spawners and command blocks, with a 3D preview
+- Downloader: WAV, FLAC, OGG, MOV and AVI, a sound quality choice, video without sound
+- Finished files can be dragged from the queue into another tool; every tool has the same drop area
 - Downloads keep going when you switch the language or reload the page
-- Long error messages in the queue no longer cover the jobs below them
 
 ### Added
 - Finished files go on to other tools: drag one from the queue (the tiles on the left, or the results under a tool) into any tool that takes files, and the places that take it light up while you drag. Or press ↗ next to it in the queue and pick a tool from the list of those that take it: the tool opens with the file already in. One file can also be dragged out of the browser into a folder. Finished pictures show in their queue tile and have a copy button: copy, then Ctrl+V in Discord or any chat (the Discord app takes no files dragged out of a web page). A job with several files (split PDF parts) brings all of them.

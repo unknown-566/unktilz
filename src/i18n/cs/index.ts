@@ -12,9 +12,10 @@ import mcGive, { SAME as mcGiveSame } from './mcGive';
 import mcSummon, { SAME as mcSummonSame } from './mcSummon';
 import mcText, { SAME as mcTextSame } from './mcText';
 import mcSkin, { SAME as mcSkinSame } from './mcSkin';
+import mcPack, { SAME as mcPackSame } from './mcPack';
 import crypto, { SAME as cryptoSame } from './crypto';
 import keywords from './keywords';
 
-const same = Object.fromEntries([...toolsSame, ...pdfSame, ...imageSame, ...videoSame, ...devqrSame, ...mcWorldSame, ...mcGiveSame, ...mcSummonSame, ...mcTextSame, ...mcSkinSame, ...cryptoSame].map((s) => [s, s]));
-const all: Record<string, string> = { ...same, ...app, ...tools, ...pdf, ...image, ...video, ...devqr, ...mcWorld, ...mcGive, ...mcSummon, ...mcText, ...mcSkin, ...crypto, ...keywords };
+const same = Object.fromEntries([...toolsSame, ...pdfSame, ...imageSame, ...videoSame, ...devqrSame, ...mcWorldSame, ...mcGiveSame, ...mcSummonSame, ...mcTextSame, ...mcSkinSame, ...mcPackSame, ...cryptoSame].map((s) => [s, s]));
+const all: Record<string, string> = { ...same, ...app, ...tools, ...pdf, ...image, ...video, ...devqr, ...mcWorld, ...mcGive, ...mcSummon, ...mcText, ...mcSkin, ...mcPack, ...crypto, ...keywords };
 export default all;

@@ -117,7 +117,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
                 key={i}
                 className="cell"
                 style={{
-                  background: c.lit ? '#b6f24a' : '#0b0d10',
+                  background: c.lit ? 'var(--accent)' : 'var(--bg)',
                   animationDelay: `${phase === 'cover' ? c.delay : c.delay + HOLD}ms`,
                 }}
               />
