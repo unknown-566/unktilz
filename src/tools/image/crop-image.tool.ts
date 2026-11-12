@@ -15,5 +15,6 @@ export default defineTool({
   keywords: ['crop', 'crop image', 'cut', 'trim', 'square', 'aspect ratio', 'profile picture', 'avatar', 'circle crop', 'round', 'rotate', 'flip', 'mirror', 'instagram', 'thumbnail', 'screenshot'],
   accepts: IMAGE_ACCEPTS,
   layout: 'workbench',
+  queued: true,
   component: lazyTool(() => import('./crop/CropImage')),
 });

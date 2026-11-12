@@ -175,7 +175,6 @@ export default {
 
   // ---- command, version, saved ----
   command: 'příkaz',
-  'copy for command block': 'kopírovat pro command block',
   '{n} / 256 characters': '{n} / 256 znaků',
   'fits in chat': 'vejde se do chatu',
   'too long for chat: paste it into a command block instead': 'na chat moc dlouhé: vložte ho do command blocku',

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CopyButton, Panel, Segmented, TextField } from '../../../components/ui';
 import { Help } from '../../../components/Help';
+import { ask } from '../../../components/Ask';
 import { GoLink } from '../../../components/Transition';
 import { Combo } from '../give/Pickers';
 import { ITEMS, ITEM_BY_ID } from '../give/data';
@@ -95,8 +96,8 @@ export function ItemsPanel({
                     <button
                       type="button"
                       className="btn btn-sm"
-                      onClick={() => {
-                        if (window.confirm(t('Delete the item “{n}”?', { n: plainText(it.name) || it.id }))) onChange({ items: items.filter((x) => x.id !== it.id) });
+                      onClick={async () => {
+                        if (await ask(t('Delete the item “{n}”?', { n: plainText(it.name) || it.id }), { yes: t('delete'), danger: true })) onChange({ items: items.filter((x) => x.id !== it.id) });
                       }}
                     >
                       {t('delete')}

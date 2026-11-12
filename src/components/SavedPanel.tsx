@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Help } from './Help';
+import { ask } from './Ask';
 import { savedWhen, useSaved, type SavedItem } from '../lib/saved';
 import { t } from '../lib/i18n-core';
 
@@ -74,7 +75,7 @@ export function SavedPanel<T>({
     if (data === null) return;
     const n = name.trim() || suggestName().trim() || t('Untitled');
     const existing = items.find((i) => i.name === n);
-    if (existing && !window.confirm(t('Replace the saved “{n}”?', { n }))) return;
+    if (existing && !(await ask(t('Replace the saved “{n}”?', { n }), { yes: t('replace') }))) return;
     await save(n, data, existing?.id);
     setName('');
   };
@@ -148,14 +149,14 @@ export function SavedPanel<T>({
                   title={t('Replace with what you have now')}
                   aria-label={t('Update {name} with the current state', { name: item.name })}
                   disabled={!canSave}
-                  onClick={() => {
+                  onClick={async () => {
                     const data = getData();
-                    if (data !== null && window.confirm(t('Replace “{name}” with what you have now?', { name: item.name }))) save(item.name, data, item.id);
+                    if (data !== null && (await ask(t('Replace “{name}” with what you have now?', { name: item.name }), { yes: t('replace') }))) save(item.name, data, item.id);
                   }}
                 >
                   ⤓
                 </button>
-                <button type="button" title={t('Delete')} aria-label={t('Delete {name}', { name: item.name })} onClick={() => window.confirm(t('Delete “{name}”?', { name: item.name })) && remove(item.id)}>
+                <button type="button" title={t('Delete')} aria-label={t('Delete {name}', { name: item.name })} onClick={async () => (await ask(t('Delete “{name}”?', { name: item.name }), { yes: t('delete'), danger: true })) && remove(item.id)}>
                   ×
                 </button>
               </span>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Help } from '../../../components/Help';
+import { ask } from '../../../components/Ask';
 import { Segmented, Toggle } from '../../../components/ui';
 import { saveBlob } from '../../../queue/download';
 import { PART_LABEL, SKIN, convertArms, copyPart, texelAt, type Layer, type Model, type PartId, type Rect } from '../../../lib/mc/skinLayout';
@@ -296,9 +297,9 @@ export default function SkinEditor() {
     }, 'image/png');
   };
 
-  const close = (i: number) => {
+  const close = async (i: number) => {
     const d = slots[i];
-    if (d?.dirty && !window.confirm(t('Close {v1} ({name})? Changes you haven’t downloaded are lost.', { v1: SLOT[i], name: d.name }))) return;
+    if (d?.dirty && !(await ask(t('Close {v1} ({name})? Changes you haven’t downloaded are lost.', { v1: SLOT[i], name: d.name }), { yes: t('close'), danger: true }))) return;
     if (i === active) {
       setFloat(null);
       setSelection(null);

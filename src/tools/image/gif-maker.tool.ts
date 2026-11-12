@@ -15,5 +15,6 @@ export default defineTool({
   keywords: ['gif', 'gif maker', 'giphy', 'photo to gif', 'photos to gif', 'images to gif', 'video to gif', 'mp4 to gif', 'meme', 'caption', 'text on gif', 'boomerang', 'animated', 'slideshow', 'sticker', 'stickers', 'animated emoji', 'rotate', 'overlay', 'font', 'fonts', 'google fonts', 'link', 'share', 'upload', 'discord'],
   accepts: [...IMAGE_ACCEPTS, ...VIDEO_ACCEPTS],
   layout: 'workbench',
+  queued: true,
   component: lazyTool(() => import('./gif-maker/GifMaker')),
 });

@@ -2,6 +2,35 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.22.0] - 2026-11-12
+
+- New category: Colors, with its first tool: Color picker (every notation, contrast, matching colors, color blindness, Minecraft codes)
+- New tool: Palette from image: the main colors of a picture, with how much of it each covers, to copy as code or download
+- New tool: Gradient generator: linear, radial and conic gradients with draggable colors, blended so the middle doesn't go grey; CSS, Tailwind, SVG or PNG
+- New tool: Audio cutter: pick a part on the sound's wave, listen to it, keep it or cut it out
+- Resource pack maker: your own sounds show their wave too, to pick the part with the mouse
+- Command generators have one copy button: the command works in chat and in a command block alike
+- Settings: queue results can download by themselves as soon as they're done, for every tool or only the ones you pick (off unless you turn it on)
+- Settings: make your own color themes (pick 4 colors, the rest is worked out, with a readability check; share them as a code), and pick the font and text size
+- "Are you sure?" questions (delete, replace, close, change language) are shown on the page, so they work in every browser
+
+### Added
+- Settings, own themes: "new theme" copies the theme you have, then you change its background, panels, text and accent color and see it on the whole site at once. The other colors (lines, muted text, a readable accent for links, text on buttons) are worked out from those four, or set by hand under "more colors". "How well it reads" shows the contrast of text, muted text, links and buttons. Make up to 20, name them, duplicate or delete them, start from any built-in theme, and share one as a code that someone else pastes in. They load before the page draws, like the built-in themes.
+- Settings, font: as the theme, Geist, the system font, monospace or serif; and the text size, 90 to 125 %. The size changes only texts, so pictures, previews and tools stay as they are.
+- Settings, "downloads": a finished job in the queue can be saved at once, without clicking download. Off (the default), every tool, or picked tools, ticked one by one in a list of all 15 tools that use the queue (grouped by category). A job with several results comes as one .zip, as with the download button, and it stays in the queue. When several results come one after another, Chrome asks once whether the site may download multiple files.
+- New "Colors" category, and in it "Color picker": everything about one color on one page. Pick it on a square and hue strip, with RGB, HSL, HSB, OKLCH or CMYK sliders, type or paste it in any form (#3b82f6, rgb(), hsl(), oklch(), names like tomato, a Minecraft number or &9), take it from a picture (a magnifier shows the pixels; one pixel or an average of 3×3 or 5×5) or from anywhere on the screen with the eyedropper (Chrome and Edge). See it as HEX, RGB, HSL, HSV, OKLCH, OKLab, Lab, LCH, CMYK, 0–1 and a decimal number, each with a copy button, with its nearest color name. Contrast on white, black and your own background with the AA / AAA levels; matching colors (complementary, triad, analogous, split, tetrad) and nine lighter and darker steps; how it looks with four kinds of color blindness. For Minecraft: the nearest text color (&9, §9, <blue>) with a preview, the exact color for MiniMessage and plugins (<#…>, &#…), the number for dyed leather, potions and fireworks, and the nearest map art block, flat and staircase. The color is kept in the address so a link opens it, and the last 16 colors are remembered.
+- "Palette from image" in Colors: drop, choose or paste a picture and get its 3 to 12 main colors. Each shows how much of the picture it covers, its nearest color name and a dot where it is in the picture; click to copy its hex or open it in the Color picker. Order them by how much they are used, from light to dark or by hue. Copy the palette as a HEX list, CSS variables, JSON or a Tailwind colors object, or download it as a PNG or a .gpl palette for GIMP, Inkscape and Krita. The same picture always gives the same palette; soft edges between colors don't count as colors of their own.
+- "Gradient generator" in Colors: a linear (angle, or one of 8 directions), radial (circle or ellipse) or conic gradient, with a movable middle. Click the strip to add a color, drag the handles to move them (arrow keys and Delete work too), and set each color by picker, typed in any form, with its place and opacity; reverse the order or spread the colors evenly. Blend the colors in sRGB, OKLab or OKLCH, shown side by side. Start from 12 ready gradients, a random one, or your own colors pasted in (like the list from Palette from image). Copy it as CSS (with a plain line first for old browsers when blending in OKLab / OKLCH), a Tailwind class or SVG, or download it as SVG or a PNG at 1920×1080, 1080×1080, 1080×1920, 512×512 or your own size. The gradient is kept in the address, so a link opens it.
+- "Audio cutter" in Audio: open a sound or a video (its sound is taken) and see its wave. Drag across it to pick a part or drag the part's edges, type exact times (1:23.45), or set the start and end where the playhead is. Zoom in with Ctrl + wheel to cut precisely. Play the part (also round and round), or hear how the cut will sound. Then keep only the part or cut it out (what's around it is joined without a click), with a fade in and out, and save it as MP3, OGG, Opus, M4A, WAV or FLAC.
+- Resource pack maker: when you put in your own sound, its wave is shown above the from / to fields; drag on it to pick the part and play just that part.
+
+### Changed
+- Give, summon, tellraw & title and setblock & fill generators: the "copy for command block" button is gone. It only left out the / at the start, which a command block doesn't mind; "copy" works there too.
+
+### Fixed
+- Color picker, "from a picture": a wide picture was drawn wider than its column in a narrow window, and went under the side panel.
+- Deleting or replacing a saved item, deleting an own item in the resource pack maker, closing an unsaved skin and changing the language while jobs run asked with the browser's own dialog, which some browsers and embedded views block: then nothing happened. The question is now shown on the page itself (cancel is preselected, Esc cancels).
+
 ## [1.21.0] - 2026-10-25
 
 - New tool (beta): Resource pack maker: textures with a 3D preview and animations, your own items for /give, one-click tweaks, sounds, texts, menu background

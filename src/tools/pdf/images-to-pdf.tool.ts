@@ -14,5 +14,6 @@ export default defineTool({
   keywords: ['jpg to pdf', 'png to pdf', 'image to pdf', 'scan', 'scanner', 'photos', 'document', 'paper', 'homework', 'receipt', 'camscanner', 'heic to pdf'],
   accepts: IMAGE_ACCEPTS,
   layout: 'workbench',
+  queued: true,
   component: lazyTool(() => import('./scan/ScanToPdf')),
 });

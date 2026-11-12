@@ -8,6 +8,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'minecraft', label: 'Minecraft' },
   { id: 'dev', label: t('Dev') },
   { id: 'image', label: t('Image') },
+  { id: 'color', label: t('Colors') },
   { id: 'audio', label: t('Audio') },
   { id: 'video', label: t('Video') },
   { id: 'pdf', label: 'PDF' },
@@ -46,6 +47,8 @@ export const ALIASES: Record<string, { to: string; opts: Opts }> = {
 };
 
 export const fileTools = tools.filter((tt) => tt.run);
+/** Tools whose results come from the queue (file tools and pages that queue tasks). */
+export const queueTools = tools.filter((tt) => tt.run || tt.queued);
 
 /** Categories that have at least one tool, in display order, with their tools. */
 export const groups = CATEGORIES.map((c) => ({ ...c, tools: tools.filter((tt) => tt.category === c.id) })).filter(

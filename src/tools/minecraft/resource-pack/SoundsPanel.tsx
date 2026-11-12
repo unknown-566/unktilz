@@ -6,6 +6,7 @@ import { SearchIcon } from '../../../components/icons';
 import { assetFile } from '../../../lib/mc/pack/assets';
 import { isMusic, type PackDoc, type SoundEntry } from '../../../lib/mc/pack/pack';
 import { toMinecraftOgg } from '../../../lib/mc/pack/sound';
+import { TrimWave } from '../../audio/cutter/TrimWave';
 import type { Vanilla } from '../../../lib/mc/pack/vanilla';
 import { fmtNum, plural, t } from '../../../lib/i18n-core';
 
@@ -241,6 +242,12 @@ export function SoundsPanel({ doc, vanilla, onChange }: { doc: PackDoc; vanilla:
           ) : (
             <div className="rp-sound-opts">
               <span className="mono">{pending.file.name}</span>
+              <TrimWave
+                file={pending.file}
+                start={Math.max(0, Number(pending.start.replace(',', '.')) || 0)}
+                end={pending.end.trim() && Number(pending.end.replace(',', '.')) > 0 ? Number(pending.end.replace(',', '.')) : null}
+                onSelect={(a, b) => setPending((p) => p && { ...p, start: String(Math.round(a * 100) / 100), end: String(Math.round(b * 100) / 100) })}
+              />
               <label className="rp-frames">
                 <span>{t('from')}</span>
                 <input className="input mono rp-ticks" inputMode="decimal" value={pending.start} onChange={(e) => setPending({ ...pending, start: e.target.value })} />

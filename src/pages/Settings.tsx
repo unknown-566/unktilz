@@ -2,32 +2,19 @@ import { useEffect } from 'react';
 import { GoLink } from '../components/Transition';
 import { UpdateCheck } from '../components/UpdateCheck';
 import { APP_VERSION } from '../lib/updates';
-import { THEME_IDS, setTheme, themeName, useTheme, type Theme, type ThemeChoice } from '../lib/theme';
+import { LookSection, ThemeSection } from './settings/Looks';
 import { getLang, t, tn } from '../lib/i18n';
 import { switchLang } from '../lib/switchLang';
-
-/** A small page in a theme's colors; [data-theme] gives it that theme whatever the site uses. */
-function Swatch({ theme }: { theme: Theme }) {
-  return (
-    <span className="theme-swatch" data-theme={theme} aria-hidden="true">
-      <span className="ts-panel">
-        <span className="ts-text">{'Aa' /* i18n-ignore */}</span>
-        <span className="ts-line" />
-        <span className="ts-accent" />
-      </span>
-    </span>
-  );
-}
+import { setAutoDownload, useAutoDownload, type AutoDownload } from '../lib/autoDownload';
+import { CATEGORIES, queueTools } from '../registry';
+import { CategoryIcon } from '../components/icons';
 
 export default function Settings() {
-  const [, picked] = useTheme();
   const lang = getLang();
 
   useEffect(() => {
     document.title = t('Settings · unktilz');
   }, []);
-
-  const choices: ThemeChoice[] = ['system', ...THEME_IDS];
 
   return (
     <div className="wrap tool-wrap">
@@ -43,27 +30,9 @@ export default function Settings() {
         <p className="tool-desc">{t('The look and language of the site, and which version you have. Saved in this browser.')}</p>
       </div>
 
-      <section className="panel" aria-labelledby="set-theme">
-        <h2 id="set-theme" className="panel-title">
-          {t('// theme')}
-        </h2>
-        <div className="theme-grid" role="radiogroup" aria-labelledby="set-theme">
-          {choices.map((id) => (
-            <button key={id} type="button" role="radio" aria-checked={picked === id} className="theme-card" onClick={() => setTheme(id)}>
-              {id === 'system' ? (
-                <span className="theme-split">
-                  <Swatch theme="dark" />
-                  <Swatch theme="light" />
-                </span>
-              ) : (
-                <Swatch theme={id} />
-              )}
-              <span className="theme-name">{themeName(id)}</span>
-            </button>
-          ))}
-        </div>
-        {picked === 'system' && <p className="note">{t('Dark or light, the same as your computer.')}</p>}
-      </section>
+      <ThemeSection />
+
+      <LookSection />
 
       <section className="panel" aria-labelledby="set-lang">
         <h2 id="set-lang" className="panel-title">
@@ -77,8 +46,10 @@ export default function Settings() {
             {'Čeština' /* i18n-ignore */}
           </button>
         </div>
-        <p className="note">{t('Changing it reloads the page. Minecraft names stay in English, as in the game.')}</p>
+        <p className="note">{t('Changing it reloads the page.')}</p>
       </section>
+
+      <AutoDownloadSection />
 
       <section className="panel" aria-label={t('Updates')}>
         <UpdateCheck />
@@ -110,5 +81,72 @@ export default function Settings() {
         </dl>
       </section>
     </div>
+  );
+}
+
+/** Queue tools by category, in the site's order. */
+const QUEUE_GROUPS = CATEGORIES.map((c) => ({ ...c, tools: queueTools.filter((tt) => tt.category === c.id).sort((a, b) => a.order - b.order) })).filter((g) => g.tools.length);
+
+function AutoDownloadSection() {
+  const ad = useAutoDownload();
+  const modes: { id: AutoDownload['mode']; label: string }[] = [
+    { id: 'off', label: t('off') },
+    { id: 'all', label: t('every tool') },
+    { id: 'custom', label: t('picked tools') },
+  ];
+  const toggle = (slug: string, on: boolean) => setAutoDownload({ ...ad, tools: on ? [...ad.tools.filter((x) => x !== slug), slug] : ad.tools.filter((x) => x !== slug) });
+
+  return (
+    <section className="panel" aria-labelledby="set-dl">
+      <h2 id="set-dl" className="panel-title">
+        {t('// downloads')}
+      </h2>
+      <p className="field-label" id="set-dl-auto">
+        {t('Download results as soon as they’re done')}
+      </p>
+      <div className="seg" role="group" aria-labelledby="set-dl-auto">
+        {modes.map((m) => (
+          <button key={m.id} type="button" aria-pressed={ad.mode === m.id} onClick={() => setAutoDownload({ ...ad, mode: m.id })}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <p className="note">
+        {t('When a job in the queue is done, the browser saves its result right away, so you don’t have to click download. A job with several results comes as one .zip. It stays in the queue, so you can download it again.')}
+      </p>
+      {ad.mode === 'custom' && (
+        <div className="set-dl-tools">
+          <div className="set-dl-actions">
+            <button type="button" className="btn btn-sm" onClick={() => setAutoDownload({ ...ad, tools: queueTools.map((tt) => tt.slug) })}>
+              {t('pick all')}
+            </button>
+            <button type="button" className="btn btn-sm" onClick={() => setAutoDownload({ ...ad, tools: [] })}>
+              {t('pick none')}
+            </button>
+            <span className="muted">{t('{n} of {total} picked', { n: queueTools.filter((tt) => ad.tools.includes(tt.slug)).length, total: queueTools.length })}</span>
+          </div>
+          {QUEUE_GROUPS.map((g) => (
+            <fieldset key={g.id} className="set-dl-group">
+              <legend>
+                <CategoryIcon category={g.id} /> {g.label}
+              </legend>
+              <div className="check-grid">
+                {g.tools.map((tt) => (
+                  <label key={tt.slug} className="check">
+                    <input type="checkbox" checked={ad.tools.includes(tt.slug)} onChange={(e) => toggle(tt.slug, e.target.checked)} />
+                    {tt.name}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+        </div>
+      )}
+      {ad.mode !== 'off' && (
+        <p className="note">
+          {t('When several results download one after another, Chrome asks once whether this site may download multiple files. Choose Allow, or only the first one is saved.')}
+        </p>
+      )}
+    </section>
   );
 }

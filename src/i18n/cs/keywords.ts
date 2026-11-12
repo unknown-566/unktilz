@@ -5,6 +5,10 @@
 
 export default {
   // ---- audio ----
+  'keywords:audio-cutter': 'stříhat zvuk střih střihač ořezat oříznout zkrátit písničku vystřihnout část vyříznout vyzvánění vyzváněcí tón zvuková vlna mp3 nahrávka',
+  'keywords:color-picker': 'výběr barvy vybrat barvu barva barvy převod barev převodník hex na rgb rgb na hex kapátko kontrast barvoslepost odstíny světlejší tmavší doplňková paleta minecraft kódy barev mapart obarvená kůže',
+  'keywords:image-palette': 'paleta barev paleta z obrázku barvy z obrázku hlavní barvy převládající barvy vytáhnout barvy barevné schéma odstíny fotka fotky gimp tailwind',
+  'keywords:gradient': 'přechod přechody barevný přechod gradient generátor přechodů css přechod lineární kruhový kuželový pozadí tapeta tailwind duha',
   'keywords:audio-converter': 'převést zvuk převádění převodník konvertor konvertovat konverze audio hudba hudbu písnička písničku nahrávka zvukový soubor změnit formát',
   'keywords:bad-audio': 'zkazit zvuk zničit pokazit zkreslení zkreslit hlasitý nahlas uši basy zesílit basy rozbitý zvuk vtip meme',
 

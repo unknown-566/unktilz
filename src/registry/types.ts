@@ -1,6 +1,6 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 
-export type Category = 'minecraft' | 'dev' | 'image' | 'audio' | 'video' | 'pdf' | 'text' | 'calc';
+export type Category = 'minecraft' | 'dev' | 'image' | 'color' | 'audio' | 'video' | 'pdf' | 'text' | 'calc';
 
 export type OptionValue = string | number | boolean;
 export type Opts = Record<string, OptionValue>;
@@ -70,6 +70,8 @@ export type Tool = {
    * full width and related tools move below it instead of taking a side column.
    */
   layout?: 'workbench';
+  /** The tool page sends its work to the queue itself (as tasks); listed with the file tools in the auto-download setting. */
+  queued?: boolean;
   /** Interactive tools: rendered on the tool page. */
   component?: LazyTool;
 };

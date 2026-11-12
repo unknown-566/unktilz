@@ -626,7 +626,6 @@ export default function GiveGenerator() {
       actions={
         <span className="inline">
           <CopyButton text={result.command} label={t('copy')} />
-          <CopyButton text={result.command.slice(1)} label={t('copy for command block')} />
         </span>
       }
     >

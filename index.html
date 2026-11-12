@@ -7,11 +7,23 @@
     <meta name="description" content="Minecraft utilities, dev tools, file converters and everyday helpers, in one place." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <script>
-      // The theme before anything draws, so the page doesn't flash dark first (see src/lib/theme.ts).
+      // The theme, font and size before anything draws, so the page doesn't flash (see src/lib/theme.ts).
       try {
+        var h = document.documentElement;
         var t = localStorage.getItem('unktilz-theme');
+        var own = null;
+        if (t && t.indexOf('custom:') === 0) {
+          var list = JSON.parse(localStorage.getItem('unktilz-custom-themes') || '[]');
+          for (var i = 0; i < list.length; i++) if ('custom:' + list[i].id === t) own = list[i];
+          if (own) t = own.base === 'light' ? 'light' : 'dark';
+        }
         if (['dark', 'light', 'midnight', 'terminal', 'paper', 'purple', 'polar', 'contrast'].indexOf(t) < 0) t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-        document.documentElement.dataset.theme = t;
+        h.dataset.theme = t;
+        if (own && own.vars) for (var k in own.vars) if (k.indexOf('--') === 0 && !/url|expression/i.test(own.vars[k])) h.style.setProperty(k, own.vars[k]);
+        var f = { geist: "'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", system: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif", mono: 'var(--mono)', serif: "Georgia, 'Times New Roman', serif" }[localStorage.getItem('unktilz-font')];
+        if (f) h.style.setProperty('--sans', f);
+        var z = Number(localStorage.getItem('unktilz-text-size'));
+        if ([90, 110, 125].indexOf(z) >= 0) h.style.setProperty('--text-scale', String(z / 100));
       } catch (e) {}
     </script>
   </head>

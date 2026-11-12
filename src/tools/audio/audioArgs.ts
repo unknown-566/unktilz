@@ -19,7 +19,7 @@ export const LOSSLESS = new Set<AudioFormat>(['wav', 'flac']);
 
 export const OPUS = ['-c:a', 'opus', '-strict', '-2', '-ar', '48000'];
 
-const CODEC: Record<AudioFormat, string[]> = {
+export const CODEC: Record<AudioFormat, string[]> = {
   mp3: ['-c:a', 'libmp3lame'],
   wav: ['-c:a', 'pcm_s16le'],
   ogg: ['-c:a', 'libvorbis'],

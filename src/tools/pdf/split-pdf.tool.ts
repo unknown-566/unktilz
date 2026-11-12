@@ -12,5 +12,6 @@ export default defineTool({
   keywords: ['split pdf', 'extract pages', 'separate pdf', 'cut pdf', 'pdf pages', 'single pages', 'divide pdf', 'save pages'],
   accepts: ['.pdf'],
   layout: 'workbench',
+  queued: true,
   component: lazyTool(() => import('./split/Split')),
 });

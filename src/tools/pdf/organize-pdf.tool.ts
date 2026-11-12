@@ -14,5 +14,6 @@ export default defineTool({
   keywords: ['organize pdf', 'reorder pages', 'rearrange pdf', 'rotate pdf', 'rotate page', 'delete pages', 'remove pages', 'duplicate page', 'blank page', 'sort pages', 'move pages'],
   accepts: ['.pdf'],
   layout: 'workbench',
+  queued: true,
   component: lazyTool(() => import('./organize/Organize')),
 });

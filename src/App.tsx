@@ -1,3 +1,4 @@
+import { AskHost } from './components/Ask';
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
@@ -67,6 +68,7 @@ export default function App() {
       <TransitionProvider>
         <Shortcuts />
         <NewVersionPopup />
+        <AskHost />
         <div className="shell">
           <Header />
           <div className="body">

@@ -35,6 +35,15 @@ export function CategoryIcon({ category }: { category: Category }) {
           <path d="M21 16l-5-5-9 9" />
         </svg>
       );
+    case 'color':
+      return (
+        <svg {...base}>
+          <path d="M12 3a9 9 0 0 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A4.6 4.6 0 0 0 21 9.8C21 6 17 3 12 3z" />
+          <circle cx="7.5" cy="11" r="1.2" />
+          <circle cx="10" cy="7" r="1.2" />
+          <circle cx="15" cy="7.5" r="1.2" />
+        </svg>
+      );
     case 'pdf':
       return (
         <svg {...base}>

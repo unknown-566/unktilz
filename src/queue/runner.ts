@@ -3,6 +3,8 @@ import { controllers, dropInputs, getInputs, putOutputs, type Output } from './b
 import { useQueue, type Job } from './store';
 import { TASK_GONE, dropTask, getTask } from './tasks';
 import { resumer } from './resume';
+import { downloadJob } from './download';
+import { wantsAutoDownload } from '../lib/autoDownload';
 import { t } from '../lib/i18n-core';
 
 // Jobs run one at a time, in the order they were added, whatever page is open.
@@ -71,6 +73,9 @@ async function run(job: Job) {
       resume: undefined,
     });
     void dropInputs(job.id);
+    // Set in Settings: the result downloads at once (several results as one .zip, as the download button does).
+    const done = useQueue.getState().jobs.find((j) => j.id === job.id);
+    if (done && wantsAutoDownload(ALIASES[job.slug]?.to ?? job.slug)) void downloadJob(done).catch(() => {});
   } catch (e) {
     if (!controller.signal.aborted) patch(job.id, { status: 'error', error: message(e) });
   } finally {

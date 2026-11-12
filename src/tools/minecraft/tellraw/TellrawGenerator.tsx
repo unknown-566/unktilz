@@ -162,7 +162,6 @@ export default function TellrawGenerator() {
       actions={
         <span className="inline">
           <CopyButton text={all} label={result.commands.length > 1 ? t('copy all') : t('copy')} />
-          <CopyButton text={result.commands.map((c) => c.slice(1)).join('\n')} label={t('copy for command block')} />
         </span>
       }
     >

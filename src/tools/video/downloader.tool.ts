@@ -16,5 +16,6 @@ export default defineTool({
     'youtube downloader', 'yt-dlp', 'youtube-dl', 'aria2', 'download video', 'youtube to mp3', 'youtube to mp4', 'soundcloud', 'twitch', 'tiktok', 'reddit video',
     'playlist download', 'seal', 'save video', 'music download', 'subtitles', 'sponsorblock',
   ],
+  queued: true,
   component: lazyTool(() => import('./downloader/Downloader')),
 });
