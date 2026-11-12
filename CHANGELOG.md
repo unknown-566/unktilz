@@ -2,6 +2,31 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.23.0] - 2026-11-12
+
+- New look: cleaner and sharper, with calmer colors, a brighter green accent and smooth, quick animations
+- One search, at the top of every page: click it, press Ctrl+K (⌘K on Mac) or / to find any tool, page, theme or the language switch
+- Home page: tools are listed by category with a side menu, and each card shows an icon, a short description, its formats and tags
+- Home page: the title types itself in, the tool and category counts count up, and a wave of thin green slats moves behind the title
+- Cards light up around the mouse, buttons give off small sparks when clicked, and pages fade into each other
+
+### Added
+- Search at the top of every page (the bar in the header, Ctrl+K / ⌘K, or /): type to find a tool (the same search words as before, Czech too), a page (all tools, settings, changelog, request a tool, backup) or an action (any built-in or own theme, switch the language). ↑ ↓ to move, Enter to open, Esc to close; the picked tool starts loading before you press Enter. Empty, it lists the pages and every tool by category.
+- Home page side menu: all tools, each category with its icon and count, and the New / Beta tags. Pick one to show only it, pick it again to show everything; it's kept in the address, and older links with several categories still work.
+- Tool cards: an icon, the name, the first two lines of what the tool does, its formats and its tags; on hover the card lifts, its edge glows in the theme's color near the mouse, a soft light follows the mouse and an arrow slides in.
+- Each category on the home page has a one-line description.
+- Effects adapted from React Bits (reactbits.dev, MIT + Commons Clause, see THIRD_PARTY_NOTICES.md): Micro Slats (the wave of slats behind the home title, in the theme's accent color, with a glint that follows the mouse; still while off screen), Click Spark (small sparks when clicking a link, button or card), Shiny Text (a shine passing over the "new" tag and the counts). The counting numbers, the decrypting title and the card light and glowing edge follow React Bits' Count Up, Decrypted Text, Spotlight Card and Border Glow, written small for this site.
+
+### Changed
+- The search box on the home page is gone: the one at the top does the same and more, on every page. "Search tools" under the title opens it, "Browse all" scrolls to the list.
+- The category chips are replaced by the side menu.
+- Dark and light themes: neutral near-black and white, a brighter lime accent, thinner lines. The other themes keep their colors, and own themes work as before.
+- Buttons, segmented choices, chips and inputs: rounder, monospace labels; the main button and picked choices are drawn in the text color, the accent marks hover, focus and the cursor. Pressing a button gives it a small squeeze.
+- Header: the name in monospace with a plain ">_", the search bar in the middle, links with an underline that slides in.
+- Moving between pages is a short fade (about 0.4 s) instead of the block wave. Tool pages bring in their heading and tool one after the other.
+- Everything that moves stays still when the system asks for reduced motion.
+- Settings: the Ctrl+K note says what the new search does.
+
 ## [1.22.0] - 2026-11-12
 
 - New category: Colors, with its first tool: Color picker (every notation, contrast, matching colors, color blindness, Minecraft codes)

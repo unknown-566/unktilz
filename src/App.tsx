@@ -1,6 +1,8 @@
 import { AskHost } from './components/Ask';
+import { CommandPaletteHost, togglePalette } from './components/CommandPalette';
+import { ClickSpark } from './components/bits/ClickSpark';
 import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
 import { QueueRail } from './components/QueueRail';
 import { TransitionProvider, scrollToTop } from './components/Transition';
@@ -40,20 +42,25 @@ function NewVersionPopup() {
 }
 
 function Shortcuts() {
-  const navigate = useNavigate();
   const { pathname, state } = useLocation();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        const q = document.getElementById('q');
-        if (q) q.focus();
-        else navigate('/', { state: { focusSearch: true } });
+        togglePalette();
+        return;
+      }
+      // "/" opens it too, unless the user is typing somewhere.
+      const el = e.target as HTMLElement | null;
+      const typing = el?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"], dialog[open]');
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !typing) {
+        e.preventDefault();
+        togglePalette();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [navigate]);
+  }, []);
 
   // New page starts at the top, except when the swap button only flipped the direction.
   useEffect(() => {
@@ -69,6 +76,8 @@ export default function App() {
         <Shortcuts />
         <NewVersionPopup />
         <AskHost />
+        <CommandPaletteHost />
+        <ClickSpark />
         <div className="shell">
           <Header />
           <div className="body">

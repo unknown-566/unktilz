@@ -67,7 +67,7 @@ export default function Settings() {
           <dt>{t('Your saved things')}</dt>
           <dd>{tn('Only in this browser. {backup} them to keep them safe or move them to another computer.', { backup: <GoLink to="/backup">{t('Back up')}</GoLink> })}</dd>
           <dt>{t('Search')}</dt>
-          <dd>{tn('{key} anywhere jumps to the tool search.', { key: <kbd className="kbd">{'Ctrl+K' /* i18n-ignore */}</kbd> })}</dd>
+          <dd>{tn('{key} or / anywhere opens the search for tools, pages and themes (also the bar at the top).', { key: <kbd className="kbd">{'Ctrl+K' /* i18n-ignore */}</kbd> })}</dd>
           <dt>{t('Made by')}</dt>
           <dd>
             <a href="https://github.com/unknown-566" target="_blank" rel="noopener noreferrer">

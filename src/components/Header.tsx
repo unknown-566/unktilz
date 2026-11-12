@@ -3,6 +3,10 @@ import { useLaunch } from './Transition';
 import { APP_VERSION, useUpdateStatus } from '../lib/updates';
 import { getLang, t } from '../lib/i18n';
 import { switchLang } from '../lib/switchLang';
+import { openPalette } from './CommandPalette';
+import { SearchIcon } from './icons';
+
+const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform);
 
 export function Header() {
   const launch = useLaunch();
@@ -20,16 +24,23 @@ export function Header() {
           </span>
           <span>unktilz</span>
         </Link>
+        <button type="button" className="find-bar" onClick={openPalette} aria-label={t('Search tools and pages')}>
+          <SearchIcon />
+          <span className="find-text">{t('Search tools…')}</span>
+          <span className="kbd" aria-hidden="true">
+            {isMac ? '⌘ K' : 'Ctrl K' /* i18n-ignore */}
+          </span>
+        </button>
         <nav className="nav" aria-label={t('Main')}>
           {update?.newer && (
             <Link to="/changelog" className="update-pill" title={t('Version {latest} is out (you have {current})', { latest: update.latest, current: APP_VERSION })} onClick={(e) => launch(e, '/changelog')}>
               {t('update available')}
             </Link>
           )}
-          <NavLink to="/" end onClick={(e) => launch(e, '/')}>
+          <NavLink to="/" end className="nav-link" onClick={(e) => launch(e, '/')}>
             {t('All tools')}
           </NavLink>
-          <NavLink to="/request" onClick={(e) => launch(e, '/request')}>
+          <NavLink to="/request" className="nav-link" onClick={(e) => launch(e, '/request')}>
             {t('Request a tool')}
           </NavLink>
           <button type="button" className="theme-btn" onClick={() => switchLang(lang === 'en' ? 'cs' : 'en')} aria-label={other.label} title={other.label}>

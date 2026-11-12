@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ComponentProps, type MouseEvent, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, type ComponentProps, type MouseEvent, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { prefersReducedMotion } from '../lib/theme';
 
@@ -7,8 +7,8 @@ type Launch = (e: MouseEvent | null, slug: string) => void;
 const LaunchContext = createContext<Launch>(() => {});
 
 /**
- * Opens a page through the block-wipe transition. `target` is a tool slug, or a path starting with "/".
- * Pass the click event so the wave starts under the cursor.
+ * Opens a page through the page transition (a short fade). `target` is a tool slug, or a path
+ * starting with "/". Pass the click event so new-tab clicks (Ctrl, Shift, middle button) stay the browser's.
  */
 export const useLaunch = () => useContext(LaunchContext);
 
@@ -27,24 +27,20 @@ export function GoLink({ to, onClick, ...rest }: ComponentProps<typeof Link> & {
   );
 }
 
-const COLS = 16;
-const ROWS = 10;
-const STEP = 22; // ms of delay per cell of distance
-const BLOCK = 300; // ms each block takes to scale
-const HOLD = 120; // ms the covered screen holds before uncovering
-
-type Cell = { lit: boolean; delay: number };
+/** How long the old page takes to fade out (matches main.page-out in styles.css). */
+const OUT = 140;
+/** How long the new page takes to come in (matches main.page-in). */
+const IN = 260;
 
 export const scrollToTop = () => document.getElementById('scroll')?.scrollTo(0, 0);
+
+const main = () => document.querySelector('main');
 
 export function TransitionProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
-  const [phase, setPhase] = useState<null | 'cover' | 'uncover'>(null);
-  const [cells, setCells] = useState<Cell[]>([]);
-  const [slug, setSlug] = useState('');
   const timers = useRef<number[]>([]);
-  const covering = useRef(false);
+  const busy = useRef(false);
 
   const clear = () => {
     timers.current.forEach(clearTimeout);
@@ -57,8 +53,6 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
       // Let the browser handle new-tab clicks.
       if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0)) return;
       e?.preventDefault();
-      if (covering.current) return;
-      clear();
       const to = target.startsWith('/') ? target : `/t/${target}`;
       // Already there (e.g. the logo on the home page): just go back to the top. A different query
       // ("All tools" from a filtered home page) is a different page.
@@ -66,71 +60,32 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
         scrollToTop();
         return;
       }
+      if (busy.current) return;
       if (prefersReducedMotion()) {
         navigate(to);
         return;
       }
 
-      const w = window.innerWidth || 1280;
-      const h = window.innerHeight || 800;
-      const x = e && e.clientX ? e.clientX : w / 2;
-      const y = e && e.clientY ? e.clientY : h / 2;
-      const ox = Math.min(COLS - 1, Math.max(0, Math.floor((x / w) * COLS)));
-      const oy = Math.min(ROWS - 1, Math.max(0, Math.floor((y / h) * ROWS)));
-      const next: Cell[] = [];
-      let max = 0;
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const delay = Math.round(Math.hypot(c - ox, r - oy) * STEP);
-          max = Math.max(max, delay);
-          next.push({ lit: (c * 7 + r * 13) % 11 === 0, delay });
-        }
-      }
-
-      covering.current = true;
-      setCells(next);
-      // The label shows the page's name: "unktilz/skin-editor", "unktilz/changelog".
-      setSlug(to.split('?')[0].replace(/^\/(t\/)?/, ''));
-      setPhase('cover');
-      // Route changes only once the screen is fully covered, then the same wave uncovers it.
+      clear();
+      busy.current = true;
+      const m = main();
+      m?.classList.remove('page-in');
+      m?.classList.add('page-out');
+      // The route changes once the old page has faded, then the new one comes in.
       timers.current.push(
         window.setTimeout(() => {
-          covering.current = false;
           navigate(to);
           scrollToTop();
-          setPhase('uncover');
-          timers.current.push(window.setTimeout(() => setPhase(null), max + HOLD + 360));
-        }, max + BLOCK + 20),
+          const n = main();
+          n?.classList.remove('page-out');
+          n?.classList.add('page-in');
+          busy.current = false;
+          timers.current.push(window.setTimeout(() => n?.classList.remove('page-in'), IN + 40));
+        }, OUT),
       );
     },
     [navigate, pathname, search],
   );
 
-  return (
-    <LaunchContext.Provider value={launch}>
-      {children}
-      {phase && (
-        <>
-          <div key={phase} className={`boot${phase === 'uncover' ? ' out' : ''}`} aria-hidden="true">
-            {cells.map((c, i) => (
-              <div
-                key={i}
-                className="cell"
-                style={{
-                  background: c.lit ? 'var(--accent)' : 'var(--bg)',
-                  animationDelay: `${phase === 'cover' ? c.delay : c.delay + HOLD}ms`,
-                }}
-              />
-            ))}
-          </div>
-          {phase === 'uncover' && (
-            <div className="bootlabel" aria-hidden="true">
-              {/* i18n-ignore */}› unktilz{slug ? `/${slug}` : ''}
-              <span className="bootcaret" />
-            </div>
-          )}
-        </>
-      )}
-    </LaunchContext.Provider>
-  );
+  return <LaunchContext.Provider value={launch}>{children}</LaunchContext.Provider>;
 }

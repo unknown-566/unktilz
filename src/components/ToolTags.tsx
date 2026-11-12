@@ -10,7 +10,7 @@ export function ToolTags({ tool, explain }: { tool: Pick<Tool, 'added' | 'beta'>
     <>
       {fresh && (
         <span className="tool-tag tool-new" title={t('Added in the last {NEW_DAYS} days', { NEW_DAYS })}>
-          {t('new')}
+          <span className="shiny">{t('new')}</span>
         </span>
       )}
       {tool.beta && (
