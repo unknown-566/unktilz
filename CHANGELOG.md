@@ -2,6 +2,31 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.24.0] - 2026-11-12
+
+- New tool: Word counter: words, characters, sentences, paragraphs, reading time and the most used words, as you type (the first tool in the Text category)
+- Resize image is rebuilt: a live preview of the real result, presets (Full HD, Instagram, YouTube…), width and height that stay in shape, fill and crop to an exact size, and the new file size before you save
+- Resize image: pick the quality and save as AVIF too, small pictures are no longer enlarged by accident, and very big enlargements no longer fail
+
+### Added
+- Word counter (`/t/word-counter`): words, characters (an emoji or a letter with an accent counts as one), characters without spaces, sentences, paragraphs, lines, reading time (230 words a minute) and speaking time (130), the number of different words, and the 10 most used words with how often they come up. Short words (one or two letters) can be left in or out; numbers are never listed. Works with Czech and other languages.
+- Text category on the home page, with its own icon.
+- Resize image: presets as small cards (Full HD, HD, 4K, Instagram post and portrait, Story / Reel, YouTube thumbnail, X / Twitter header, icon), each with the shape drawn in; picking one fills and crops to exactly that size.
+- Resize image: a lock between width and height: typing one side works out the other from the picture's shape. With the lock off, pick what happens when the shape differs: fit inside, fill and crop (the edges are cut off evenly), or stretch.
+- Resize image: "Don't enlarge" (on by default), quick percent buttons (25, 50, 75, 200 %), AVIF, and a quality slider for JPG, WebP and AVIF.
+- Resize image: the result's size and file size, counting smoothly to the new numbers, with how much smaller (or bigger) it is than the original; a warning with advice when it comes out bigger.
+- Resize image: drop, choose or paste (Ctrl+V) several pictures, switch between them, resize one or all of them into the queue.
+
+### Changed
+- Resize image is its own page instead of the plain options list: the picture and the real result on the left (hold "original" to compare), the settings on the right. The heading shows the picture's size, file size and type. Saved settings from the old page are ignored.
+- Resized files are named with their new size, e.g. `photo-1080x1080.jpg`.
+
+### Fixed
+- Resize image: enlarging a big picture (e.g. 400 % of a large photo) failed; now the result is made just small enough for the browser (16,384 px a side, about 100 megapixels), and the page says so.
+- Resize image: pixel mode started at 1280 px wide and quietly enlarged smaller pictures.
+- Resize image: the quality was fixed at 92, so a file could come out bigger than the original.
+- Resize image: a GIF quietly lost its animation; the page now says only the first frame is kept and points to GIF maker.
+
 ## [1.23.0] - 2026-11-12
 
 - New look: cleaner and sharper, with calmer colors, a brighter green accent and smooth, quick animations

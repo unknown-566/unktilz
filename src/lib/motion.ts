@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from './theme';
 
 export { prefersReducedMotion };
@@ -60,6 +60,42 @@ export function useCountUp(to: number, ms = 1200) {
     raf = requestAnimationFrame(step);
     // rAF doesn't run in a hidden tab: make sure the right number is there when it ends.
     timer = window.setTimeout(() => setN(to), ms + 50);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [to, ms]);
+  return n;
+}
+
+/**
+ * A number that glides from the last value to the new one when it changes (a quick count up or
+ * down), so changing numbers are easy to follow. Reduced motion or a hidden tab: at once.
+ */
+export function useTweened(to: number, ms = 450) {
+  const [n, setN] = useState(to);
+  const from = useRef(to);
+  useEffect(() => {
+    const start = from.current;
+    if (prefersReducedMotion() || document.hidden || start === to) {
+      from.current = to;
+      setN(to);
+      return;
+    }
+    const t0 = performance.now();
+    let raf = 0;
+    const step = () => {
+      const p = Math.min(1, (performance.now() - t0) / ms);
+      const v = start + (to - start) * (1 - Math.pow(1 - p, 3));
+      from.current = v;
+      setN(Math.round(v));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    const timer = window.setTimeout(() => {
+      from.current = to;
+      setN(to);
+    }, ms + 50);
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(timer);

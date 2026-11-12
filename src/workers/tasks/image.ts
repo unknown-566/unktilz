@@ -9,7 +9,7 @@ export type ImagePayload = {
   format: ImageFormat;
   /** 1..100 */
   quality: number;
-  resize?: { mode: 'percent'; percent: number } | { mode: 'pixels'; width: number; height: number; keepAspect: boolean };
+  resize?: Resize;
   /** Clockwise. */
   rotate?: 0 | 90 | 180 | 270;
   flip?: 'none' | 'h' | 'v';
@@ -23,6 +23,21 @@ export type ImagePayload = {
   /** Cut to a circle (an ellipse when the crop isn't square); outside is see-through, or white for JPG / BMP. */
   circle?: boolean;
 };
+
+/**
+ * percent: scale by a factor. pixels: a width and/or height (0 = work it out from the other side).
+ * fit: 'contain' fits inside the box, 'cover' fills it exactly and cuts off the middle's overflow,
+ * 'stretch' forces the exact size. Without fit, keepAspect true = contain, false = stretch (Crop image).
+ * noEnlarge: never bigger than the picture.
+ */
+export type Fit = 'contain' | 'cover' | 'stretch';
+export type Resize =
+  | { mode: 'percent'; percent: number; noEnlarge?: boolean }
+  | { mode: 'pixels'; width: number; height: number; keepAspect?: boolean; fit?: Fit; noEnlarge?: boolean };
+
+/** Biggest result: each side, and the whole area (bigger canvases fail or eat all memory). */
+export const MAX_SIDE = 16384;
+export const MAX_AREA = 100_000_000;
 
 const MIME: Record<Exclude<ImageFormat, 'keep'>, string> = {
   png: 'image/png',
@@ -55,22 +70,70 @@ function sameFormat(file: File): string {
   return isHeic(file) || isTiff(file) ? 'image/jpeg' : 'image/png';
 }
 
-export function targetSize(w: number, h: number, resize: ImagePayload['resize']) {
-  if (!resize) return { w, h };
-  if (resize.mode === 'percent') {
+const fitOf = (r: Extract<Resize, { mode: 'pixels' }>): Fit => r.fit ?? (r.keepAspect === false ? 'stretch' : 'contain');
+
+/**
+ * The size of the result. `capped` is true when it had to be made smaller to stay under MAX_SIDE /
+ * MAX_AREA, `kept` when "don't enlarge" kept it from growing.
+ */
+export function resultSize(w: number, h: number, resize: Resize | undefined) {
+  let tw = w;
+  let th = h;
+  let kept = false;
+  if (resize?.mode === 'percent') {
     const k = Math.max(1, resize.percent) / 100;
-    return { w: Math.max(1, Math.round(w * k)), h: Math.max(1, Math.round(h * k)) };
+    tw = w * k;
+    th = h * k;
+    if (resize.noEnlarge && k > 1) {
+      tw = w;
+      th = h;
+      kept = true;
+    }
+  } else if (resize) {
+    const bw = resize.width > 0 ? resize.width : 0;
+    const bh = resize.height > 0 ? resize.height : 0;
+    const fit = fitOf(resize);
+    if (bw || bh) {
+      if (!bw || !bh || fit === 'contain') {
+        const k = Math.min(bw ? bw / w : Infinity, bh ? bh / h : Infinity);
+        tw = w * k;
+        th = h * k;
+      } else {
+        tw = bw;
+        th = bh;
+      }
+      if (resize.noEnlarge) {
+        // Shrink the whole box evenly so nothing gets bigger than the picture (cover keeps its shape).
+        const k = fit === 'stretch' ? 1 : Math.min(1, w / tw, h / th);
+        const kw = fit === 'stretch' ? Math.min(1, w / tw) : k;
+        const kh = fit === 'stretch' ? Math.min(1, h / th) : k;
+        if (kw < 1 || kh < 1) kept = true;
+        tw *= kw;
+        th *= kh;
+      }
+    }
   }
-  let tw = resize.width > 0 ? resize.width : 0;
-  let th = resize.height > 0 ? resize.height : 0;
-  if (!tw && !th) return { w, h };
-  if (resize.keepAspect || !tw || !th) {
-    // With both set and aspect locked, fit inside the box.
-    const k = Math.min(tw ? tw / w : Infinity, th ? th / h : Infinity);
-    tw = Math.round(w * k);
-    th = Math.round(h * k);
+  let capped = false;
+  const k = Math.min(1, MAX_SIDE / tw, MAX_SIDE / th, Math.sqrt(MAX_AREA / (tw * th)));
+  if (k < 1) {
+    capped = true;
+    tw *= k;
+    th *= k;
   }
-  return { w: Math.max(1, Math.min(16384, tw)), h: Math.max(1, Math.min(16384, th)) };
+  return { w: Math.max(1, Math.round(tw)), h: Math.max(1, Math.round(th)), capped, kept };
+}
+
+export function targetSize(w: number, h: number, resize: Resize | undefined) {
+  const r = resultSize(w, h, resize);
+  return { w: r.w, h: r.h };
+}
+
+/** The middle part of a w × h picture that has the shape of tw × th (for "fill and crop"). */
+export function coverCrop(w: number, h: number, tw: number, th: number) {
+  const k = Math.min(w / tw, h / th);
+  const cw = Math.max(1, Math.round(tw * k));
+  const ch = Math.max(1, Math.round(th * k));
+  return { x: Math.round((w - cw) / 2), y: Math.round((h - ch) / 2), w: cw, h: ch };
 }
 
 /** Draws with repeated halving so big downscales stay sharp instead of aliased. */
@@ -164,7 +227,14 @@ export async function processImage(p: ImagePayload, report: Report): Promise<Tas
   const mime = p.format === 'keep' ? sameFormat(p.file) : MIME[p.format];
   const opaque = mime === 'image/jpeg' || mime === 'image/bmp';
   let w: number, h: number, canvas: OffscreenCanvas;
-  if (p.crop) {
+  const cover = !p.crop && p.resize?.mode === 'pixels' && fitOf(p.resize) === 'cover' && p.resize.width > 0 && p.resize.height > 0;
+  if (cover) {
+    // Cut the middle to the box's shape, then scale it to the exact size.
+    const { w: tw, h: th } = targetSize(bmp.width, bmp.height, p.resize);
+    const crop = coverCrop(bmp.width, bmp.height, tw, th);
+    canvas = cropped(bmp, { ...p, crop, resize: { mode: 'pixels', width: tw, height: th, fit: 'stretch' } }, opaque);
+    ({ width: w, height: h } = canvas);
+  } else if (p.crop) {
     canvas = cropped(bmp, { ...p, crop: p.crop }, opaque);
     ({ width: w, height: h } = canvas);
   } else {

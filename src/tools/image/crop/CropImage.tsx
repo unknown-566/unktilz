@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Panel, Segmented } from '../../../components/ui';
 import { Help } from '../../../components/Help';
 import { DropZone } from '../../../components/DropZone';
@@ -10,8 +10,8 @@ import { useAutosave } from '../../../lib/saved';
 import { useQueue } from '../../../queue/store';
 import { filesFromDrop, isFileDrag, usePendingFiles } from '../../../queue/dragFiles';
 import type { ImageFormat, ImagePayload } from '../../../workers/tasks/image';
-import { isHeic, isTiff } from '../../../workers/tasks/imageCodecs';
 import { IMAGE_ACCEPTS } from '../formats';
+import { isImage, loadPicture, Thumb } from '../shared';
 import { CropBox } from './CropBox';
 import {
   fitRatio, fromRelative, mirrorBoxH, mirrorBoxV, outputSize, ratioOf, rounded, startBox, step, toRelative, turnBox, turnedSize,
@@ -64,29 +64,9 @@ const RATIOS: { id: RatioId; label: string }[] = [
 let nextId = 1;
 
 async function load(file: File): Promise<Item> {
-  let W: number, H: number, bitmap: ImageBitmap;
-  try {
-    if (isHeic(file) || isTiff(file)) {
-      // The page can't read these; the worker makes a small PNG and tells the real size.
-      const p = await computeValue('image-preview', { file, max: SHOWN });
-      W = p.width;
-      H = p.height;
-      bitmap = await createImageBitmap(p.blob);
-    } else {
-      const big = await createImageBitmap(file, { imageOrientation: 'from-image' });
-      W = big.width;
-      H = big.height;
-      const k = Math.min(1, SHOWN / Math.max(W, H));
-      bitmap = k < 1 ? await createImageBitmap(big, { resizeWidth: Math.round(W * k), resizeHeight: Math.round(H * k), resizeQuality: 'high' }) : big;
-      if (bitmap !== big) big.close();
-    }
-  } catch {
-    throw new Error(t('{name} couldn’t be read as a picture.', { name: file.name }));
-  }
-  return { id: nextId++, file, W, H, bitmap, orient: { rotate: 0, mirror: false }, rect: { x: 0, y: 0, w: W, h: H } };
+  const p = await loadPicture(file, SHOWN);
+  return { id: nextId++, ...p, orient: { rotate: 0, mirror: false }, rect: { x: 0, y: 0, w: p.W, h: p.H } };
 }
-
-const isImage = (f: File) => f.type.startsWith('image/') || IMAGE_ACCEPTS.some((ext) => f.name.toLowerCase().endsWith(ext));
 
 export default function CropImage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -515,18 +495,4 @@ export default function CropImage() {
       )}
     </Workbench>
   );
-}
-
-function Thumb({ bitmap }: { bitmap: ImageBitmap }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const size = useMemo(() => {
-    const k = 72 / Math.max(bitmap.width, bitmap.height);
-    return { w: Math.max(1, Math.round(bitmap.width * k)), h: Math.max(1, Math.round(bitmap.height * k)) };
-  }, [bitmap]);
-  useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
-    c.getContext('2d')!.drawImage(bitmap, 0, 0, size.w, size.h);
-  }, [bitmap, size]);
-  return <canvas ref={ref} width={size.w} height={size.h} />;
 }
