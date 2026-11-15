@@ -316,8 +316,8 @@ export default {
   // ---- Crop image ----
   'Crop image': 'Oříznout obrázek',
   '1:1 · 16:9 · circle': '1:1 · 16:9 · kruh',
-  'Cut out the part of a picture you want: drag the box or type exact pixels, lock a ratio (1:1, 16:9, 4:5…), turn and mirror, crop round for a profile picture, and save at an exact size. Several pictures at once, with the same crop if you like.':
-    'Vyřízněte z obrázku, co potřebujete: přetáhněte rámeček nebo zadejte přesné pixely, zamkněte poměr stran (1:1, 16:9, 4:5…), otočte a zrcadlete, ořízněte do kruhu na profilovku a uložte v přesné velikosti. I víc obrázků najednou, klidně se stejným výřezem.',
+  'Cut out the part of a picture you want: drag the box or type exact pixels, keep a shape (1:1, 16:9, 4:5…), turn and mirror, or crop round for a profile picture. Several pictures at once.':
+    'Vyřízněte z obrázku část, kterou chcete: přetáhněte rámeček nebo napište přesné pixely, držte tvar (1:1, 16:9, 4:5…), otočte a zrcadlete, nebo ořízněte dokulata na profilovku. Jde i víc obrázků najednou.',
   'or paste a picture (Ctrl+V)': 'nebo obrázek vložte (Ctrl+V)',
   'Only pictures can be cropped; the other files were left out.': 'Oříznout jde jen obrázky; ostatní soubory se vynechaly.',
   '+ add pictures': '+ přidat obrázky',

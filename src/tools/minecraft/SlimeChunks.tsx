@@ -45,7 +45,7 @@ export default function SlimeChunks() {
 
   const map = !grid ? (
     <Panel title={t('slime chunks')}>
-      <p className="note">{t('Enter your world seed to see the slime chunks around you.')}</p>
+      <p className="empty">{t('Enter your world seed to see the slime chunks around you.')}</p>
     </Panel>
   ) : (
     <Panel title={t('slime chunks · {n} of {all}', { n: count, all: (R * 2 + 1) ** 2 })}>

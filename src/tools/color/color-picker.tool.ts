@@ -9,7 +9,7 @@ export default defineTool({
   meta: t('hex · rgb · hsl · oklch'),
   added: '2026-11-11',
   description: t(
-    'Everything about one color on one page: pick it, type or paste it, or take it from a picture or anywhere on the screen. See it as HEX, RGB, HSL, OKLCH, CMYK and more, check its contrast, get matching, lighter and darker colors, see how color-blind people see it, and get its Minecraft text code and map art block.',
+    'Everything about one color: pick it, type it, or take it from a picture or anywhere on the screen. See it in every format (HEX, RGB, HSL…), check whether text on it is readable, and get matching colors and its Minecraft code.',
   ),
   keywords: [
     'color picker', 'colour picker', 'hex to rgb', 'rgb to hex', 'hsl', 'hsv', 'oklch', 'cmyk', 'lab', 'color converter', 'eyedropper', 'pick color from image',

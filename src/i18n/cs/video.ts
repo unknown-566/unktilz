@@ -121,13 +121,14 @@ export default {
     'MP3 hraje všude. M4A (AAC) a Opus jsou při stejné kvalitě menší; OGG je otevřený formát Vorbis, který používají některé hry. WAV a FLAC jsou bezztrátové: velké soubory na střih nebo vypálení CD (lepší než zvuk na webu ale nebudou). Původní ponechá soubor webu bez převodu.',
   'Sound quality': 'Kvalita zvuku',
   'sound quality': 'kvalita zvuku',
-  'Best picks the top variable quality (about 245 kbit/s for MP3). A fixed bitrate makes the size predictable: 320 is the most MP3 can do, 128 is half the size and still fine for speech. YouTube’s own sound is about 130–160 kbit/s, so more than that only makes the file bigger.':
-    'Nejlepší zvolí nejvyšší proměnnou kvalitu (u MP3 asi 245 kbit/s). Pevný datový tok dá předvídatelnou velikost: 320 je maximum MP3, 128 je poloviční velikost a na mluvené slovo pořád stačí. Vlastní zvuk YouTube má asi 130–160 kbit/s, takže víc jen zvětší soubor.',
+  'Best gives the best quality (about 245 kbit/s for MP3). A fixed number makes the file size easy to guess: 320 is the most MP3 can do, 128 is half the size and still fine for speech. YouTube’s own sound is about 130–160 kbit/s, so more than that only makes the file bigger.':
+    'Nejlepší dá nejlepší kvalitu (u MP3 asi 245 kbit/s). S pevným číslem se dá velikost souboru snadno odhadnout: 320 je maximum pro MP3, 128 je poloviční velikost a na mluvené slovo pořád stačí. Zvuk na YouTube má asi 130–160 kbit/s, takže víc už soubor jen zvětší.',
   'Cover and tags': 'Obal a štítky',
   'cover and tags': 'obal a štítky',
   'Puts the thumbnail in as cover art, and the title, artist and album into the file, so music players show them.': 'Vloží náhledový obrázek jako obal a do souboru zapíše název, interpreta a album, aby je přehrávače hudby ukázaly.',
   'Cut out sponsors': 'Vystřihnout sponzory',
-  "Removes the sponsored parts of YouTube videos, using SponsorBlock's community-marked segments.": 'Odstraní sponzorované části videí z YouTube podle úseků, které označila komunita SponsorBlocku.',
+  'Cuts the sponsored parts out of YouTube videos. Other viewers mark them (SponsorBlock).':
+    'Vystřihne z videí na YouTube sponzorované části. Označují je ostatní diváci (SponsorBlock).',
   'Advanced: exact format, extra yt-dlp options': 'Pokročilé: přesný formát, další volby yt-dlp',
   'Video stream': 'Obrazová stopa',
   'from the settings above': 'podle nastavení výše',
@@ -138,7 +139,8 @@ export default {
   "Anything from yt-dlp's option list, added to the command. Options that would run other programs or write outside the download (like --exec or -o) aren't allowed.":
     'Cokoli ze seznamu voleb yt-dlp, přidá se k příkazu. Volby, které by spouštěly jiné programy nebo zapisovaly mimo stahování (třeba --exec nebo -o), nejsou povolené.',
   'my templates': 'moje šablony',
-  "Saves these download settings (and extra options) under a name, like Seal's command templates.": 'Uloží toto nastavení stahování (i další volby) pod názvem, podobně jako šablony příkazů v Seal.',
+  'Saves these download settings (and extra options) under a name, so you can use them again.':
+    'Uloží toto nastavení stahování (i další volby) pod názvem, abyste ho mohli použít znovu.',
   'audio {format}': 'zvuk {format}',
   'video {quality} {container}': 'video {quality} {container}',
   Download: 'Stáhnout',

@@ -52,7 +52,7 @@ export default function PlayerHead() {
             <span className="field-label" id="ver">
               {t('Game version')}
             </span>
-            <Help label={t('game version')} text={t('The /give syntax for heads changed twice. 1.20.5+ uses item components, 1.13 to 1.20.4 uses SkullOwner NBT, and 1.12 or older uses the skull item with damage value 3.')} />
+            <Help label={t('game version')} text={t('The command for heads is written differently in old and new versions of the game. Pick yours and the command will fit.')} />
           </span>
           <Segmented labelledBy="ver" value={version} onChange={setVersion} options={VERSIONS} />
         </div>
@@ -77,7 +77,7 @@ export default function PlayerHead() {
         </div>
       </section>
       <Panel title={t('command')}>
-        {ok ? <Output label={t('Paste into chat or a command block')} value={cmd} multiline /> : <p className="note">{t('Enter a player name to get the command.')}</p>}
+        {ok ? <Output label={t('Paste into chat or a command block')} value={cmd} multiline /> : <p className="empty">{t('Enter a player name to get the command.')}</p>}
         <p className="note">{t('The head shows the skin the player has when the head is placed. Use names like MHF_Chest or MHF_Cake for Mojang’s decoration heads.')}</p>
       </Panel>
     </>

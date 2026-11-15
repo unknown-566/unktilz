@@ -15,6 +15,7 @@ const MAX = 4;
  */
 export default function WhatsNew({ onClose }: { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const gotIt = useRef<HTMLButtonElement>(null);
   const seen = seenVersion();
   const all = changelogSections(changelog).filter((s) => compareVersions(s.version, APP_VERSION) <= 0);
   const fresh = seen ? all.filter((s) => compareVersions(s.version, seen) > 0) : all.slice(0, 1);
@@ -23,6 +24,8 @@ export default function WhatsNew({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const d = dialog.current;
     if (d && !d.open) d.showModal();
+    // showModal() focuses the first link; the button that closes the popup is the one to land on.
+    gotIt.current?.focus();
   }, []);
 
   const close = () => {
@@ -65,7 +68,7 @@ export default function WhatsNew({ onClose }: { onClose: () => void }) {
               {t('whole changelog')}
             </GoLink>
           )}
-          <button type="button" className="btn btn-primary" onClick={close} autoFocus>
+          <button ref={gotIt} type="button" className="btn btn-primary" onClick={close}>
             {t('Got it')}
           </button>
         </div>

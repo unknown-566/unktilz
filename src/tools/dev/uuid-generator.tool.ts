@@ -7,7 +7,7 @@ export default defineTool({
   category: 'dev',
   order: 8,
   meta: 'v4 · v7',
-  description: t('Generate random v4 or time-ordered v7 UUIDs, one or a hundred at a time.'),
+  description: t('Make random IDs (UUID v4) or ones that sort by time (v7), one or a hundred at a time.'),
   keywords: ['uuid', 'guid', 'random id', 'v4', 'v7'],
   component: lazyTool(() => import('./UuidGenerator')),
 });

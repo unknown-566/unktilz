@@ -525,7 +525,7 @@ export default function Downloader() {
                   <span className="opt-label" id="dl-br">
                     {t('Sound quality')}
                   </span>
-                  <Help label={t('sound quality')} text={t('Best picks the top variable quality (about 245 kbit/s for MP3). A fixed bitrate makes the size predictable: 320 is the most MP3 can do, 128 is half the size and still fine for speech. YouTube’s own sound is about 130–160 kbit/s, so more than that only makes the file bigger.')} />
+                  <Help label={t('sound quality')} text={t('Best gives the best quality (about 245 kbit/s for MP3). A fixed number makes the file size easy to guess: 320 is the most MP3 can do, 128 is half the size and still fine for speech. YouTube’s own sound is about 130–160 kbit/s, so more than that only makes the file bigger.')} />
                 </span>
                 <Segmented
                   labelledBy="dl-br"
@@ -551,7 +551,7 @@ export default function Downloader() {
             <span className="opt-label" id="dl-sb">
               {t('Cut out sponsors')}
             </span>
-            <Help label={t('SponsorBlock')} text={t('Removes the sponsored parts of YouTube videos, using SponsorBlock\'s community-marked segments.')} />
+            <Help label={t('SponsorBlock')} text={t('Cuts the sponsored parts out of YouTube videos. Other viewers mark them (SponsorBlock).')} />
           </span>
           <Toggle labelledBy="dl-sb" checked={o.sponsorBlock} onChange={(sponsorBlock) => set({ sponsorBlock })} />
         </div>
@@ -600,7 +600,7 @@ export default function Downloader() {
           <SavedPanel<DlOptions>
             slug="downloader-templates"
             title={t('my templates')}
-            help={t('Saves these download settings (and extra options) under a name, like Seal\'s command templates.')}
+            help={t('Saves these download settings (and extra options) under a name, so you can use them again.')}
             suggestName={() => (o.mode === 'audio' ? `Audio ${o.audioFormat}` : `Video ${o.quality} ${o.container}`)}
             getData={() => ({ ...o, format: '' })}
             onLoad={(d) => setO({ ...DEFAULT_OPTIONS, ...d, format: '' })}
@@ -642,7 +642,7 @@ export default function Downloader() {
 
       <Panel title={t('history')}>
         {history.items.length === 0 ? (
-          <p className="note">{t('Nothing downloaded yet.')}</p>
+          <p className="empty">{t('Nothing downloaded yet.')}</p>
         ) : (
           <ul className="dl-history">
             {history.items.map((h) => (

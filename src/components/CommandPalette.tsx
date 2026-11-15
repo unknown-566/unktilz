@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { CATEGORIES, matches, tools, type Tool } from '../registry';
 import { preloadTool } from '../registry/preload';
 import { useLaunch } from './Transition';
-import { SearchIcon } from './icons';
+import { CategoryIcon, SearchIcon } from './icons';
 import { getLang, t } from '../lib/i18n-core';
 import { switchLang } from '../lib/switchLang';
 import { THEME_IDS, setTheme, themeName, useCustomThemes, useTheme, type ThemeChoice } from '../lib/theme';
@@ -218,6 +218,9 @@ function Palette() {
                 onMouseMove={() => !on && setSel(i)}
                 onClick={() => it.run()}
               >
+                <span className="cmdk-icon" aria-hidden="true">
+                  {it.tool ? <CategoryIcon category={it.tool.category} /> : <span className="cmdk-glyph">{'>' /* i18n-ignore */}</span>}
+                </span>
                 <span className="cmdk-label">{it.label}</span>
                 {it.hint && <span className="cmdk-hint">{it.hint}</span>}
                 <span className="cmdk-enter" aria-hidden="true">

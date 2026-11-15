@@ -61,7 +61,7 @@ export default defineTool({
     },
     {
       key: 'quality',
-      help: t('Lower means a smaller file with more visible compression blur. 80–90 usually looks the same as the original. (PNG files saved as “same” stay lossless.)'),
+      help: t('Lower means a smaller file, but a blurrier picture. 80–90 usually looks the same as the original. (A PNG saved as “same” loses nothing.)'),
       label: t('Quality'),
       type: 'range',
       min: 10,

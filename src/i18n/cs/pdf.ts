@@ -21,7 +21,7 @@ export default {
   '1 day': '1 den',
   '12 hours': '12 hodin',
   '1 hour': '1 hodina',
-  'Links need the site started with start.bat (or npm run dev / npm run preview).': 'Odkazy fungují, jen když je web spuštěný přes start.bat (nebo npm run dev / npm run preview).',
+  'Links need the site started with start.bat.': 'Odkazy fungují, jen když je web spuštěný přes start.bat.',
   'The GIF is too big to upload.': 'GIF je na nahrání moc velký.',
   '{site} refused the upload right now. Try again later, or pick “forever”.': '{site} teď nahrání odmítl. Zkuste to později, nebo vyberte „navždy“.',
   '{site} refused the upload right now. Try again later.': '{site} teď nahrání odmítl. Zkuste to později.',

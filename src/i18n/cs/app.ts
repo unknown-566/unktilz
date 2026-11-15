@@ -16,7 +16,7 @@ export default {
   'update available': 'nová verze',
   'Back to all tools': 'Zpět na všechny nástroje',
   '(you have {v})': '(máte {v})',
-  Later: 'Později',
+  'update|Later': 'Později',
   'What’s new': 'Co je nového',
   'All tools': 'Všechny nástroje',
   'Request a tool': 'Navrhnout nástroj',
@@ -85,10 +85,10 @@ export default {
   '// font': '// písmo',
   'as the theme': 'podle motivu',
   system: 'systémové',
-  monospace: 'neproporcionální',
+  'monospace': 'monospace',
   serif: 'patkové',
-  'The size changes every text on the site; pictures, previews and tools keep their size. Codes and numbers keep their monospace font.':
-    'Velikost změní všechny texty na webu; obrázky, náhledy a nástroje si nechají svou velikost. Kódy a čísla si nechávají své neproporcionální písmo.',
+  'The size changes every text on the site; pictures and previews stay as they are. Codes and numbers keep their own font.':
+    'Velikost změní všechny texty na webu; obrázky a náhledy zůstanou, jak jsou. Kódy a čísla si nechají své písmo.',
   '// language': '// jazyk',
   'Changing it reloads the page.': 'Změna obnoví stránku.',
   '// downloads': '// stahování',
@@ -146,7 +146,7 @@ export default {
   Audio: 'Zvuk',
   Video: 'Video',
   Text: 'Text',
-  'Calc & generators': 'Výpočty a generátory',
+  Generators: 'Generátory',
 
   // ---- tool page ----
   '{name} · unktilz': '{name} · unktilz',
@@ -221,7 +221,7 @@ export default {
   'That result is no longer stored. Run the job again.': 'Tenhle výsledek už uložený není. Spusťte úlohu znovu.',
   'Download {file} result': 'Stáhnout výsledek {file}',
   'Remove {file} from queue': 'Odebrat {file} z fronty',
-  'Process queue': 'Fronta úloh',
+  'Queue': 'Fronta',
   'Unpin queue panel': 'Odepnout panel fronty',
   'Pin queue panel open': 'Připnout panel fronty',
   'queue · {n} active': 'fronta · aktivní {n}',
@@ -279,7 +279,8 @@ export default {
   'Checking…': 'Kontroluji…',
   'Check for updates': 'Zkontrolovat aktualizace',
   'Asks GitHub which version is the newest. Needs the internet.': 'Zeptá se GitHubu, která verze je nejnovější. Potřebuje internet.',
-  'Couldn’t reach GitHub. Check your internet connection and try again.': 'GitHub se nepodařilo zastihnout. Zkontrolujte připojení k internetu a zkuste to znovu.',
+  'Couldn’t reach GitHub. Check your internet connection and try again.':
+    'Nepodařilo se spojit s GitHubem. Zkontrolujte připojení k internetu a zkuste to znovu.',
   'You’re up to date ({v} is the newest).': 'Máte nejnovější verzi ({v}).',
   'Version {v} is out.': 'Vyšla verze {v}.',
   'To update, close the site’s window and open {file} in the unktilz folder. Your saved things stay.':
@@ -303,8 +304,8 @@ export default {
     'Načtení zálohy přidá, co v ní je: uložené položky se sloučí a rozdělaná práce se doplní jen tam, kde žádnou nemáte.',
   "What's saved": 'Co je uložené',
   '// saved in this browser': '// uložené v tomto prohlížeči',
-  'Saved data belongs to the address in the address bar (e.g. localhost:5173). start.bat always uses 5173, so it stays the same after updates.':
-    'Uložená data patří k adrese v adresním řádku (třeba localhost:5173). start.bat vždy používá 5173, takže po aktualizaci zůstanou.',
+  'Saved things are tied to the site’s address (like localhost:5173). start.bat always opens the same address, so they stay after an update.':
+    'Uložené věci jsou vázané na adresu webu (třeba localhost:5173). start.bat otevírá vždy stejnou adresu, takže po aktualizaci zůstanou.',
 
   // ---- 404, request ----
   'Not found · unktilz': 'Nenalezeno · unktilz',
@@ -312,9 +313,18 @@ export default {
   "That tool doesn't exist yet, or the link is wrong.": 'Tenhle nástroj ještě neexistuje, nebo je odkaz špatně.',
   'Request a tool · unktilz': 'Navrhnout nástroj · unktilz',
   request: 'návrh',
-  "Missing something you keep searching for? Soon you'll be able to suggest it here.": 'Chybí vám něco, co pořád hledáte? Brzy to tu půjde navrhnout.',
-  '// coming soon': '// už brzy',
-  "Tool requests aren't open yet. Check back later.": 'Návrhy nástrojů zatím nejsou otevřené. Zkuste to později.',
+  'Missing something you keep searching for, or is a tool broken? Write it down and send it as a request on GitHub.': 'Chybí vám něco, co pořád hledáte, nebo je některý nástroj rozbitý? Napište to sem a pošlete jako návrh na GitHubu.',
+  '// your idea': '// váš nápad',
+  'Name of the tool or problem': 'Název nástroje nebo problému',
+  'e.g. Subtitle converter': 'např. Převodník titulků',
+  'What should it do?': 'Co má umět?',
+  'What goes in, what comes out, and what you’d use it for.': 'Co do něj půjde, co z něj vyjde a k čemu by se hodil.',
+  'Continue on GitHub': 'Pokračovat na GitHubu',
+  'See other requests': 'Zobrazit ostatní návrhy',
+  'GitHub opens in a new tab with your text filled in; there you press “Create”. It needs a free GitHub account. Nothing is sent until then.':
+    'GitHub se otevře na nové kartě s vyplněným textem; tam stisknete „Create“. Je potřeba bezplatný účet na GitHubu. Do té doby se nic neodesílá.',
+  'Did you mean?': 'Nemysleli jste?',
+  '// did you mean?': '// nemysleli jste?',
   // ---- Ctrl+K palette ----
   "Search tools and pages": "Hledat nástroje a stránky",
   "Search tools and pages…": "Hledat nástroje a stránky…",
@@ -327,7 +337,7 @@ export default {
   move: "pohyb",
   // ---- home: categories ----
   'Commands, server tools, calculators, maps, skins and resource packs.': 'Příkazy, serverové nástroje, kalkulačky, mapy, skiny a resource packy.',
-  'JSON, encoding, hashes and IDs.': 'JSON, kódování, hashe a identifikátory.',
+  'JSON, encoding, hashes, IDs and bit maths.': 'JSON, kódování, hashe, identifikátory a práce s bity.',
   'Convert, resize and crop pictures, remove backgrounds and make GIFs.': 'Převod, změna velikosti a ořez obrázků, odstranění pozadí a tvorba GIFů.',
   'Pick, mix and export colors, palettes and gradients.': 'Výběr, míchání a export barev, palet a přechodů.',
   'Convert and cut sound, or make it sound bad.': 'Převod a stříhání zvuku, nebo jeho schválné zhoršení.',

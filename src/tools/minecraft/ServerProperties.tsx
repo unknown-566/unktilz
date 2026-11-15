@@ -48,10 +48,10 @@ const PROPS: Prop[] = [
 
   { key: 'server-port', def: '25565', kind: int(1, 65535), group: 'Network', help: t('The port players connect to. 25565 is the default, so players don’t have to type it. This is the port to forward on your router.') },
   { key: 'server-ip', def: '', kind: text, group: 'Network', help: t('Only listen on one network address of this machine. Leave it empty; filling it in is a common reason nobody can connect.') },
-  { key: 'network-compression-threshold', def: '256', kind: int(-1), group: 'Network', help: t('Packets bigger than this many bytes get compressed. Lower saves bandwidth but costs CPU; -1 turns compression off (fine on a LAN or behind a proxy).') },
+  { key: 'network-compression-threshold', def: '256', kind: int(-1), group: 'Network', help: t('Data bigger than this many bytes is compressed before it is sent. Lower saves internet data but uses more CPU; -1 turns it off (fine at home or behind a proxy).') },
   { key: 'rate-limit', def: '0', kind: int(0), group: 'Network', help: t('Most packets per second a player may send before being kicked. 0 means no limit.') },
   { key: 'enable-status', def: 'true', kind: bool, group: 'Network', help: t('Answer server-list pings. Off: the server shows as offline in the list, but players who know the address can still join.') },
-  { key: 'enable-query', def: 'false', kind: bool, group: 'Network', help: t('Turns on the GameSpy4 query protocol that some server lists and monitoring tools use to read the player count.') },
+  { key: 'enable-query', def: 'false', kind: bool, group: 'Network', help: t('Lets server lists and monitoring tools read the player count and other info about the server.') },
   { key: 'query.port', def: '25565', kind: int(1, 65535), group: 'Network', help: t('UDP port for query, used when enable-query is on.') },
   { key: 'enable-rcon', def: 'false', kind: bool, group: 'Network', help: t('Remote console: run server commands from another program. Set a strong rcon.password and never open this port to the internet.') },
   { key: 'rcon.port', def: '25575', kind: int(1, 65535), group: 'Network', help: t('TCP port RCON listens on.') },

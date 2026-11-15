@@ -7,7 +7,7 @@ export default defineTool({
   category: 'dev',
   order: 1,
   meta: '{ }',
-  description: t('Pretty-print, minify or sort JSON, and see exactly where it breaks when it’s invalid.'),
+  description: t('Make JSON easy to read, squeeze it onto one line or sort its keys, and see exactly where the mistake is when it’s broken.'),
   keywords: ['json', 'pretty print', 'beautify', 'minify', 'validate', 'lint'],
   layout: 'workbench',
   component: lazyTool(() => import('./JsonFormatter')),

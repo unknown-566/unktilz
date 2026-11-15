@@ -7,7 +7,7 @@ export default defineTool({
   category: 'minecraft',
   order: 11,
   meta: t('seed'),
-  description: t('Map the slime chunks around you from your world seed (Java Edition).'),
+  description: t('See the slime chunks around you on a map, from your world seed (Java Edition).'),
   keywords: ['slime', 'seed', 'farm', 'chunk', 'spawn'],
   layout: 'workbench',
   component: lazyTool(() => import('./SlimeChunks')),

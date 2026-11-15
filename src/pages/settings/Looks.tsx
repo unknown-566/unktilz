@@ -331,7 +331,7 @@ export function LookSection() {
           </button>
         ))}
       </div>
-      <p className="note">{t('The size changes every text on the site; pictures, previews and tools keep their size. Codes and numbers keep their monospace font.')}</p>
+      <p className="note">{t('The size changes every text on the site; pictures and previews stay as they are. Codes and numbers keep their own font.')}</p>
     </section>
   );
 }

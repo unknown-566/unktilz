@@ -60,7 +60,7 @@ export function assetObject(hash: string): Promise<Uint8Array> {
       }
       const bytes = new Uint8Array(await res.arrayBuffer());
       // A static host without the /mc-assets pass-through answers with its own page (or 404).
-      if (!res.ok || (await sha1(bytes)) !== hash) throw new AssetsUnavailable(t('The game’s sounds, languages and menu panorama come through the site’s own server: open the site with start.bat (or npm run dev / preview).'));
+      if (!res.ok || (await sha1(bytes)) !== hash) throw new AssetsUnavailable(t('The game’s sounds, languages and menu panorama come through the site’s own server, so open the site with start.bat.'));
       if (bytes.length <= KEEP_BYTES) set(hash, bytes, store).catch(() => {});
       return bytes;
     })();

@@ -732,7 +732,7 @@ export default function QrMaker() {
                 onChange={(ecl) => setS((o) => ({ ...o, ecl }))}
               />
             </Row>
-            <Row label={t('Empty border')} help={t('The quiet zone around the code, in squares. Scanners find the code more easily with 4.')}>
+            <Row label={t('Empty border')} help={t('The empty edge around the code, in squares. Scanners find the code more easily with 4.')}>
               <Slider value={st.margin} min={0} max={8} step={1} onChange={(margin) => setStyle({ margin })} show={String(st.margin)} />
             </Row>
           </TabPanel>

@@ -14,7 +14,7 @@ import { plural, t } from '../lib/i18n-core';
 /** One line under each category's heading. */
 const ABOUT: Record<Category, string> = {
   minecraft: t('Commands, server tools, calculators, maps, skins and resource packs.'),
-  dev: t('JSON, encoding, hashes and IDs.'),
+  dev: t('JSON, encoding, hashes, IDs and bit maths.'),
   image: t('Convert, resize and crop pictures, remove backgrounds and make GIFs.'),
   color: t('Pick, mix and export colors, palettes and gradients.'),
   audio: t('Convert and cut sound, or make it sound bad.'),

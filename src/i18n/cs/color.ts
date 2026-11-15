@@ -5,8 +5,8 @@ export const SAME: string[] = [];
 export default {
   'Color picker': 'Výběr barvy',
   'hex · rgb · hsl · oklch': 'hex · rgb · hsl · oklch',
-  'Everything about one color on one page: pick it, type or paste it, or take it from a picture or anywhere on the screen. See it as HEX, RGB, HSL, OKLCH, CMYK and more, check its contrast, get matching, lighter and darker colors, see how color-blind people see it, and get its Minecraft text code and map art block.':
-    'Vše o jedné barvě na jedné stránce: vyberte ji, napište nebo vložte, případně ji vezměte z obrázku nebo odkudkoli z obrazovky. Uvidíte ji jako HEX, RGB, HSL, OKLCH, CMYK a další, zkontrolujete kontrast, dostanete ladící, světlejší a tmavší barvy, uvidíte, jak ji vnímají barvoslepí, a získáte její kód barvy textu v Minecraftu i blok pro mapart.',
+  'Everything about one color: pick it, type it, or take it from a picture or anywhere on the screen. See it in every format (HEX, RGB, HSL…), check whether text on it is readable, and get matching colors and its Minecraft code.':
+    'Všechno o jedné barvě: vyberte ji, napište, nebo ji vezměte z obrázku či odkudkoli z obrazovky. Uvidíte ji ve všech formátech (HEX, RGB, HSL…), zjistíte, jestli je na ní text čitelný, a dostanete ladící barvy i její kód pro Minecraft.',
 
   // picking
   'pick a color': 'výběr barvy',

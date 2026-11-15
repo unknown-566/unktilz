@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { RollingNumber } from './bits/RollingNumber';
 import { Help } from './Help';
 import { t } from '../lib/i18n-core';
 
@@ -15,6 +16,38 @@ export function Panel({ title, children, actions }: { title: string; children: R
       {children}
     </section>
   );
+}
+
+type Box = { x: number; y: number; w: number; h: number };
+
+/**
+ * Where the selected item of a group is, for a marker that slides to it (the white pill of
+ * Segmented, the line under Tabs). Measured again when the group or an item changes size. `on` is
+ * false until the first place is painted, so the marker doesn't slide in from the corner.
+ */
+function useMarker(group: RefObject<HTMLElement | null>, selector: string, key: string) {
+  const [box, setBox] = useState<Box | null>(null);
+  const [on, setOn] = useState(false);
+  useLayoutEffect(() => {
+    const el = group.current;
+    if (!el) return;
+    const measure = () => {
+      const a = el.querySelector<HTMLElement>(selector);
+      const next = a && a.offsetWidth ? { x: a.offsetLeft, y: a.offsetTop, w: a.offsetWidth, h: a.offsetHeight } : null;
+      setBox((old) => (old && next && old.x === next.x && old.y === next.y && old.w === next.w && old.h === next.h ? old : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    for (const c of el.children) ro.observe(c);
+    return () => ro.disconnect();
+  }, [group, selector, key]);
+  useEffect(() => {
+    if (!box || on) return;
+    const raf = requestAnimationFrame(() => setOn(true));
+    return () => cancelAnimationFrame(raf);
+  }, [box, on]);
+  return { box, on };
 }
 
 export type TabDef<T extends string> = { id: T; label: string; /** Shows a ● when the tab holds changes. */ dot?: boolean };
@@ -34,13 +67,16 @@ export function Tabs<T extends string>({
   idPrefix: string;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const strip = useRef<HTMLDivElement>(null);
+  const line = useMarker(strip, '[aria-selected="true"]', value + '|' + tabs.map((x) => x.id + x.label + (x.dot ? 1 : 0)).join('|'));
   const move = (i: number) => {
     const n = (i + tabs.length) % tabs.length;
     onChange(tabs[n].id);
     refs.current[n]?.focus();
   };
   return (
-    <div className="tabs" role="tablist" aria-label={label}>
+    <div ref={strip} className={`tabs${line.box ? ' has-line' : ''}`} role="tablist" aria-label={label}>
+      {line.box && <span className={`tab-line${line.on ? ' on' : ''}`} aria-hidden="true" style={{ width: line.box.w, transform: `translateX(${line.box.x}px)` }} />}
       {tabs.map((tab, i) => (
         <button
           key={tab.id}
@@ -95,8 +131,11 @@ export function Segmented<T extends string>({
   compact?: boolean;
   labelledBy?: string;
 }) {
+  const group = useRef<HTMLDivElement>(null);
+  const pill = useMarker(group, '[aria-pressed="true"]', value + '|' + options.map((o) => o.value + o.label).join('|'));
   return (
-    <div className={`seg${compact ? ' compact' : ''}`} role="group" aria-label={labelledBy ? undefined : label} aria-labelledby={labelledBy}>
+    <div ref={group} className={`seg${compact ? ' compact' : ''}${pill.box ? ' has-pill' : ''}`} role="group" aria-label={labelledBy ? undefined : label} aria-labelledby={labelledBy}>
+      {pill.box && <span className={`seg-pill${pill.on ? ' on' : ''}`} aria-hidden="true" style={{ width: pill.box.w, height: pill.box.h, transform: `translate(${pill.box.x}px, ${pill.box.y}px)` }} />}
       {options.map((o) => (
         <button key={o.value} type="button" aria-pressed={o.value === value} onClick={() => onChange(o.value)}>
           {o.label}
@@ -148,7 +187,7 @@ export function CopyButton({ text, label = t('copy'), small = true }: { text: st
   const { copied, copy } = useCopy();
   return (
     <button type="button" className={`btn mono${small ? ' btn-sm' : ''}`} onClick={() => copy(text)} disabled={!text} aria-live="polite">
-      <span className="swap">
+      <span className="swap-text">
         <span aria-hidden={copied} data-on={!copied}>
           {label}
         </span>
@@ -178,11 +217,15 @@ export function Output({ label, value, multiline }: { label: string; value: stri
   );
 }
 
+/** Values that are numbers (with separators, signs, units like % or ×) roll to their new digits. */
+const rolls = (v: ReactNode): v is string | number =>
+  (typeof v === 'number' && Number.isFinite(v)) || (typeof v === 'string' && v.length <= 28 && /^[\d\s.,:+\-−–~%/×()]*\d[\d\s.,:+\-−–~%/×()]*$/.test(v));
+
 export function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="stat">
       <span className="stat-label">{label}</span>
-      <span className="stat-value">{value}</span>
+      <span className="stat-value">{rolls(value) ? <RollingNumber value={String(value)} /> : value}</span>
     </div>
   );
 }

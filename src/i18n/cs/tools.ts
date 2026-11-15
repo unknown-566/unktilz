@@ -102,13 +102,13 @@ export default {
 
   // ---- video ----
   'Video converter': 'Převod videa',
-  'Convert videos to MP4, WebM, MOV, MKV or GIF, make them smaller, cut them shorter or remove the sound. Runs on your computer, on one CPU core: long or 4K videos take a while.':
-    'Převeďte videa do MP4, WebM, MOV, MKV nebo GIF, zmenšete je, zkraťte nebo odeberte zvuk. Běží na vašem počítači na jednom jádru procesoru: dlouhá nebo 4K videa chvíli trvají.',
+  'Convert videos to MP4, WebM, MOV, MKV or GIF, make them smaller, cut them shorter or remove the sound. It runs on your computer, so long or 4K videos take a while.':
+    'Převeďte videa do MP4, WebM, MOV, MKV nebo GIF, zmenšete je, zkraťte nebo odeberte zvuk. Běží na vašem počítači, takže dlouhá nebo 4K videa chvíli trvají.',
   'MP4 plays everywhere (phones, Discord, browsers). WebM is for websites. MOV is for Apple apps, MKV keeps everything. GIF loops without sound.':
     'MP4 hraje všude (telefony, Discord, prohlížeče). WebM je pro weby. MOV je pro aplikace Apple, MKV zachová všechno. GIF se opakuje dokola bez zvuku.',
   Quality: 'Kvalita',
-  'Keep: if only the format changes, the video is copied as it is: instant and no quality lost. Otherwise it’s re-encoded in high quality. The others make the file smaller step by step: “small file” is good for sending in chats.':
-    'Ponechat: když se mění jen formát, video se zkopíruje beze změny, okamžitě a bez ztráty kvality. Jinak se překóduje ve vysoké kvalitě. Ostatní volby soubor postupně zmenšují: „malý soubor“ se hodí na posílání do chatu.',
+  'Keep: the best quality; if only the format changes it’s instant and nothing is lost. The others make the file smaller step by step: “small file” is good for sending in chats.':
+    'Ponechat: nejlepší kvalita; když se mění jen formát, je to hned a nic se neztratí. Ostatní volby soubor postupně zmenšují: „malý soubor“ se hodí na posílání do chatu.',
   high: 'vysoká',
   balanced: 'vyvážená',
   'small file': 'malý soubor',
@@ -122,8 +122,8 @@ export default {
   'Width of the GIF; the height follows. GIFs grow fast, so smaller is usually better.': 'Šířka GIFu, výška se dopočítá. GIFy rychle rostou, takže menší je většinou lepší.',
   'Cut off the end: the time in the original video where it should stop. Empty goes to the end.': 'Ořízne konec: čas v původním videu, kde má skončit. Prázdné = až do konce.',
   'Video & audio downloader': 'Stahování videa a zvuku',
-  'Download videos and music from YouTube, SoundCloud, Twitch, Reddit, TikTok and 1800+ sites, like the Seal app: pick the quality or get just the sound as MP3 with its cover, whole playlists, subtitles, cut-out sponsors. Uses yt-dlp and aria2c (16 connections at once) on your computer, so it needs the site started with start.bat.':
-    'Stahujte videa a hudbu z YouTube, SoundCloudu, Twitche, Redditu, TikToku a z víc než 1800 dalších webů, jako v aplikaci Seal: vyberte kvalitu, nebo jen zvuk jako MP3 s obalem, celé playlisty, titulky, bez sponzorských vstupů. Používá yt-dlp a aria2c (16 spojení najednou) na vašem počítači, takže web musí být spuštěný přes start.bat.',
+  'Download videos and music from YouTube, SoundCloud, Twitch, Reddit, TikTok and 1800+ other sites. Pick the quality or get just the sound as MP3; playlists and subtitles work too. It runs on your computer, so the site has to be started with start.bat.':
+    'Stahujte videa a hudbu z YouTube, SoundCloudu, Twitche, Redditu, TikToku a z víc než 1800 dalších webů. Vyberte kvalitu, nebo jen zvuk jako MP3; jdou i playlisty a titulky. Běží na vašem počítači, takže web musí být spuštěný přes start.bat.',
 
   // ---- image ----
   'Image converter': 'Převod obrázků',
@@ -132,8 +132,8 @@ export default {
   'Same keeps the format and just re-saves (with the quality below, that makes photos smaller). PNG keeps every pixel and transparency. JPG is smallest for photos, no transparency. WebP is smaller than both. ICO is for website and app icons. BMP is uncompressed, for old programs.':
     'Stejný ponechá formát a jen soubor znovu uloží (s kvalitou níže se fotky zmenší). PNG zachová každý pixel i průhlednost. JPG je u fotek nejmenší, ale bez průhlednosti. WebP je menší než oba. ICO je na ikony webů a aplikací. BMP je nekomprimovaný, pro staré programy.',
   same: 'stejný',
-  'Lower means a smaller file with more visible compression blur. 80–90 usually looks the same as the original. (PNG files saved as “same” stay lossless.)':
-    'Nižší znamená menší soubor s viditelnějším rozmazáním od komprese. 80–90 obvykle vypadá stejně jako originál. (Soubory PNG uložené jako „stejný“ zůstanou bezeztrátové.)',
+  'Lower means a smaller file, but a blurrier picture. 80–90 usually looks the same as the original. (A PNG saved as “same” loses nothing.)':
+    'Nižší znamená menší soubor, ale rozmazanější obrázek. 80–90 obvykle vypadá stejně jako originál. (PNG uložené jako „stejný“ o nic nepřijde.)',
   'Website favicon: 16, 32 and 48 px. App icon: every size up to 256 px, for Windows shortcuts and programs. Non-square pictures are centred with transparent edges.':
     'Favicon webu: 16, 32 a 48 px. Ikona aplikace: všechny velikosti až do 256 px, pro zástupce a programy ve Windows. Obrázky, které nejsou čtvercové, se vycentrují s průhlednými okraji.',
   'Icon sizes': 'Velikosti ikony',
@@ -161,18 +161,18 @@ export default {
   'same format': 'stejný formát',
   'Background remover': 'Odstranění pozadí',
   'AI · colour · brush': 'AI · barva · štětec',
-  'Remove the background of a photo: automatically with AI (runs on your computer), by clicking a colour with an adjustable tolerance, and fix the result by hand with an erase / restore brush. Save as a see-through PNG or on a colour.':
-    'Odstraňte pozadí fotky: automaticky pomocí AI (běží na vašem počítači), kliknutím na barvu s nastavitelnou tolerancí, a výsledek dolaďte ručně štětcem, který maže a vrací. Uložte jako průhledné PNG nebo na barevném pozadí.',
+  'Remove the background of a photo: automatically with AI (runs on your computer) or by clicking the colour that should go. Fix details by hand with a brush, then save it see-through or on a colour.':
+    'Odstraňte pozadí fotky: automaticky pomocí AI (běží na vašem počítači), nebo kliknutím na barvu, která má zmizet. Detaily dolaďte ručně štětcem a uložte obrázek průhledný nebo na barevném pozadí.',
   'GIF maker': 'Tvorba GIFů',
   'video / photos → .gif': 'video / fotky → .gif',
-  'Make a GIF from a video clip or from photos, with meme text in any Google font and animated stickers you can move, resize and turn. Speed, boomerang, crop and more; the preview shows exactly what you’ll get, and you get a link to share it.':
-    'Udělejte GIF z videa nebo z fotek, s meme textem v libovolném písmu Google a animovanými nálepkami, které jde posouvat, zvětšovat a otáčet. Rychlost, bumerang, oříznutí a další; náhled ukazuje přesně to, co dostanete, a získáte i odkaz ke sdílení.',
+  'Make a GIF from a video or from photos. Add meme text and animated stickers, change the speed, crop it or play it back and forth. The preview shows exactly what you’ll get, and you get a link to share it.':
+    'Udělejte GIF z videa nebo z fotek. Přidejte meme text a animované nálepky, změňte rychlost, ořízněte ho nebo ho nechte hrát tam a zpátky. Náhled ukazuje přesně to, co dostanete, a získáte i odkaz ke sdílení.',
 
   // ---- pdf ----
   'Compress PDF': 'Komprimovat PDF',
   'smaller .pdf': 'menší .pdf',
-  'Make PDFs smaller. “Keep text” only shrinks the pictures inside, so text stays sharp and selectable. “Redraw pages” turns every page into a compressed picture: the smallest result for scans, but the text can’t be selected afterwards.':
-    'Zmenšete PDF. „Zachovat text“ zmenší jen obrázky uvnitř, takže text zůstane ostrý a půjde označit. „Překreslit stránky“ udělá z každé stránky komprimovaný obrázek: nejmenší výsledek u skenů, ale text pak nejde označit.',
+  'Make PDFs smaller. The text can stay sharp and selectable, or every page becomes a picture, which gives the smallest file for scans.':
+    'Zmenšete PDF. Text může zůstat ostrý a označitelný, nebo se z každé stránky stane obrázek, což dá u skenů nejmenší soubor.',
   Method: 'Způsob',
   'Keep text: only the pictures inside are made smaller; text and drawings stay sharp and can be selected and searched. Redraw pages: every page becomes a picture, the smallest file for scans, but the text can’t be selected afterwards.':
     'Zachovat text: zmenší se jen obrázky uvnitř; text a kresby zůstanou ostré a půjde je označit i vyhledávat. Překreslit stránky: z každé stránky bude obrázek, nejmenší soubor u skenů, ale text pak nejde označit.',
@@ -188,8 +188,8 @@ export default {
   '“Strong” might still help.': 'Možná pomůže ještě „silná“.',
   'Images to PDF': 'Obrázky do PDF',
   '.jpg → .pdf · scan': '.jpg → .pdf · sken',
-  'Turn photos into a PDF, one per page. Photos of paper become clean scans: the sheet is found (or you drag its corners), straightened and made white, or only what’s written on it is put on a clean page inside the margins.':
-    'Udělejte z fotek PDF, každou na jednu stránku. Z fotek papíru budou čisté skeny: list se najde (nebo přetáhnete jeho rohy), narovná a vybělí, nebo se jen to, co je na něm napsané, položí na čistou stránku s okraji.',
+  'Turn photos into a PDF, one per page. A photo of a sheet of paper is cleaned up into a scan: straightened, with a white background.':
+    'Udělejte z fotek PDF, každou na jednu stránku. Z fotky papíru bude čistý sken: narovnaný a s bílým pozadím.',
   'Merge PDF': 'Sloučit PDF',
   'Combine PDFs into one file. Pages keep the order you pick the files in.': 'Spojte víc PDF do jednoho souboru. Stránky budou v pořadí, v jakém soubory vyberete.',
   'Organize PDF': 'Uspořádat PDF',
@@ -215,9 +215,11 @@ export default {
   'Make a QR code for a link, text, Wi-Fi, a contact, an e-mail, an SMS, a place, an event or a payment, in any colours and shapes, with your logo and a frame. It checks that phones can still read it.':
     'Udělejte QR kód pro odkaz, text, Wi-Fi, kontakt, e-mail, SMS, místo, událost nebo platbu, v libovolných barvách a tvarech, s vaším logem a rámečkem. Sám zkontroluje, že ho telefony pořád přečtou.',
   'JSON formatter & validator': 'Formátování a kontrola JSON',
-  'Pretty-print, minify or sort JSON, and see exactly where it breaks when it’s invalid.': 'Přehledně naformátujte, zmenšete nebo seřaďte JSON a uvidíte přesně, kde je chyba, když je neplatný.',
+  'Make JSON easy to read, squeeze it onto one line or sort its keys, and see exactly where the mistake is when it’s broken.':
+    'Udělejte JSON přehledný, stáhněte ho na jeden řádek nebo seřaďte jeho klíče a uvidíte přesně, kde je chyba, když je rozbitý.',
   'UUID generator': 'Generátor UUID',
-  'Generate random v4 or time-ordered v7 UUIDs, one or a hundred at a time.': 'Vytvořte náhodná UUID v4 nebo časově řazená v7, jedno nebo sto najednou.',
+  'Make random IDs (UUID v4) or ones that sort by time (v7), one or a hundred at a time.':
+    'Vytvořte náhodná ID (UUID v4) nebo ID řazená podle času (v7), jedno nebo sto najednou.',
 
   // ---- minecraft ----
   'AdvancedServerList profile generator': 'Generátor profilů AdvancedServerList',
@@ -242,9 +244,11 @@ export default {
   '§ codes': '§ kódy',
   'Write a colored two-line server MOTD, preview it like the server list, and copy it for server.properties.': 'Napište barevné dvouřádkové MOTD serveru, prohlédněte si ho jako v seznamu serverů a zkopírujte ho do server.properties.',
   'Nether portal calculator': 'Výpočet nether portálu',
-  'Work out where to build a linked portal: Overworld coordinates divide by 8 in the Nether.': 'Spočítejte, kde postavit propojený portál: souřadnice z Overworldu se v Netheru dělí osmi.',
+  'Work out where to build the second portal so the two link up: one block in the Nether is 8 blocks in the Overworld.':
+    'Spočítejte, kde postavit druhý portál, aby se oba propojily: jeden blok v Netheru je 8 bloků v Overworldu.',
   'Player head command': 'Příkaz na hlavu hráče',
-  'Get the /give command for any player’s head, in the right syntax for your version.': 'Získejte příkaz /give na hlavu libovolného hráče, ve správném zápisu pro vaši verzi.',
+  'Get the /give command for any player’s head, written the right way for your version.':
+    'Získejte příkaz /give na hlavu libovolného hráče, zapsaný správně pro vaši verzi.',
   'Seed map': 'Mapa seedu',
   'seed → map': 'seed → mapa',
   'See the biomes of any Java world seed and where villages, temples, monuments, ancient cities and other structures are. Click a spot for its coordinates.':
@@ -257,9 +261,11 @@ export default {
   'Paint a skin right on the 3D player, open two skins at once and copy a hat, jacket or any piece from one to the other. Ctrl+Z undoes anything.':
     'Malujte skin přímo na 3D postavě, otevřete dva skiny najednou a přeneste klobouk, bundu nebo jakýkoli kus z jednoho na druhý. Ctrl+Z vrátí cokoli.',
   'Skin viewer & downloader': 'Prohlížení a stažení skinů',
-  'See any Java player’s skin from the front, as a head, or as the raw texture, and save the PNG.': 'Podívejte se na skin libovolného hráče v Javě zepředu, jako hlavu nebo jako samotnou texturu a uložte PNG.',
+  'See any Java player’s skin from the front, as a head or as the flat skin file, and save the PNG.':
+    'Podívejte se na skin libovolného hráče v Javě zepředu, jako hlavu nebo jako plochý soubor skinu a uložte PNG.',
   'Slime chunk finder': 'Hledání slime chunků',
-  'Map the slime chunks around you from your world seed (Java Edition).': 'Zobrazte slime chunky kolem sebe podle seedu světa (Java Edition).',
+  'See the slime chunks around you on a map, from your world seed (Java Edition).':
+    'Podívejte se na mapě na slime chunky kolem sebe podle seedu světa (Java Edition).',
   'Stack & shulker calculator': 'Výpočet stacků a shulkerů',
   'items → stacks': 'itemy → stacky',
   'Turn an item count into stacks, shulker boxes and double chests, and back.': 'Převeďte počet itemů na stacky, shulker boxy a dvojité truhly a zpátky.',
@@ -268,5 +274,6 @@ export default {
   'Find a Java player’s UUID from their name, or the name from a UUID. Also gives the offline-mode UUID.': 'Najděte UUID hráče v Javě podle jména, nebo jméno podle UUID. Ukáže i UUID pro offline režim.',
   'XP level calculator': 'Výpočet XP levelů',
   'levels ⇄ points': 'levely ⇄ body',
-  'Convert experience levels to points and back, and see how much XP a level range costs.': 'Převeďte levely zkušeností na body a zpátky a zjistěte, kolik XP stojí rozsah levelů.',
+  'Convert experience levels to points and back, and see how much XP it takes to get from one level to another.':
+    'Převeďte levely zkušeností na body a zpátky a zjistěte, kolik XP je potřeba z jednoho levelu na druhý.',
 } as Record<string, string>;

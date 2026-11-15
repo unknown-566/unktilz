@@ -51,7 +51,7 @@ export default function UuidGenerator() {
             <span className="opt-label" id="uv">
               {t('Version')}
             </span>
-            <Help label={t('UUID version')} text={t('v4 is completely random. v7 starts with the current time, so IDs sort in the order they were made, which keeps database indexes fast.')} />
+            <Help label={t('UUID version')} text={t('v4 is completely random. v7 starts with the current time, so the IDs sort in the order they were made (handy in databases).')} />
           </span>
           <Segmented
             labelledBy="uv"

@@ -48,7 +48,7 @@ export default function NetherPortal() {
             <Output label={t('Teleport command')} value={`/execute in minecraft:${to === 'Nether' ? 'the_nether' : 'overworld'} run tp @s ${tx} ${ty} ${tz}`} />
           </>
         ) : (
-          <p className="note">{t('Enter the X and Z of your portal in the {dimension}.', { dimension: from })}</p>
+          <p className="empty">{t('Enter the X and Z of your portal in the {dimension}.', { dimension: from })}</p>
         )}
         <p className="note">
           {t('Y stays the same. A portal links to the closest portal within {n} blocks of the target point, so build it close to these coordinates to avoid linking to the wrong one.', { n: to === 'Nether' ? 16 : 128 })}

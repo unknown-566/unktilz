@@ -219,7 +219,8 @@ export default {
   'The list of the game’s sounds and languages needs the internet once.': 'Seznam zvuků a jazyků hry potřebuje poprvé internet.',
   'Mojang has no sound list for this version.': 'Mojang pro tuto verzi nemá seznam zvuků.',
   'Mojang’s sound server can’t be reached. Check your internet connection.': 'Zvukový server Mojangu není dostupný. Zkontrolujte připojení k internetu.',
-  'The game’s sounds, languages and menu panorama come through the site’s own server: open the site with start.bat (or npm run dev / preview).': 'Zvuky, jazyky a pozadí menu hry jdou přes vlastní server webu: otevřete web přes start.bat (nebo npm run dev / preview).',
+  'The game’s sounds, languages and menu panorama come through the site’s own server, so open the site with start.bat.':
+    'Zvuky hry, jazyky a panorama v menu jdou přes vlastní server webu, takže web otevřete přes start.bat.',
 
   // ---- sounds ----
   sounds: 'zvuky',

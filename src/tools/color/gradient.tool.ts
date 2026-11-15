@@ -9,7 +9,7 @@ export default defineTool({
   meta: t('css · tailwind · svg · png'),
   added: '2026-11-12',
   description: t(
-    'Make a linear, radial or conic gradient: add and drag its colors, set the angle, and blend them in sRGB, OKLab or OKLCH so the middle doesn’t go grey. Start from a ready one, a random one or your own colors, then copy the CSS, a Tailwind class or SVG, or download it as a PNG in any size.',
+    'Make a color gradient: add and drag its colors, set the angle, and pick how they blend so the middle doesn’t go grey. Copy it as CSS, Tailwind or SVG, or download a PNG in any size.',
   ),
   keywords: ['gradient', 'gradient generator', 'css gradient', 'linear gradient', 'radial gradient', 'conic gradient', 'color gradient', 'background', 'tailwind gradient', 'oklch gradient', 'mesh', 'wallpaper'],
   layout: 'workbench',

@@ -13,7 +13,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'video', label: t('Video') },
   { id: 'pdf', label: 'PDF' },
   { id: 'text', label: t('Text') },
-  { id: 'calc', label: t('Calc & generators') },
+  { id: 'calc', label: t('Generators') },
 ];
 
 export const categoryLabel = (id: Category) => CATEGORIES.find((c) => c.id === id)?.label ?? id;

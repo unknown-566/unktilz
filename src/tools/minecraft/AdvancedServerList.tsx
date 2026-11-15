@@ -100,7 +100,7 @@ function Warnings({ list }: { list: string[] }) {
 function WidthMeter({ px }: { px: number }) {
   const over = px > MOTD_WIDTH;
   return (
-    <span className="width-meter" data-over={over || undefined} title={t('Estimated width in the Minecraft font, with sample values for live values')}>
+    <span className="width-meter" data-over={over || undefined} title={t('About how wide it is in the game’s font (live values use sample text)')}>
       <span className="width-bar">
         <span style={{ width: `${Math.min(100, (px / MOTD_WIDTH) * 100)}%` }} />
       </span>

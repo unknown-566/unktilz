@@ -23,8 +23,8 @@ export default {
   '{v1}’s head': 'Hlava hráče {v1}',
   'Game version': 'Verze hry',
   'game version': 'verze hry',
-  'The /give syntax for heads changed twice. 1.20.5+ uses item components, 1.13 to 1.20.4 uses SkullOwner NBT, and 1.12 or older uses the skull item with damage value 3.':
-    'Zápis /give pro hlavy se změnil dvakrát. 1.20.5+ používá item components, 1.13 až 1.20.4 SkullOwner NBT a 1.12 a starší item skull s hodnotou poškození 3.',
+  'The command for heads is written differently in old and new versions of the game. Pick yours and the command will fit.':
+    'Příkaz na hlavy se ve starých a nových verzích hry píše jinak. Vyberte tu svou a příkaz bude sedět.',
   Target: 'Cíl',
   target: 'cíl',
   'Who gets the head. @p is the player nearest to where the command runs, @s is whoever runs it (you, in chat), @a gives one to everyone online, @r to one random player. Pick “a specific player” to type a name.':

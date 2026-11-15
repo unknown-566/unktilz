@@ -187,7 +187,7 @@ export default function MapArt() {
           {!grid && <span className="mapart-wait mono">{t('converting…')}</span>}
         </div>
       ) : (
-        <p className="note">{t('Pick a picture on the left to see it in map colors.')}</p>
+        <p className="empty">{t('Pick a picture on the left to see it in map colors.')}</p>
       )}
       {grid && (
         <div className="stats">

@@ -135,7 +135,7 @@ export default function Backup() {
       <section className="panel" aria-label={t('What\'s saved')}>
         <h2 className="panel-title">{t('// saved in this browser')}</h2>
         {summary.length === 0 ? (
-          <p className="note">{t('Nothing saved yet.')}</p>
+          <p className="empty">{t('Nothing saved yet.')}</p>
         ) : (
           <ul className="backup-list">
             {summary.map((r) => (
@@ -146,7 +146,7 @@ export default function Backup() {
             ))}
           </ul>
         )}
-        <p className="note">{t('Saved data belongs to the address in the address bar (e.g. localhost:5173). start.bat always uses 5173, so it stays the same after updates.')}</p>
+        <p className="note">{t('Saved things are tied to the site’s address (like localhost:5173). start.bat always opens the same address, so they stay after an update.')}</p>
       </section>
     </div>
   );

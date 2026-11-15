@@ -28,8 +28,8 @@ export default {
   Settings: 'Nastavení',
   Version: 'Verze',
   'UUID version': 'Verze UUID',
-  'v4 is completely random. v7 starts with the current time, so IDs sort in the order they were made, which keeps database indexes fast.':
-    'v4 je úplně náhodné. v7 začíná aktuálním časem, takže se ID řadí v pořadí, v jakém vznikla, a indexy v databázi zůstanou rychlé.',
+  'v4 is completely random. v7 starts with the current time, so the IDs sort in the order they were made (handy in databases).':
+    'v4 je úplně náhodné. v7 začíná aktuálním časem, takže se ID řadí v pořadí, v jakém vznikla (hodí se v databázích).',
   'v4 random': 'v4 náhodné',
   'v7 time-ordered': 'v7 řazené časem',
   Uppercase: 'Velká písmena',
@@ -217,7 +217,8 @@ export default {
   'Dot size': 'Velikost teček',
   'Error correction': 'Oprava chyb',
   'Empty border': 'Prázdný okraj',
-  'The quiet zone around the code, in squares. Scanners find the code more easily with 4.': 'Prázdná zóna kolem kódu ve čtverečcích. Se 4 najdou čtečky kód snáz.',
+  'The empty edge around the code, in squares. Scanners find the code more easily with 4.':
+    'Prázdný okraj kolem kódu, ve čtverečcích. Se 4 najdou čtečky kód snáz.',
   'Corner frame': 'Rám rohu',
   'Corner middle': 'Střed rohu',
   'Ready colours': 'Hotové barvy',

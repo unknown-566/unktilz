@@ -208,10 +208,12 @@ export default {
   'Lets other servers send players here with the /transfer command (1.20.5+).': 'Ostatní servery sem smí posílat hráče příkazem /transfer (1.20.5+).',
   'The port players connect to. 25565 is the default, so players don’t have to type it. This is the port to forward on your router.': 'Port, na který se hráči připojují. 25565 je výchozí, takže ho hráči nemusí psát. Tento port přesměrujte na routeru.',
   'Only listen on one network address of this machine. Leave it empty; filling it in is a common reason nobody can connect.': 'Poslouchat jen na jedné síťové adrese tohoto počítače. Nechte prázdné; vyplnění je častý důvod, proč se nikdo nepřipojí.',
-  'Packets bigger than this many bytes get compressed. Lower saves bandwidth but costs CPU; -1 turns compression off (fine on a LAN or behind a proxy).': 'Pakety větší než tolik bajtů se komprimují. Nižší šetří přenos, ale bere CPU; -1 kompresi vypne (v pořádku na LAN nebo za proxy).',
+  'Data bigger than this many bytes is compressed before it is sent. Lower saves internet data but uses more CPU; -1 turns it off (fine at home or behind a proxy).':
+    'Data větší než tolik bajtů se před odesláním zkomprimují. Nižší hodnota šetří přenesená data, ale víc zatíží procesor; -1 kompresi vypne (stačí doma nebo za proxy).',
   'Most packets per second a player may send before being kicked. 0 means no limit.': 'Kolik nejvýš paketů za sekundu smí hráč poslat, než je vyhozen. 0 = bez omezení.',
   'Answer server-list pings. Off: the server shows as offline in the list, but players who know the address can still join.': 'Odpovídat na dotazy ze seznamu serverů. Vypnuto: server se v seznamu ukáže jako offline, ale hráči, kteří znají adresu, se připojí dál.',
-  'Turns on the GameSpy4 query protocol that some server lists and monitoring tools use to read the player count.': 'Zapne protokol GameSpy4 query, přes který některé seznamy serverů a monitorovací nástroje čtou počet hráčů.',
+  'Lets server lists and monitoring tools read the player count and other info about the server.':
+    'Umožní seznamům serverů a monitorovacím nástrojům číst počet hráčů a další údaje o serveru.',
   'UDP port for query, used when enable-query is on.': 'UDP port pro query, používá se při zapnutém enable-query.',
   'Remote console: run server commands from another program. Set a strong rcon.password and never open this port to the internet.': 'Vzdálená konzole: spouštění příkazů serveru z jiného programu. Nastavte silné rcon.password a tento port nikdy neotevírejte do internetu.',
   'TCP port RCON listens on.': 'TCP port, na kterém RCON poslouchá.',

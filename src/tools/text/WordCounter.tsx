@@ -116,7 +116,7 @@ export default function WordCounter() {
           ))}
         </ol>
       ) : (
-        <p className="note">{t('Type or paste some text to see its most used words.')}</p>
+        <p className="empty">{t('Type or paste some text to see its most used words.')}</p>
       )}
     </Panel>
   );

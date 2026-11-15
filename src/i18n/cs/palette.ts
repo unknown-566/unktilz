@@ -5,8 +5,8 @@ export const SAME: string[] = [];
 export default {
   'Palette from image': 'Paleta z obrázku',
   'main colors · css · gpl': 'hlavní barvy · css · gpl',
-  'Drop or paste a picture and get its main colors: how much of the picture each one covers and where it is. Copy them as HEX, CSS variables, JSON or Tailwind, or download the palette as a PNG or a GIMP / Inkscape palette.':
-    'Přetáhněte nebo vložte obrázek a získejte jeho hlavní barvy: kolik obrázku každá zabírá a kde v něm je. Zkopírujte je jako HEX, proměnné CSS, JSON nebo Tailwind, případně si paletu stáhněte jako PNG nebo paletu pro GIMP / Inkscape.',
+  'Drop or paste a picture and get its main colors, with how much of the picture each one covers. Copy them as HEX, CSS, JSON or Tailwind, or download the palette.':
+    'Přetáhněte nebo vložte obrázek a získáte jeho hlavní barvy i s tím, jak velkou část obrázku každá zabírá. Zkopírujte je jako HEX, CSS, JSON nebo Tailwind, nebo si paletu stáhněte.',
   palette: 'paleta',
   'The colors of your picture show up here.': 'Tady se objeví barvy vašeho obrázku.',
   'The picture is fully transparent, so it has no colors.': 'Obrázek je celý průhledný, takže nemá žádné barvy.',

@@ -2,11 +2,12 @@ import { HomeCrumb } from '../components/HomeCrumb';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ALIASES, categoryLabel, getTool, related } from '../registry';
-import { GoLink, useLaunch } from '../components/Transition';
-import { loadFileTool, preloadTool } from '../registry/preload';
+import { GoLink } from '../components/Transition';
+import { loadFileTool } from '../registry/preload';
 
 const FileTool = lazy(() => loadFileTool().then((m) => ({ default: m.FileTool })));
-import { SwapIcon } from '../components/icons';
+import { CategoryIcon, SwapIcon } from '../components/icons';
+import { ToolLink } from '../components/ToolLink';
 import { ToolTags } from '../components/ToolTags';
 import { prefersReducedMotion } from '../lib/theme';
 import NotFound from './NotFound';
@@ -65,7 +66,6 @@ function ToolView({ slug }: { slug: string }) {
   const tool = getTool(slug)!;
   const navigate = useNavigate();
   const location = useLocation();
-  const launch = useLaunch();
   const [rot, setRot] = useState(0);
   const title = useScramble(tool.name, (location.state as { swap?: boolean } | null)?.swap ? 0 : 380);
 
@@ -83,18 +83,14 @@ function ToolView({ slug }: { slug: string }) {
   const cat = categoryLabel(tool.category).toLowerCase();
   const wide = tool.layout === 'workbench';
 
-  const relatedLinks = related(tool, 4).map((tt) => (
-    <a key={tt.slug} className="rel" href={`/t/${tt.slug}`} onClick={(e) => launch(e, tt.slug)} onMouseEnter={() => preloadTool(tt)} onFocus={() => preloadTool(tt)}>
-      <span>
-        {tt.name} <ToolTags tool={tt} />
-      </span>
-      <span className="card-meta">{tt.meta}</span>
-    </a>
-  ));
+  const relatedLinks = related(tool, 4).map((tt) => <ToolLink key={tt.slug} tool={tt} />);
 
   const head = (
     <div className="tool-head">
       <div className="title-row">
+        <span className="card-icon tool-icon" aria-hidden="true">
+          <CategoryIcon category={tool.category} />
+        </span>
         <h1 aria-label={tool.name}>
           <span aria-hidden="true">{title}</span>
         </h1>

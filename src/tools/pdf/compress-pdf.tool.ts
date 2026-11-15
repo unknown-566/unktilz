@@ -34,7 +34,7 @@ export default defineTool({
   meta: t('smaller .pdf'),
   beta: true,
   description:
-    t('Make PDFs smaller. “Keep text” only shrinks the pictures inside, so text stays sharp and selectable. “Redraw pages” turns every page into a compressed picture: the smallest result for scans, but the text can’t be selected afterwards.'),
+    t('Make PDFs smaller. The text can stay sharp and selectable, or every page becomes a picture, which gives the smallest file for scans.'),
   keywords: ['compress pdf', 'shrink pdf', 'reduce pdf size', 'smaller pdf', 'email', 'upload limit', 'scan', 'optimize pdf'],
   accepts: ['.pdf'],
   preview: async (file, opts) => {

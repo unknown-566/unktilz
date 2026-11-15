@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
 import { QueueRail } from './components/QueueRail';
 import { UpdateNotice } from './components/UpdateNotice';
+import { CopyToast } from './components/CopyToast';
 import { TransitionProvider, scrollToTop } from './components/Transition';
 import Home from './pages/Home';
 import ToolPage from './pages/ToolPage';
@@ -80,6 +81,7 @@ export default function App() {
         <CommandPaletteHost />
         <ClickSpark />
         <UpdateNotice />
+        <CopyToast />
         <div className="shell">
           <Header />
           <div className="body">

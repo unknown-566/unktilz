@@ -11,7 +11,7 @@ export default defineTool({
   accepts: ['*'],
   layout: 'workbench',
   description: t(
-    'Every way to encode, encrypt and hash: Base64, hex, URL, Morse and more, classic ciphers (Caesar, Vigenère, XOR…) you can chain, MD5 / SHA / BLAKE3 of text or files, bcrypt and Argon2 password hashes, and real encryption with a password (AES-256-GCM, OpenSSL compatible).',
+    'Encode and decode text (Base64, hex, URL, Morse…), try classic ciphers (Caesar, Vigenère, XOR…), get the hash of text or files (MD5, SHA, BLAKE3), and lock text with a password using real encryption (AES-256).',
   ),
   keywords: [
     'base64', 'encode', 'decode', 'b64', 'data url', 'base32', 'base58', 'base85', 'hex', 'binary', 'url encode', 'html entities', 'unicode escape', 'punycode', 'morse',

@@ -5,8 +5,8 @@ export const SAME: string[] = ['{deg}°'];
 export default {
   'Gradient generator': 'Generátor přechodů',
   'css · tailwind · svg · png': 'css · tailwind · svg · png',
-  'Make a linear, radial or conic gradient: add and drag its colors, set the angle, and blend them in sRGB, OKLab or OKLCH so the middle doesn’t go grey. Start from a ready one, a random one or your own colors, then copy the CSS, a Tailwind class or SVG, or download it as a PNG in any size.':
-    'Vytvořte lineární, kruhový nebo kuželový přechod: přidávejte a posouvejte barvy, nastavte úhel a míchejte je v sRGB, OKLab nebo OKLCH, aby střed nezšedl. Začněte z hotového, náhodného nebo z vlastních barev, pak zkopírujte CSS, třídu pro Tailwind nebo SVG, případně si ho stáhněte jako PNG v libovolné velikosti.',
+  'Make a color gradient: add and drag its colors, set the angle, and pick how they blend so the middle doesn’t go grey. Copy it as CSS, Tailwind or SVG, or download a PNG in any size.':
+    'Vytvořte barevný přechod: přidávejte a přetahujte barvy, nastavte úhel a vyberte, jak se mají míchat, aby střed nezešedl. Zkopírujte ho jako CSS, Tailwind nebo SVG, nebo stáhněte PNG v libovolné velikosti.',
   'SVG has no conic gradients. Use the PNG, or the CSS.': 'SVG kuželové přechody neumí. Použijte PNG nebo CSS.',
   'The first line is for old browsers that can’t blend in {blend}; the steps in it look almost the same.':
     'První řádek je pro starší prohlížeče, které neumí míchat v {blend}; mezikroky v něm vypadají skoro stejně.',

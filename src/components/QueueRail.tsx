@@ -215,7 +215,7 @@ export function QueueRail() {
     <div className="rail-slot">
       <aside
         className={`rail${open ? ' open' : ''}${open && !pinned ? ' floating' : ''}`}
-        aria-label={t('Process queue')}
+        aria-label={t('Queue')}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         // A dragged result closes the floating panel, so it doesn't cover where the file goes.

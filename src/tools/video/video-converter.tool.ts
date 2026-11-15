@@ -13,7 +13,7 @@ export default defineTool({
   order: 1,
   meta: t('mp4 · webm · mov · gif'),
   description:
-    t('Convert videos to MP4, WebM, MOV, MKV or GIF, make them smaller, cut them shorter or remove the sound. Runs on your computer, on one CPU core: long or 4K videos take a while.'),
+    t('Convert videos to MP4, WebM, MOV, MKV or GIF, make them smaller, cut them shorter or remove the sound. It runs on your computer, so long or 4K videos take a while.'),
   keywords: [
     'mov to mp4', 'mkv to mp4', 'webm to mp4', 'avi to mp4', 'mp4 to webm', 'mp4 to gif', 'video to gif', 'gif to mp4', 'compress video', 'shrink video',
     'trim video', 'cut video', 'mute video', 'remove audio', 'resize video', '720p', '1080p', 'iphone video', 'hevc', 'convert',
@@ -37,7 +37,7 @@ export default defineTool({
     {
       key: 'quality',
       label: t('Quality'),
-      help: t('Keep: if only the format changes, the video is copied as it is: instant and no quality lost. Otherwise it’s re-encoded in high quality. The others make the file smaller step by step: “small file” is good for sending in chats.'),
+      help: t('Keep: the best quality; if only the format changes it’s instant and nothing is lost. The others make the file smaller step by step: “small file” is good for sending in chats.'),
       type: 'choice',
       default: 'keep',
       when: notGif,

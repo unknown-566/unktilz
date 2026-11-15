@@ -6,8 +6,8 @@ export const SAME = ['Base64 · XOR · AES · SHA-256', 'Hex', 'Hash'];
 export default {
   // ---- tool, tabs ----
   'Encode, encrypt & hash': 'Kódování, šifrování a hashe',
-  'Every way to encode, encrypt and hash: Base64, hex, URL, Morse and more, classic ciphers (Caesar, Vigenère, XOR…) you can chain, MD5 / SHA / BLAKE3 of text or files, bcrypt and Argon2 password hashes, and real encryption with a password (AES-256-GCM, OpenSSL compatible).':
-    'Všechny způsoby kódování, šifrování a hashování: Base64, hex, URL, Morseovka a další, klasické šifry (Caesar, Vigenère, XOR…), které jde řetězit, MD5 / SHA / BLAKE3 textu i souborů, hashe hesel bcrypt a Argon2 a opravdové šifrování heslem (AES-256-GCM, kompatibilní s OpenSSL).',
+  'Encode and decode text (Base64, hex, URL, Morse…), try classic ciphers (Caesar, Vigenère, XOR…), get the hash of text or files (MD5, SHA, BLAKE3), and lock text with a password using real encryption (AES-256).':
+    'Kódujte a dekódujte text (Base64, hex, URL, morseovka…), zkuste klasické šifry (Caesar, Vigenère, XOR…), spočítejte hash textu nebo souborů (MD5, SHA, BLAKE3) a zamkněte text heslem skutečným šifrováním (AES-256).',
   'Encode & ciphers': 'Kódování a šifry',
   Hashes: 'Hashe',
   'Password hashes': 'Hashe hesel',

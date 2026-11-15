@@ -91,7 +91,7 @@ export default function Bitwise() {
               <span className="opt-label" id="bw-s">
                 {t('Signed')}
               </span>
-              <Help label={t('Signed')} text={t('Reads the highest bit as the sign (two’s complement), like int in most languages: 8 bits then go from −128 to 127 instead of 0 to 255. The bits stay the same, only how they’re read changes.')} />
+              <Help label={t('Signed')} text={t('Lets the number be negative, like int in most programming languages: 8 bits then go from −128 to 127 instead of 0 to 255. The bits stay the same, only how they’re read changes.')} />
               <Toggle labelledBy="bw-s" checked={s.signed} onChange={(signed) => set({ signed })} />
             </span>
           </div>
@@ -175,7 +175,7 @@ export default function Bitwise() {
             <p className="note">{t('Click a bit of a number to flip it (the box changes too). Click a value to copy it.')}</p>
           </>
         ) : (
-          <p className="note">{t('Type an expression above, like 0xFF & 0x0F or 5 << 2.')}</p>
+          <p className="empty">{t('Type an expression above, like 0xFF & 0x0F or 5 << 2.')}</p>
         )}
       </section>
     </div>

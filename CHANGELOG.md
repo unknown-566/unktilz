@@ -2,6 +2,38 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.26.0] - 2026-11-15
+
+- The main button is green everywhere, so it no longer looks like a picked option
+- Small motion all over the site: the picked option and tab slide into place, switches bounce, numbers roll, panels come in one after another
+- Copying any selected text shows a small "copied" bubble
+- Request a tool now works: write your idea and send it as a request on GitHub
+- The "not found" page helps: search, and the tools you probably meant
+- Tool descriptions and help texts are shorter and plainer
+
+### Added
+- "copied" bubble: select any text on the site and copy it (Ctrl+C or the right-click menu) and a small green bubble with a tick pops up over it.
+- Request a tool: a short form (name and what it should do) and a button that opens a filled-in request on GitHub in a new tab. Nothing is sent until you confirm it there. A second button shows the requests others made.
+- Not found page: the path back home, a search button, and "did you mean?" with the tools whose address is closest to what was typed.
+- The category icon next to every tool's title, and in front of every row in the search (Ctrl+K).
+- Empty results ("Enter a player name…") have a small blinking `>_` mark.
+
+### Changed
+- Main actions (Generate, Check, Choose files, Search tools, Check for updates…) are the accent color on every page; white is only for the picked option.
+- Options (the row of choices) have one white pill that slides to the picked one, and tabs a line that slides under the picked tab.
+- Switches: the knob stretches while pressed and lands with a small bounce.
+- Numbers in result boxes (stacks, XP, chunks, word counts…) roll to their new value.
+- A tool's panels come in one after another when the page opens.
+- Related tools are small cards with the category icon, the short line under the name and an arrow on hover.
+- The "Calc & generators" category is called "Generators".
+- Shorter, plainer texts: the descriptions of 20 tools (video downloader, JSON formatter, UUID generator, background remover, GIF maker, PDF tools, color tools…) and a number of help texts that used technical words without need. Czech too.
+- The page no longer shifts a few pixels sideways between pages with and without a scrollbar.
+
+### Fixed
+- Copy buttons had an extra frame inside them, and the "swap" button on converters was laid out wrong (since 1.25.0).
+- Czech: "Later" on the update notice and in the PDF tool shared one translation, so one of them was wrong.
+- The "What's new" popup put the focus on the changelog link instead of the "Got it" button.
+
 ## [1.25.0] - 2026-11-15
 
 - New tool: Bitwise & bit shift: type an expression like `0xFF & 0x3C` or `5 << 2` and see it worked out bit by bit, in 8, 16, 32 or 64 bits

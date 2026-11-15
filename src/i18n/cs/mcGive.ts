@@ -5,7 +5,8 @@ export const SAME = ['Steve', '@p · nearest player'];
 
 export default {
   // ---- warnings under the command (src/lib/mc/give.ts) ----
-  'An item can’t have both a max stack size above 1 and durability; the game rejects the command.': 'Item nemůže mít zároveň velikost stacku nad 1 a výdrž; hra příkaz odmítne.',
+  'An item can’t both stack and have durability; the game rejects the command.':
+    'Item nemůže být zároveň stackovatelný a mít výdrž; hra takový příkaz odmítne.',
   'item_model only exists from 1.21.2; it was left out.': 'item_model existuje až od 1.21.2; byl vynechán.',
   'In this version hiding the default attributes (like a sword’s attack damage) replaces them with none, so the item does 1 damage. From 1.21.5 they can be hidden without removing them.':
     'V této verzi skrytí výchozích atributů (třeba poškození meče) atributy úplně odstraní, takže item dává poškození 1. Od 1.21.5 jdou skrýt, aniž by se odstranily.',

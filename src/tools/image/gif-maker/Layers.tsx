@@ -69,7 +69,7 @@ export function LayerList({
     [nextList[i], nextList[j]] = [nextList[j], nextList[i]];
     onChange(nextList);
   };
-  if (!layers.length) return <p className="note">{t('No text or stickers yet. Add some, then drag them on the preview: corners resize, the round handle turns.')}</p>;
+  if (!layers.length) return <p className="empty">{t('No text or stickers yet. Add some, then drag them on the preview: corners resize, the round handle turns.')}</p>;
   return (
     <ul className="gm-layers">
       {layers

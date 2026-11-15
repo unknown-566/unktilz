@@ -194,7 +194,7 @@ export default function TellrawGenerator() {
             </option>
           ))}
         </select>
-        <span className="note">{t('Up to 1.21.4 the text is JSON; from 1.21.5 it\'s SNBT, and clicking and hovering are written differently.')}</span>
+        <span className="note">{t('The command is written differently up to 1.21.4 and from 1.21.5. Pick your version and it will fit.')}</span>
       </div>
       <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => replaceWith({ ...emptyText(), mode: spec.mode }, t('Started over'))}>
         {t('start over')}

@@ -34,7 +34,7 @@ export default {
   // ---- preview ----
   'this option': 'tato volba',
   'Outdated server icon': 'Ikona zastaralého serveru',
-  'Estimated width in the Minecraft font, with sample values for live values': 'Odhadovaná šířka v písmu Minecraftu, s ukázkovými hodnotami za živé hodnoty',
+  'About how wide it is in the game’s font (live values use sample text)': 'Přibližná šířka v písmu hry (živé hodnoty používají ukázkový text)',
   'MOTD to preview': 'MOTD pro náhled',
   'Server icon': 'Ikona serveru',
   'MOTD {n} of {length}, picked at random in the game.': 'MOTD {n} z {length}, ve hře se vybírá náhodně.',
@@ -240,7 +240,8 @@ export default {
   commands: 'příkazy',
   'Run them in this order (in command blocks: a chain). The title command shows the title with the subtitle and times set before it.':
     'Spusťte je v tomto pořadí (v command blocích jako řetěz). Příkaz title ukáže titulek s podnadpisem a časy nastavenými před ním.',
-  "Up to 1.21.4 the text is JSON; from 1.21.5 it's SNBT, and clicking and hovering are written differently.": 'Do 1.21.4 je text v JSON, od 1.21.5 v SNBT a kliknutí a najetí myší se zapisují jinak.',
+  'The command is written differently up to 1.21.4 and from 1.21.5. Pick your version and it will fit.':
+    'Příkaz se do verze 1.21.4 a od verze 1.21.5 píše jinak. Vyberte svou verzi a bude sedět.',
   'Text editor': 'Editor textu',
   Where: 'Kam',
   'Who sees it': 'Kdo to uvidí',

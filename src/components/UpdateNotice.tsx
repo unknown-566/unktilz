@@ -31,7 +31,7 @@ export function UpdateNotice() {
           {t('What’s new')}
         </GoLink>
         <button type="button" className="btn" onClick={later}>
-          {t('Later')}
+          {t('update|Later')}
         </button>
       </div>
     </aside>

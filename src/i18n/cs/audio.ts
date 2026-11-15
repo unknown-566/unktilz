@@ -5,8 +5,8 @@ export const SAME: string[] = [];
 export default {
   'Audio cutter': 'Střihač zvuku',
   'waveform · trim · cut out': 'vlna · ořez · vystřižení',
-  'Cut a song or recording on its waveform: pick the part with the mouse, listen to it, then keep only that part or cut it out, with a fade in and out. For ringtones, clips and Minecraft sounds; works on videos too (takes their sound).':
-    'Stříhejte písničku nebo nahrávku přímo na její zvukové vlně: myší vyberte úsek, poslechněte si ho a pak nechte jen ten úsek, nebo ho vystřihněte, i s postupným zesílením a zeslabením. Na vyzváněcí tóny, klipy i zvuky do Minecraftu; funguje i na videa (vezme jejich zvuk).',
+  'Cut a song or recording: pick the part with the mouse, listen to it, then keep only that part or cut it out. Good for ringtones, clips and Minecraft sounds; works on videos too (takes their sound).':
+    'Ostříhejte písničku nebo nahrávku: myší vyberte část, poslechněte si ji a pak nechte jen ji, nebo ji vystřihněte. Hodí se na vyzvánění, klipy a zvuky do Minecraftu; funguje i na videa (vezme jejich zvuk).',
   'This file can’t be opened, or it has no sound.': 'Tento soubor nejde otevřít, nebo nemá zvuk.',
   'Drop a sound or video here': 'Přetáhněte sem zvuk nebo video',
   'Making a copy this browser can play… {p} %': 'Vytvářím kopii, kterou tento prohlížeč umí přehrát… {p} %',

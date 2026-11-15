@@ -7,7 +7,7 @@ export default defineTool({
   category: 'minecraft',
   order: 9,
   meta: t('xyz ÷ 8'),
-  description: t('Work out where to build a linked portal: Overworld coordinates divide by 8 in the Nether.'),
+  description: t('Work out where to build the second portal so the two link up: one block in the Nether is 8 blocks in the Overworld.'),
   keywords: ['nether', 'portal', 'coordinates', 'link', 'overworld'],
   component: lazyTool(() => import('./NetherPortal')),
 });

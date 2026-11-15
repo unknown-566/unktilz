@@ -35,8 +35,8 @@ export default {
   'Like a right shift, but the bits that fall off the right come back in on the left. Nothing is lost.': 'Jako posun doprava, ale bity, které vypadnou vpravo, se vrátí zleva. Nic se neztratí.',
   '{n} bit': '{n} bit',
   Signed: 'Se znaménkem',
-  'Reads the highest bit as the sign (two’s complement), like int in most languages: 8 bits then go from −128 to 127 instead of 0 to 255. The bits stay the same, only how they’re read changes.':
-    'Nejvyšší bit se čte jako znaménko (dvojkový doplněk), jako int ve většině jazyků: 8 bitů pak jde od −128 do 127 místo od 0 do 255. Bity zůstávají stejné, mění se jen to, jak se čtou.',
+  'Lets the number be negative, like int in most programming languages: 8 bits then go from −128 to 127 instead of 0 to 255. The bits stay the same, only how they’re read changes.':
+    'Číslo může být i záporné, jako int ve většině programovacích jazyků: 8 bitů pak jde od −128 do 127 místo od 0 do 255. Bity zůstávají stejné, mění se jen to, jak se čtou.',
   Bits: 'Bity',
   'Bit {i}': 'Bit {i}',
   'Click to copy': 'Kliknutím zkopírujete',

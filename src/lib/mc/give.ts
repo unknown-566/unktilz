@@ -346,7 +346,7 @@ export function itemComponents(spec: ItemSpec, v: GiveVersion): { parts: string[
   if (damage !== null) parts.push(`damage=${Math.max(0, Math.round(damage))}`);
   const maxDamage = num(spec.maxDamage);
   const maxStack = num(spec.maxStack);
-  if (maxDamage !== null && maxStack !== null && maxStack > 1) notes.push(t('An item can’t have both a max stack size above 1 and durability; the game rejects the command.'));
+  if (maxDamage !== null && maxStack !== null && maxStack > 1) notes.push(t('An item can’t both stack and have durability; the game rejects the command.'));
   if (maxDamage !== null) parts.push(`max_damage=${Math.max(1, Math.round(maxDamage))}`);
   if (maxStack !== null) parts.push(`max_stack_size=${Math.min(99, Math.max(1, Math.round(maxStack)))}`);
   if (spec.rarity) parts.push(`rarity=${q(spec.rarity)}`);

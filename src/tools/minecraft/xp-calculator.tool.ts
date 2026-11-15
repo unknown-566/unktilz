@@ -7,7 +7,7 @@ export default defineTool({
   category: 'minecraft',
   order: 14,
   meta: t('levels ⇄ points'),
-  description: t('Convert experience levels to points and back, and see how much XP a level range costs.'),
+  description: t('Convert experience levels to points and back, and see how much XP it takes to get from one level to another.'),
   keywords: ['xp', 'experience', 'levels', 'points', 'enchanting', 'bottle o enchanting'],
   component: lazyTool(() => import('./XpCalculator')),
 });

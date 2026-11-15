@@ -40,7 +40,7 @@ export function parseUploadReply(status: number, body: string, host: 'catbox' | 
   if (status >= 200 && status < 300 && /^https:\/\/\S+$/.test(text)) return text;
   // No proxy: a 404, or (on some hosts) the site's own page instead of an answer.
   if (status === 404 || (status < 300 && text.startsWith('<'))) {
-    throw new Error(t('Links need the site started with start.bat (or npm run dev / npm run preview).'));
+    throw new Error(t('Links need the site started with start.bat.'));
   }
   if (status === 413) throw new Error(t('The GIF is too big to upload.'));
   // Their firewall turns away an address for a while after too many failed requests.

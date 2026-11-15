@@ -9,7 +9,7 @@ export default defineTool({
   meta: t('main colors · css · gpl'),
   added: '2026-11-11',
   description: t(
-    'Drop or paste a picture and get its main colors: how much of the picture each one covers and where it is. Copy them as HEX, CSS variables, JSON or Tailwind, or download the palette as a PNG or a GIMP / Inkscape palette.',
+    'Drop or paste a picture and get its main colors, with how much of the picture each one covers. Copy them as HEX, CSS, JSON or Tailwind, or download the palette.',
   ),
   keywords: ['palette', 'color palette', 'colour palette', 'palette from image', 'palette extractor', 'dominant colors', 'main colors', 'extract colors', 'image colors', 'color scheme', 'gpl', 'tailwind colors'],
   layout: 'workbench',

@@ -1244,15 +1244,20 @@ textarea,
 .btn-primary {
   min-height: 48px;
   padding: 0 24px;
-  border: 1px solid var(--fg);
-  background: var(--fg);
-  color: var(--bg);
+  /* The main action is the accent color everywhere; white (--fg) is kept for "selected". */
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
   font-size: calc(14px * var(--text-scale, 1));
-  font-weight: 500;
+  font-weight: 600;
 }
 .btn-primary:hover {
-  border-color: var(--fg);
-  background: color-mix(in srgb, var(--fg) 86%, var(--bg));
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 86%, var(--fg));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.btn-primary:disabled {
+  box-shadow: none;
 }
 .btn-sm {
   min-height: 36px;
@@ -1333,9 +1338,6 @@ textarea,
   min-width: 44px;
 }
 .seg .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
   font-size: inherit;
 }
 .seg .btn-primary:disabled {
@@ -1487,7 +1489,7 @@ textarea,
   border: 1px solid var(--chip-line);
   background: var(--bg);
   padding: 0;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 }
 .switch::after {
   content: '';
@@ -1498,7 +1500,7 @@ textarea,
   height: 22px;
   border-radius: 50%;
   background: var(--muted);
-  transition: transform 150ms ease, background-color 150ms ease;
+  transition: transform var(--dur) var(--ease-spring), background-color var(--dur) var(--ease-out), width var(--dur-fast) var(--ease-out);
 }
 .switch[aria-checked='true'] {
   background: var(--accent);
@@ -1911,7 +1913,7 @@ textarea,
   font-family: var(--mono);
   font-size: calc(13px * var(--text-scale, 1));
   white-space: nowrap;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition: color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 }
 .tab:hover {
   color: var(--fg);
@@ -7944,22 +7946,22 @@ canvas.rs-pic {
   }
 }
 /* Two labels in one cell (copy → copied): the button keeps the width of the longer one. */
-.swap {
+.swap-text {
   display: inline-grid;
 }
-.swap > span {
+.swap-text > span {
   grid-area: 1 / 1;
   text-align: center;
   transition: opacity var(--dur-fast, 0.15s) var(--ease-out, ease), transform var(--dur-fast, 0.15s) var(--ease-out, ease);
 }
-.swap > span[data-on='false'] {
+.swap-text > span[data-on='false'] {
   opacity: 0;
   transform: translateY(4px);
   pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .roll-strip,
-  .swap > span {
+  .swap-text > span {
     transition: none;
   }
   .flash-a,
@@ -8367,5 +8369,345 @@ canvas.rs-pic {
 @media (prefers-reduced-motion: reduce) {
   .crumbs a.crumb-home:hover svg {
     transform: none;
+  }
+}
+
+/* ================= Polish pass (1.26): consistency and small motion ================= */
+
+/* The page keeps its place whether or not it needs a scrollbar. */
+.scroll {
+  scrollbar-gutter: stable;
+}
+.btn {
+  transition:
+    border-color var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+a.btn[aria-disabled='true'] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: inherit !important;
+}
+
+/* Segmented: one white pill that slides to the picked option (ui.tsx useMarker). */
+.seg {
+  position: relative;
+}
+.seg-pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 8px;
+  background: var(--fg);
+  pointer-events: none;
+}
+.seg-pill.on {
+  transition:
+    transform 260ms var(--ease-out),
+    width 260ms var(--ease-out),
+    height 260ms var(--ease-out);
+}
+.seg.has-pill > button {
+  position: relative;
+  z-index: 1;
+}
+.seg.has-pill > button[aria-pressed='true'] {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Tabs: the accent line slides under the picked tab. */
+.tabs {
+  position: relative;
+}
+.tab-line {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  pointer-events: none;
+}
+.tab-line.on {
+  transition:
+    transform 260ms var(--ease-out),
+    width 260ms var(--ease-out);
+}
+.tabs.has-line .tab[aria-selected='true'] {
+  border-bottom-color: transparent;
+}
+
+/* Switch: the knob stretches a little while pressed and lands with a small bounce. */
+.switch:active::after {
+  width: 27px;
+}
+.switch[aria-checked='true']:active::after {
+  transform: translateX(17px);
+}
+.switch:hover {
+  border-color: var(--hover-line);
+}
+.switch[aria-checked='true']:hover {
+  border-color: var(--accent);
+}
+
+/* Tool pages: the panels come in one after another. */
+.tool-wrap .panel {
+  animation: panel-in 420ms var(--ease-out) both;
+}
+.tool-wrap .panel:nth-of-type(2) {
+  animation-delay: 60ms;
+}
+.tool-wrap .panel:nth-of-type(3) {
+  animation-delay: 120ms;
+}
+.tool-wrap .panel:nth-of-type(n + 4) {
+  animation-delay: 180ms;
+}
+.tool-wrap .panel .panel {
+  animation: none;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* The category icon next to a tool's title. */
+.tool-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  color: var(--accent-text);
+  border-color: color-mix(in srgb, var(--accent-text) 30%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  animation: icon-in 520ms var(--ease-spring) both;
+}
+.tool-icon svg {
+  width: 22px;
+  height: 22px;
+}
+@keyframes icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+}
+
+/* Related tools and "did you mean": small cards like the ones on the home page. */
+.rel {
+  justify-content: flex-start;
+  min-height: 60px;
+  padding: 10px 14px;
+  transition:
+    transform var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    background-color var(--dur) var(--ease-out);
+}
+.rel:hover {
+  border-color: var(--hover-line);
+  background: var(--raise);
+  transform: translateY(-1px);
+}
+.rel:active {
+  transform: scale(0.985);
+}
+.rel:hover .card-icon {
+  color: var(--accent-text);
+  border-color: color-mix(in srgb, var(--accent-text) 35%, var(--line));
+}
+.rel-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rel-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  line-height: 1.25;
+}
+.rel .rel-text .card-meta {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rel-go {
+  flex: none;
+  color: var(--accent-text);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+.rel:hover .rel-go,
+.rel:focus-visible .rel-go {
+  opacity: 1;
+  transform: none;
+}
+
+/* Search (Ctrl+K): an icon in front of every row. */
+.cmdk-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.cmdk-icon svg {
+  width: 15px;
+  height: 15px;
+}
+.cmdk-glyph {
+  font-family: var(--mono);
+  font-size: calc(12px * var(--text-scale, 1));
+  font-weight: 600;
+}
+.cmdk-item[aria-selected='true'] .cmdk-icon {
+  color: var(--accent-text);
+  border-color: color-mix(in srgb, var(--accent-text) 35%, var(--line));
+}
+
+/* Not found */
+.nf-path {
+  font-family: var(--mono);
+  color: var(--accent-text);
+  overflow-wrap: anywhere;
+}
+.nf-guess {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.nf-guess .rel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+/* An empty result: what to do, with a small mark in front. */
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: calc(14px * var(--text-scale, 1));
+  line-height: 1.5;
+}
+.empty::before {
+  content: '>_';
+  flex: none;
+  font-family: var(--mono);
+  font-size: calc(12px * var(--text-scale, 1));
+  font-weight: 600;
+  color: var(--accent-text);
+  animation: empty-blink 1.6s steps(2, jump-none) infinite;
+}
+@keyframes empty-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg-pill.on,
+  .tab-line.on {
+    transition: none;
+  }
+  .tool-wrap .panel,
+  .tool-icon,
+  .empty::before {
+    animation: none;
+  }
+}
+
+/* "copied" over a selection that was just copied (src/components/CopyToast.tsx). */
+.copy-toast {
+  position: fixed;
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 600 calc(12px * var(--text-scale, 1)) var(--mono);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, calc(-100% - 8px));
+  animation: copy-toast 1100ms var(--ease-out) both;
+}
+.copy-toast svg path {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: copy-tick 260ms 80ms var(--ease-out) forwards;
+}
+@keyframes copy-toast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 2px)) scale(0.85);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 8px)) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 10px)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 18px)) scale(0.98);
+  }
+}
+@keyframes copy-tick {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .copy-toast {
+    animation: copy-toast-still 1100ms linear both;
+  }
+  .copy-toast svg path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  @keyframes copy-toast-still {
+    0%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 }

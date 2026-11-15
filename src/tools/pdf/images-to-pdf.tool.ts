@@ -10,7 +10,7 @@ export default defineTool({
   meta: t('.jpg → .pdf · scan'),
   beta: true,
   description:
-    t('Turn photos into a PDF, one per page. Photos of paper become clean scans: the sheet is found (or you drag its corners), straightened and made white, or only what’s written on it is put on a clean page inside the margins.'),
+    t('Turn photos into a PDF, one per page. A photo of a sheet of paper is cleaned up into a scan: straightened, with a white background.'),
   keywords: ['jpg to pdf', 'png to pdf', 'image to pdf', 'scan', 'scanner', 'photos', 'document', 'paper', 'homework', 'receipt', 'camscanner', 'heic to pdf'],
   accepts: IMAGE_ACCEPTS,
   layout: 'workbench',

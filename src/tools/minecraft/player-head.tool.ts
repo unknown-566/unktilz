@@ -8,7 +8,7 @@ export default defineTool({
   online: 'partly',
   order: 4,
   meta: t('skin → /give'),
-  description: t('Get the /give command for any player’s head, in the right syntax for your version.'),
+  description: t('Get the /give command for any player’s head, written the right way for your version.'),
   keywords: ['skull', 'head', 'give', 'command', 'skullowner'],
   component: lazyTool(() => import('./PlayerHead')),
 });
