@@ -2,6 +2,26 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.25.0] - 2026-11-15
+
+- New tool: Bitwise & bit shift: type an expression like `0xFF & 0x3C` or `5 << 2` and see it worked out bit by bit, in 8, 16, 32 or 64 bits
+- The site now checks for a new version every two minutes and shows a small card in the corner when one is out
+- A house at the start of the path above every tool, to get back to all tools
+- Changing numbers stay in place and roll to their new value
+
+### Added
+- Bitwise & bit shift (`/t/bitwise`, Developer): one box for the expression, with AND, OR, XOR, NOT, shift left, shift right (keeping the sign), zero-fill shift right, rotate left and rotate right. Numbers in decimal, `0x` hex, `0b` binary or `0o` octal. Operator buttons with a short explanation of each, and examples to try.
+- Bitwise: the calculation laid out like a sum on paper: decimal, every bit (grouped by 4 and 8, with bit numbers) and hex in lined-up columns, then the result in binary, octal and the other signed / unsigned reading. Click a bit to flip it (the number in the box changes too, in the base it was typed in); click a value to copy it. Signed (two's complement) can be switched on; bits pushed out by a shift and numbers too big for the width are pointed out.
+- Bitwise: a mistake in the expression is explained in a sentence and marked with `^` under the place where it is.
+- Update notice: a card in the bottom right corner when a newer version is on GitHub, with how to update and what's new. "Later" hides it for that version; the "update available" note in the header stays.
+
+### Changed
+- Updates are checked every two minutes while the site is open (before: at most once a day). A tab in the background waits and checks as soon as it is shown again; open tabs share one answer.
+- The path above each tool and page starts with a house and "tools", a link back to all tools.
+- Numbers in results, stats and code use figures of the same width, so a changing number no longer moves what is next to it. Results can roll digit by digit to their new value and glow briefly when they change.
+- The copy button keeps its width when it switches to "copied".
+- The update instructions say to open `update.bat` instead of double-clicking it.
+
 ## [1.24.0] - 2026-11-12
 
 - New tool: Word counter: words, characters, sentences, paragraphs, reading time and the most used words, as you type (the first tool in the Text category)

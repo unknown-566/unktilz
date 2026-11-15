@@ -1,5 +1,5 @@
+import { HomeCrumb } from '../components/HomeCrumb';
 import { useEffect, useRef, useState } from 'react';
-import { GoLink } from '../components/Transition';
 import { allSaved, mergeSaved, type SavedItem } from '../lib/saved';
 import { saveBlob } from '../queue/download';
 import { loadSaved as loadSkinEditor, save as saveSkinEditor } from '../tools/minecraft/skin-editor/load';
@@ -103,7 +103,7 @@ export default function Backup() {
   return (
     <div className="wrap tool-wrap">
       <nav aria-label={t('Breadcrumb')} className="crumbs">
-        <GoLink to="/">{t('tools')}</GoLink>
+        <HomeCrumb />
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t('backup')}</span>
       </nav>

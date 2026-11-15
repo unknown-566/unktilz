@@ -7886,3 +7886,486 @@ canvas.rs-pic {
   background: var(--surface);
   border: 1px solid var(--line);
 }
+
+/* ---- Details: numbers that keep their place, rolling digits, change glow ---- */
+.stat-value,
+.input.mono,
+.textarea.mono,
+.code,
+.out pre,
+.num {
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+/* Rolling digits (bits/RollingNumber.tsx): each character has a fixed slot. */
+.roll {
+  --roll-h: 1.3em;
+  display: inline-flex;
+  align-items: flex-start;
+  font-variant-numeric: tabular-nums slashed-zero;
+  line-height: var(--roll-h);
+  white-space: pre;
+  vertical-align: bottom;
+}
+.roll-col {
+  display: inline-block;
+  height: var(--roll-h);
+  overflow: hidden;
+}
+.roll-strip {
+  display: flex;
+  flex-direction: column;
+  transform: translateY(calc(var(--d) * -1 * var(--roll-h)));
+  transition: transform 420ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.roll-strip > span {
+  display: block;
+  height: var(--roll-h);
+  text-align: center;
+}
+.roll-ch {
+  display: inline-block;
+  height: var(--roll-h);
+}
+/* A short glow on a value that just changed (useFlash in lib/motion.ts). */
+.flash-a {
+  animation: flash-a 620ms var(--ease-out, ease-out);
+}
+.flash-b {
+  animation: flash-b 620ms var(--ease-out, ease-out);
+}
+@keyframes flash-a {
+  from {
+    background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+@keyframes flash-b {
+  from {
+    background-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+/* Two labels in one cell (copy → copied): the button keeps the width of the longer one. */
+.swap {
+  display: inline-grid;
+}
+.swap > span {
+  grid-area: 1 / 1;
+  text-align: center;
+  transition: opacity var(--dur-fast, 0.15s) var(--ease-out, ease), transform var(--dur-fast, 0.15s) var(--ease-out, ease);
+}
+.swap > span[data-on='false'] {
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .roll-strip,
+  .swap > span {
+    transition: none;
+  }
+  .flash-a,
+  .flash-b {
+    animation: none;
+  }
+}
+
+/* ---- Bitwise (one expression, worked out below like a sum on paper) ---- */
+.bw {
+  display: grid;
+  gap: 16px;
+}
+.bw-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 8px;
+}
+.bw-head .field-label {
+  margin: 0;
+}
+.bw-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+.bw-signed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bw-field {
+  position: relative;
+}
+.bw-box {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  font-size: calc(20px * var(--text-scale, 1));
+  letter-spacing: 0;
+}
+.bw-caret {
+  position: absolute;
+  left: 17px;
+  bottom: -2px;
+  font-size: calc(20px * var(--text-scale, 1));
+  line-height: 1;
+  white-space: pre;
+  color: var(--danger, #e5484d);
+  pointer-events: none;
+  animation: bw-caret 220ms var(--ease-out);
+}
+@keyframes bw-caret {
+  from {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+}
+#bw-hint {
+  min-height: 1.5em;
+  margin: 8px 0 14px;
+}
+.bw-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bw-op {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.bw-op:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}
+.bw-op[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+}
+.bw-sym {
+  flex: none;
+  min-width: 3ch;
+  font-size: calc(15px * var(--text-scale, 1));
+  font-weight: 600;
+  color: var(--accent-text);
+}
+.bw-name {
+  font-size: calc(12px * var(--text-scale, 1));
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bw-op[aria-pressed='true'] .bw-name {
+  color: var(--fg);
+}
+.bw-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: calc(13px * var(--text-scale, 1));
+}
+.bw-example {
+  padding: 3px 8px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font-size: calc(12px * var(--text-scale, 1));
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.bw-example:hover {
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+/* The worked-out sum: sign | decimal | bits | hex, every row on the same columns. */
+.bw-sum {
+  overflow-x: auto;
+}
+.bw-grid {
+  display: grid;
+  grid-template-columns: 2.5ch max-content max-content max-content;
+  align-items: center;
+  column-gap: 22px;
+  row-gap: 6px;
+  width: max-content;
+  margin-bottom: 14px;
+  font-size: calc(15px * var(--text-scale, 1));
+}
+.bw-th {
+  font-size: calc(11px * var(--text-scale, 1));
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+.bw-grid > .bw-th:last-child,
+.bw-grid > .bw-th:nth-child(4) {
+  text-align: left;
+}
+.bw-sign {
+  color: var(--muted);
+  text-align: center;
+  font-weight: 600;
+}
+.bw-eq {
+  color: var(--accent-text);
+}
+.bw-dec {
+  justify-self: end;
+  text-align: right;
+  min-width: 4ch;
+}
+.bw-plain {
+  padding: 0 6px;
+}
+.bw-shiftby {
+  font-size: calc(13px * var(--text-scale, 1));
+}
+.bw-line {
+  grid-column: 1 / -1;
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+.bw-bits {
+  display: inline-flex;
+  font-size: calc(15px * var(--text-scale, 1));
+}
+.bw-d {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35ch;
+  height: 1.9em;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  perspective: 80px;
+}
+.bw-d.nib {
+  margin-left: 0.6ch;
+}
+.bw-d:nth-child(8n + 1):not(:first-child) {
+  margin-left: 1.3ch;
+}
+.bw-flip {
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.bw-flip:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.bw-flip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+.bw-face {
+  display: block;
+  animation: bw-flip 280ms var(--ease-out);
+}
+.bw-face.on {
+  color: var(--fg);
+  font-weight: 700;
+}
+.bw-res-bits .bw-face.on {
+  color: var(--accent-text);
+}
+@keyframes bw-flip {
+  from {
+    transform: rotateX(-90deg);
+    opacity: 0.2;
+  }
+}
+.bw-ruler .bw-d {
+  height: 1.2em;
+  align-items: end;
+}
+.bw-ix {
+  font-size: calc(10px * var(--text-scale, 1));
+  color: var(--muted);
+  opacity: 0.8;
+}
+.bw-copy {
+  position: relative;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  cursor: copy;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.bw-copy:hover {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+.bw-hex {
+  justify-self: start;
+}
+.bw-res {
+  font-weight: 700;
+  color: var(--accent-text);
+}
+.bw-copied {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--fg);
+  color: var(--bg);
+  font-family: var(--sans, inherit);
+  font-size: calc(11px * var(--text-scale, 1));
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.bw-copied.on {
+  opacity: 1;
+  transform: translate(-50%, -2px);
+}
+.bw-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-bottom: 10px;
+  font-size: calc(13px * var(--text-scale, 1));
+}
+.bw-extra-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-face,
+  .bw-caret {
+    animation: none;
+  }
+  .bw-copied {
+    transition: none;
+  }
+}
+
+/* ---- Update notice (corner card when GitHub has a newer version) ---- */
+.update-notice {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  width: min(360px, calc(100vw - 40px));
+  padding: 14px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  animation: update-in 320ms var(--ease-out) both;
+}
+.update-notice p {
+  margin: 0;
+}
+.update-notice-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.update-notice-title .muted {
+  font-weight: 400;
+  font-size: calc(12px * var(--text-scale, 1));
+}
+.update-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  animation: update-pulse 1.8s var(--ease-out) infinite;
+}
+.update-notice-text {
+  margin-top: 6px !important;
+  font-size: calc(13px * var(--text-scale, 1));
+  color: var(--muted);
+}
+.update-notice-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+@keyframes update-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes update-pulse {
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .update-notice,
+  .update-dot {
+    animation: none;
+  }
+}
+
+/* House at the start of the breadcrumb: the way back home. */
+.crumbs {
+  align-items: center;
+}
+.crumbs a.crumb-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -3px -6px -3px -8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.crumbs a.crumb-home:hover {
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+.crumb-home svg {
+  flex: none;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.crumbs a.crumb-home:hover svg {
+  transform: translateY(-1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .crumbs a.crumb-home:hover svg {
+    transform: none;
+  }
+}

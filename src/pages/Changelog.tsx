@@ -1,5 +1,5 @@
+import { HomeCrumb } from '../components/HomeCrumb';
 import { useEffect } from 'react';
-import { GoLink } from '../components/Transition';
 import { UpdateCheck } from '../components/UpdateCheck';
 import changelog from '../../CHANGELOG.md?raw';
 import { Markdown } from '../lib/markdown';
@@ -16,7 +16,7 @@ export default function Changelog() {
   return (
     <div className="wrap tool-wrap">
       <nav aria-label={t('Breadcrumb')} className="crumbs">
-        <GoLink to="/">{t('tools')}</GoLink>
+        <HomeCrumb />
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t('changelog')}</span>
       </nav>

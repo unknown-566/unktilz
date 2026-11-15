@@ -148,7 +148,14 @@ export function CopyButton({ text, label = t('copy'), small = true }: { text: st
   const { copied, copy } = useCopy();
   return (
     <button type="button" className={`btn mono${small ? ' btn-sm' : ''}`} onClick={() => copy(text)} disabled={!text} aria-live="polite">
-      {copied ? t('copied') : label}
+      <span className="swap">
+        <span aria-hidden={copied} data-on={!copied}>
+          {label}
+        </span>
+        <span aria-hidden={!copied} data-on={copied}>
+          {t('copied')}
+        </span>
+      </span>
     </button>
   );
 }

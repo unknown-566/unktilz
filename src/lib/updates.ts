@@ -5,7 +5,6 @@ export const APP_VERSION = __APP_VERSION__;
 
 const RAW = 'https://raw.githubusercontent.com/unknown-566/unktilz/main';
 const CACHE = 'unktilz-update-check';
-const DAY = 24 * 60 * 60 * 1000;
 
 /** -1, 0 or 1, comparing "1.2.3"-style versions number by number. */
 export function compareVersions(a: string, b: string) {
@@ -41,6 +40,8 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
   } catch {
     /* ignore */
   }
+  // Everything that shows the status (header, notice) hears about it, whoever asked.
+  publish(info);
   return info;
 }
 
@@ -69,16 +70,76 @@ export function changelogSections(md: string): ChangelogSection[] {
   });
 }
 
+/** How often the site asks GitHub for a newer version while it's open. */
+export const CHECK_EVERY = 2 * 60 * 1000;
+
+// One shared check for the whole page (the header and the update notice both read it).
+let current: UpdateInfo | null = cached();
+const listeners = new Set<(i: UpdateInfo | null) => void>();
+let started = false;
+
+function publish(info: UpdateInfo | null) {
+  current = info;
+  listeners.forEach((f) => f(info));
+}
+
+/** Checks now unless a check (in this tab or another one) happened less than CHECK_EVERY ago. */
+function checkIfStale() {
+  if (typeof document !== 'undefined' && document.hidden) return;
+  const c = cached();
+  if (c && Date.now() - c.checkedAt < CHECK_EVERY - 5000) {
+    if (c.latest !== current?.latest) publish(c);
+    return;
+  }
+  checkForUpdate().catch(() => {});
+}
+
 /**
- * Update status for the header: the last known answer right away, and a fresh check at most once
- * a day in the background. Being offline just means no note.
+ * Starts the background check once: right away, then every CHECK_EVERY. A hidden tab doesn't ask;
+ * it checks as soon as it's shown again. Another tab's answer arrives through localStorage.
  */
+function start() {
+  if (started || typeof window === 'undefined') return;
+  started = true;
+  checkIfStale();
+  window.setInterval(checkIfStale, CHECK_EVERY);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkIfStale();
+  });
+  window.addEventListener('storage', (e) => {
+    if (e.key === CACHE) publish(cached());
+  });
+}
+
+/** The latest known update status; checks GitHub in the background every two minutes. */
 export function useUpdateStatus() {
-  const [info, setInfo] = useState<UpdateInfo | null>(cached);
+  const [info, setInfo] = useState<UpdateInfo | null>(current);
   useEffect(() => {
-    const c = cached();
-    if (c && Date.now() - c.checkedAt < DAY) return;
-    checkForUpdate().then(setInfo, () => {});
+    listeners.add(setInfo);
+    setInfo(current);
+    start();
+    return () => {
+      listeners.delete(setInfo);
+    };
   }, []);
   return info;
+}
+
+const DISMISSED = 'unktilz-update-dismissed';
+
+/** The version whose update notice was closed with "Later" (it doesn't come back for that one). */
+export function dismissedVersion() {
+  try {
+    return localStorage.getItem(DISMISSED);
+  } catch {
+    return null;
+  }
+}
+
+export function dismissUpdate(version: string) {
+  try {
+    localStorage.setItem(DISMISSED, version);
+  } catch {
+    /* ignore */
+  }
 }

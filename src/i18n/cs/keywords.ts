@@ -36,6 +36,7 @@ export default {
   'keywords:encode-encrypt': 'šifra šifry šifrování zašifrovat šifrovat rozšifrovat dešifrovat dešifrování kódování zakódovat dekódovat heslo hesla hash hashe kontrolní součet otisk souboru tajná zpráva tajné písmo morseovka morseova abeceda caesarova šifra posun písmen převod na binárku dvojková soustava šestnáctková ověřit stažený soubor klíč',
   'keywords:json-formatter': 'formátovat zformátovat formátování kontrola zkontrolovat ověřit validace chyba odsazení zmenšit minifikace',
   'keywords:word-counter': 'počet slov spočítat slova znaky písmena počet znaků věty odstavce délka textu doba čtení počítadlo',
+  'keywords:bitwise': 'bitové operace bitový posun posunout bity rotace maska dvojkový doplněk binární and or xor not bitově',
   'keywords:uuid-generator': 'vygenerovat vytvořit generovat náhodné id identifikátor unikátní guid',
 
   // ---- calc & generators ----

@@ -129,3 +129,10 @@ export const SwapIcon = ({ rotate }: { rotate: number }) => (
     <path d="M10 12l-4 4 4 4" />
   </svg>
 );
+
+export const HomeIcon = ({ size = 15 }: { size?: number }) => (
+  <svg {...base} width={size} height={size} strokeWidth={2}>
+    <path d="M4 11l8-7 8 7" />
+    <path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" />
+  </svg>
+);

@@ -44,7 +44,7 @@ export function UpdateCheck() {
         <div role="status" className="update-box">
           <p>
             <b>{t('Version {v} is out.', { v: check.latest })}</b>{' '}
-            {tn('To update, close the site’s window and double-click {file} in the unktilz folder. Your saved things stay.', { file: <span className="mono">{'update.bat' /* i18n-ignore */}</span> })}
+            {tn('To update, close the site’s window and open {file} in the unktilz folder. Your saved things stay.', { file: <span className="mono">{'update.bat' /* i18n-ignore */}</span> })}
           </p>
           {check.newer.map((s) => (
             <div key={s.version} className="changelog-entry">

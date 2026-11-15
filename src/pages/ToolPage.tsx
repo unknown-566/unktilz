@@ -1,3 +1,4 @@
+import { HomeCrumb } from '../components/HomeCrumb';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ALIASES, categoryLabel, getTool, related } from '../registry';
@@ -121,7 +122,7 @@ function ToolView({ slug }: { slug: string }) {
 
   const crumbs = (
     <nav aria-label={t('Breadcrumb')} className="crumbs">
-      <GoLink to="/">{t('tools')}</GoLink>
+      <HomeCrumb />
       <span aria-hidden="true">/</span>
       <GoLink to={`/?cat=${tool.category}`}>{cat}</GoLink>
       <span aria-hidden="true">/</span>

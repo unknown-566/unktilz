@@ -14,6 +14,10 @@ export default {
   Main: 'Hlavní',
   'Version {latest} is out (you have {current})': 'Vyšla verze {latest} (máte {current})',
   'update available': 'nová verze',
+  'Back to all tools': 'Zpět na všechny nástroje',
+  '(you have {v})': '(máte {v})',
+  Later: 'Později',
+  'What’s new': 'Co je nového',
   'All tools': 'Všechny nástroje',
   'Request a tool': 'Navrhnout nástroj',
   'lang: en': 'jazyk: cz',
@@ -278,8 +282,8 @@ export default {
   'Couldn’t reach GitHub. Check your internet connection and try again.': 'GitHub se nepodařilo zastihnout. Zkontrolujte připojení k internetu a zkuste to znovu.',
   'You’re up to date ({v} is the newest).': 'Máte nejnovější verzi ({v}).',
   'Version {v} is out.': 'Vyšla verze {v}.',
-  'To update, close the site’s window and double-click {file} in the unktilz folder. Your saved things stay.':
-    'Pro aktualizaci zavřete okno webu a ve složce unktilz dvakrát klikněte na {file}. Uložené věci zůstanou.',
+  'To update, close the site’s window and open {file} in the unktilz folder. Your saved things stay.':
+    'Pro aktualizaci zavřete okno webu a ve složce unktilz otevřete {file}. Uložené věci zůstanou.',
   'What changed': 'Co se změnilo',
   '// what changed': '// co se změnilo',
   'your version': 'vaše verze',

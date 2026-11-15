@@ -104,6 +104,21 @@ export function useTweened(to: number, ms = 450) {
   return n;
 }
 
+/**
+ * A short glow when `value` changes (not on the first render): put the returned class on the
+ * element. Two class names take turns so the animation starts again on every change.
+ */
+export function useFlash(value: unknown) {
+  const last = useRef(value);
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (Object.is(last.current, value)) return;
+    last.current = value;
+    setN((x) => x + 1);
+  }, [value]);
+  return n === 0 ? '' : n % 2 ? 'flash-a' : 'flash-b';
+}
+
 /** For a pointermove on a list of cards: puts the pointer's place inside the card under it into --mx / --my (for the light under the cursor). */
 export function spotlight(e: React.PointerEvent) {
   const card = (e.target as HTMLElement).closest<HTMLElement>('.card');

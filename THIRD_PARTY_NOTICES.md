@@ -2,7 +2,7 @@
 
 ## React Bits
 
-`src/components/bits/` (MicroSlats, ClickSpark, ShinyText) is adapted from [React Bits](https://reactbits.dev) ([source](https://github.com/DavidHDev/react-bits)), used as part of this website under the following license.
+`src/components/bits/` (MicroSlats, ClickSpark, ShinyText, RollingNumber after Counter) is adapted from [React Bits](https://reactbits.dev) ([source](https://github.com/DavidHDev/react-bits)), used as part of this website under the following license.
 
 ```
 MIT + Commons Clause License Condition v1.0

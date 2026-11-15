@@ -1,5 +1,5 @@
+import { HomeCrumb } from '../components/HomeCrumb';
 import { useEffect } from 'react';
-import { GoLink } from '../components/Transition';
 import { t } from '../lib/i18n-core';
 
 export default function Request() {
@@ -9,7 +9,7 @@ export default function Request() {
   return (
     <div className="wrap tool-wrap">
       <nav aria-label={t('Breadcrumb')} className="crumbs">
-        <GoLink to="/">{t('tools')}</GoLink>
+        <HomeCrumb />
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t('request')}</span>
       </nav>

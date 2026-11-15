@@ -1,3 +1,4 @@
+import { HomeCrumb } from '../components/HomeCrumb';
 import { useEffect } from 'react';
 import { GoLink } from '../components/Transition';
 import { UpdateCheck } from '../components/UpdateCheck';
@@ -19,7 +20,7 @@ export default function Settings() {
   return (
     <div className="wrap tool-wrap">
       <nav aria-label={t('Breadcrumb')} className="crumbs">
-        <GoLink to="/">{t('tools')}</GoLink>
+        <HomeCrumb />
         <span aria-hidden="true">/</span>
         <span aria-current="page">{t('settings')}</span>
       </nav>

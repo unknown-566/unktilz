@@ -5,6 +5,7 @@ import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Footer, Header } from './components/Header';
 import { QueueRail } from './components/QueueRail';
+import { UpdateNotice } from './components/UpdateNotice';
 import { TransitionProvider, scrollToTop } from './components/Transition';
 import Home from './pages/Home';
 import ToolPage from './pages/ToolPage';
@@ -78,6 +79,7 @@ export default function App() {
         <AskHost />
         <CommandPaletteHost />
         <ClickSpark />
+        <UpdateNotice />
         <div className="shell">
           <Header />
           <div className="body">
