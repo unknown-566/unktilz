@@ -2,6 +2,34 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
+## [1.27.0] - 2026-11-16
+
+- New tool: Vocal remover: split a song into music and vocals on your computer, for karaoke or vocals only
+- Vocal remover finds the song's words: click a word to switch it off, or switch a word off everywhere, while the music plays on
+- Every tool has its own icon, and every category its own color
+- Tool cards come alive: the icon moves and a small example plays when you point at a card
+- Pin tools to the top of the home page, and see the ones you used last
+- Check for updates sees a new version right away
+
+### Added
+- Vocal remover (`/t/vocal-remover`, Audio, beta): an AI model separates the singing from the music, on your computer (the song isn't sent anywhere). The model (64 MB) is downloaded once. It runs on the graphics card when the browser can, otherwise on the processor; a song takes about as long as it plays. A quick mode without AI is there too.
+- Vocal remover: Music and Vocals each have a switch and a volume, with quick buttons for music only (karaoke), vocals only and both. They work while it plays.
+- Vocal remover: drag across the vocals wave to switch off just that part; the music under it keeps playing. The switched-off parts are listed and can be played or switched back on.
+- Vocal remover: "Find the words" writes down the song's words with their times (a second AI model, Whisper, also on your computer). Click a word to switch it off, type a word to switch it off everywhere it is sung, Alt + click plays from a word, and the word being sung lights up. The song's language can be picked; a quick and a better model can be chosen.
+- Vocal remover: what you hear is saved to the queue as MP3 or WAV, named after what is in it.
+- An own icon for each of the 49 tools, on the home page, next to the tool's title, in related tools and in the search.
+- A color for each category (Minecraft green, Dev blue, Image pink, Colors teal, Audio orange, Video violet, PDF red, Text yellow, Generators light blue), on icons, headings and the light under the mouse.
+- Card examples: pointing at a card plays a small example in its bottom line, like `5000 → 78 × 64 + 8`, color chips, a moving sound wave or a tiny picture built from pixels.
+- Pinning: a star on every card and next to a tool's title. Pinned tools and the six used last show at the top of the home page; a pinned tool can be unpinned right there. Kept in this browser and part of Backup.
+- Wide cards with a big picture for ten bigger tools.
+
+### Changed
+- "Check for updates" asks GitHub in a way that is up to date within a minute. Before, it could keep saying "up to date" for five minutes after a new version came out.
+- Home page cards no longer show the arrow in the corner (the star is there).
+
+### Fixed
+- A newer version that was already seen is not forgotten when a later check gets an older answer.
+
 ## [1.26.0] - 2026-11-15
 
 - The main button is green everywhere, so it no longer looks like a picked option

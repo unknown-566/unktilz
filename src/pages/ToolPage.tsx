@@ -6,7 +6,9 @@ import { GoLink } from '../components/Transition';
 import { loadFileTool } from '../registry/preload';
 
 const FileTool = lazy(() => loadFileTool().then((m) => ({ default: m.FileTool })));
-import { CategoryIcon, SwapIcon } from '../components/icons';
+import { PinIcon, SwapIcon } from '../components/icons';
+import { ToolIcon } from '../components/toolArt';
+import { markUsed, togglePin, useFavorites } from '../lib/favorites';
 import { ToolLink } from '../components/ToolLink';
 import { ToolTags } from '../components/ToolTags';
 import { prefersReducedMotion } from '../lib/theme';
@@ -72,6 +74,8 @@ function ToolView({ slug }: { slug: string }) {
   useEffect(() => {
     document.title = t('{name} · unktilz', { name: tool.name });
   }, [tool.name]);
+  useEffect(() => markUsed(tool.slug), [tool.slug]);
+  const isPinned = useFavorites().pins.includes(tool.slug);
 
   const reverse = getTool(tool.reverse);
   const swap = () => {
@@ -88,13 +92,16 @@ function ToolView({ slug }: { slug: string }) {
   const head = (
     <div className="tool-head">
       <div className="title-row">
-        <span className="card-icon tool-icon" aria-hidden="true">
-          <CategoryIcon category={tool.category} />
+        <span className="card-icon tool-icon" data-cat={tool.category} aria-hidden="true">
+          <ToolIcon tool={tool} />
         </span>
         <h1 aria-label={tool.name}>
           <span aria-hidden="true">{title}</span>
         </h1>
         <ToolTags tool={tool} explain />
+        <button type="button" className="pin pin-title" aria-pressed={isPinned} title={isPinned ? t('Unpin') : t('Pin to the top')} aria-label={isPinned ? t('Unpin {name}', { name: tool.name }) : t('Pin {name} to the top', { name: tool.name })} onClick={() => togglePin(tool.slug)}>
+          <PinIcon on={isPinned} size={18} />
+        </button>
         {reverse && (
           <button type="button" className="swap" onClick={swap} aria-label={t('Swap direction: {name}', { name: reverse.name })}>
             <SwapIcon rotate={rot} />

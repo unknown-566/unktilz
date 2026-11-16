@@ -1,9 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { groups, isNew, tools, type Category, type Tool } from '../registry';
+import { getTool, groups, isNew, tools, type Category, type Tool } from '../registry';
 import { useLaunch } from '../components/Transition';
 import { CategoryIcon, SearchIcon } from '../components/icons';
 import { ToolTags } from '../components/ToolTags';
+import { CardDemo, ToolIcon, isBig, toolDemo } from '../components/toolArt';
+import { ToolLink } from '../components/ToolLink';
+import { PinIcon } from '../components/icons';
+import { clearRecent, togglePin, useFavorites } from '../lib/favorites';
 import { HeroBackground } from '../components/HeroBackground';
 import { ShinyText } from '../components/bits/ShinyText';
 import { openPalette } from '../components/CommandPalette';
@@ -65,6 +69,14 @@ export default function Home() {
   const toolCount = useCountUp(tools.length);
   const groupCount = useCountUp(groups.length, 900);
   const list = useRef<HTMLDivElement>(null);
+  // The card under the mouse (or with the focus) plays its small example.
+  const [hot, setHot] = useState<string | null>(null);
+  const fav = useFavorites();
+  const pinned = fav.pins.map(getTool).filter((x): x is Tool => !!x);
+  const recent = fav.recent
+    .filter((s) => !fav.pins.includes(s))
+    .map(getTool)
+    .filter((x): x is Tool => !!x);
 
   useEffect(() => {
     document.title = 'unktilz';
@@ -157,7 +169,7 @@ export default function Home() {
           {menu.map((m, i) => (
             <div key={m.id} className="cat-row">
               {m.tag && !menu[i - 1]?.tag && <div className="cat-label">{t('Tags')}</div>}
-              <button type="button" data-id={m.id} className={`cat-item${m.tag ? ` cat-tag cat-${m.id}` : ''}`} aria-pressed={m.on} onClick={() => choose(m.id)}>
+              <button type="button" data-id={m.id} data-cat={m.tag || m.id === 'all' ? undefined : m.id} className={`cat-item${m.tag ? ` cat-tag cat-${m.id}` : ''}`} aria-pressed={m.on} onClick={() => choose(m.id)}>
                 <span className="cat-icon" aria-hidden="true">
                   {m.id === 'all' ? <GridIcon /> : m.tag ? <span className="cat-dot" /> : <CategoryIcon category={m.id as Category} />}
                 </span>
@@ -169,8 +181,46 @@ export default function Home() {
         </nav>
 
         <div className="home-list">
+          {all && (pinned.length > 0 || recent.length > 0) && (
+            <section className="quick" aria-label={t('Pinned and recently used tools')}>
+              {pinned.length > 0 && (
+                <div className="quick-row">
+                  <div className="quick-head">
+                    <PinIcon on />
+                    {t('Pinned')}
+                  </div>
+                  <div className="quick-list">
+                    {pinned.map((tt) => (
+                      <div key={tt.slug} className="card-wrap quick-item">
+                        <ToolLink tool={tt} />
+                        <button type="button" className="pin" aria-pressed="true" aria-label={t('Unpin {name}', { name: tt.name })} title={t('Unpin')} onClick={() => togglePin(tt.slug)}>
+                          <PinIcon on />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {recent.length > 0 && (
+                <div className="quick-row">
+                  <div className="quick-head">
+                    <ClockIcon />
+                    {t('Recently used')}
+                    <button type="button" className="link-btn quick-clear" onClick={clearRecent}>
+                      {t('clear')}
+                    </button>
+                  </div>
+                  <div className="quick-list">
+                    {recent.map((tt) => (
+                      <ToolLink key={tt.slug} tool={tt} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
           {shown.map((g) => (
-            <section key={g.id} className="group" aria-labelledby={`g-${g.id}`}>
+            <section key={g.id} className="group" data-cat={g.id} aria-labelledby={`g-${g.id}`}>
               <div className="group-head">
                 <span className="group-icon" aria-hidden="true">
                   <CategoryIcon category={g.id} />
@@ -183,36 +233,54 @@ export default function Home() {
                 </div>
               </div>
               <div className="tiles" onPointerMove={spotlight}>
-                {g.tools.map((tt) => (
-                  <a
-                    key={tt.slug}
-                    className="card"
-                    style={{ '--i': cardIndex++ } as React.CSSProperties}
-                    href={`/t/${tt.slug}`}
-                    onClick={(e) => launch(e, tt.slug)}
-                    onMouseEnter={() => preloadTool(tt)}
-                    onFocus={() => preloadTool(tt)}
-                  >
-                    <span className="card-glow" aria-hidden="true" />
-                    <span className="card-top">
-                      <span className="card-icon" aria-hidden="true">
-                        <CategoryIcon category={tt.category} />
-                      </span>
-                      <span className="card-name">{tt.name}</span>
-                      <span className="card-go" aria-hidden="true">
-                        →
-                      </span>
-                    </span>
-                    <span className="card-desc">{tt.description}</span>
-                    <span className="card-foot">
-                      <span className="card-meta">{tt.meta}</span>
-                      <span className="card-tags">
-                        <ToolTags tool={tt} />
-                        {tt.online && <NetTag level={tt.online} />}
-                      </span>
-                    </span>
-                  </a>
-                ))}
+                {g.tools.map((tt) => {
+                  const demo = hot === tt.slug ? toolDemo(tt.slug) : undefined;
+                  const isPinned = fav.pins.includes(tt.slug);
+                  const enter = () => {
+                    preloadTool(tt);
+                    setHot(tt.slug);
+                  };
+                  const leave = () => setHot((h) => (h === tt.slug ? null : h));
+                  return (
+                    <div key={tt.slug} className={`card-wrap${isBig(tt.slug) ? ' big' : ''}`} style={{ '--i': cardIndex++ } as React.CSSProperties} onMouseEnter={enter} onMouseLeave={leave} onFocus={enter} onBlur={leave}>
+                      <a className="card" href={`/t/${tt.slug}`} onClick={(e) => launch(e, tt.slug)}>
+                        <span className="card-glow" aria-hidden="true" />
+                        {isBig(tt.slug) && (
+                          <span className="card-art" aria-hidden="true">
+                            <ToolIcon tool={tt} />
+                          </span>
+                        )}
+                        <span className="card-top">
+                          <span className="card-icon" aria-hidden="true">
+                            <ToolIcon tool={tt} />
+                          </span>
+                          <span className="card-name">{tt.name}</span>
+                        </span>
+                        <span className="card-desc">{tt.description}</span>
+                        <span className="card-foot">
+                          <span className={`card-line${demo ? ' playing' : ''}`}>
+                            <span className="card-meta">{tt.meta}</span>
+                            {demo && <CardDemo demo={demo} />}
+                          </span>
+                          <span className="card-tags">
+                            <ToolTags tool={tt} />
+                            {tt.online && <NetTag level={tt.online} />}
+                          </span>
+                        </span>
+                      </a>
+                      <button
+                        type="button"
+                        className="pin"
+                        aria-pressed={isPinned}
+                        aria-label={isPinned ? t('Unpin {name}', { name: tt.name }) : t('Pin {name} to the top', { name: tt.name })}
+                        title={isPinned ? t('Unpin') : t('Pin to the top')}
+                        onClick={() => togglePin(tt.slug)}
+                      >
+                        <PinIcon on={isPinned} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ))}
@@ -228,6 +296,15 @@ export default function Home() {
         </div>
       </div>
     </>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
   );
 }
 

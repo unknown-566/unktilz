@@ -12,7 +12,7 @@ export function UpdateCheck() {
   const run = async () => {
     setCheck({ state: 'checking' });
     try {
-      const info = await checkForUpdate();
+      const info = await checkForUpdate(true);
       // Show what the newer versions bring, straight from the changelog on GitHub.
       const newer = info.newer ? changelogSections(await remoteChangelog()).filter((s) => compareVersions(s.version, APP_VERSION) > 0) : [];
       setCheck({ state: 'done', latest: info.latest, newer });

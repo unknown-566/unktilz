@@ -4,6 +4,27 @@ import { t } from './i18n-core';
 export const APP_VERSION = __APP_VERSION__;
 
 const RAW = 'https://raw.githubusercontent.com/unknown-566/unktilz/main';
+const API = 'https://api.github.com/repos/unknown-566/unktilz/contents';
+
+/**
+ * A file of the repository as text. raw.githubusercontent.com keeps a copy for five minutes (and
+ * ignores ?t=…), so right after a new version comes out it still gives the old one. `fresh` asks
+ * the GitHub API first, which is up to date within a minute but allows only 60 requests an hour
+ * from one address; when that runs out (or fails) the raw copy is used.
+ */
+async function repoFile(name: string, fresh: boolean) {
+  if (fresh) {
+    try {
+      const res = await fetch(`${API}/${name}?ref=main`, { cache: 'no-store', headers: { Accept: 'application/vnd.github.raw+json' } });
+      if (res.ok) return await res.text();
+    } catch {
+      /* fall through to the raw copy */
+    }
+  }
+  const res = await fetch(`${RAW}/${name}?t=${Date.now()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(t('GitHub answered {status}', { status: res.status }));
+  return res.text();
+}
 const CACHE = 'unktilz-update-check';
 
 /** -1, 0 or 1, comparing "1.2.3"-style versions number by number. */
@@ -29,12 +50,16 @@ function cached(): UpdateInfo | null {
   }
 }
 
-/** Asks GitHub which version is the newest. Throws when offline. */
-export async function checkForUpdate(): Promise<UpdateInfo> {
-  const res = await fetch(`${RAW}/package.json?t=${Date.now()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(t('GitHub answered {status}', { status: res.status }));
-  const { version } = (await res.json()) as { version: string };
-  const info = { latest: version, newer: compareVersions(version, APP_VERSION) > 0, checkedAt: Date.now() };
+/**
+ * Asks GitHub which version is the newest. Throws when offline. The button asks for a `fresh`
+ * answer; the check every two minutes uses the cheaper copy, which can be a few minutes behind.
+ */
+export async function checkForUpdate(fresh = false): Promise<UpdateInfo> {
+  const { version } = JSON.parse(await repoFile('package.json', fresh)) as { version: string };
+  // The cheaper copy can be behind: a newer version that was already seen is never forgotten.
+  const known = cached()?.latest;
+  const latest = known && compareVersions(known, version) > 0 ? known : version;
+  const info = { latest, newer: compareVersions(latest, APP_VERSION) > 0, checkedAt: Date.now() };
   try {
     localStorage.setItem(CACHE, JSON.stringify(info));
   } catch {
@@ -47,9 +72,7 @@ export async function checkForUpdate(): Promise<UpdateInfo> {
 
 /** The newest changelog on GitHub, for showing what an update brings. */
 export async function remoteChangelog() {
-  const res = await fetch(`${RAW}/CHANGELOG.md?t=${Date.now()}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(t('GitHub answered {status}', { status: res.status }));
-  return res.text();
+  return repoFile('CHANGELOG.md', true);
 }
 
 export type ChangelogSection = { version: string; date: string; body: string; summary: string; details: string };

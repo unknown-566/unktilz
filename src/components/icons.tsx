@@ -136,3 +136,10 @@ export const HomeIcon = ({ size = 15 }: { size?: number }) => (
     <path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5" />
   </svg>
 );
+
+/** A star: filled when the tool is pinned. */
+export const PinIcon = ({ on = false, size = 15 }: { on?: boolean; size?: number }) => (
+  <svg {...base} width={size} height={size} strokeWidth={2} fill={on ? 'currentColor' : 'none'}>
+    <path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z" />
+  </svg>
+);

@@ -346,5 +346,12 @@ export default {
   'Helpers for working with text.': 'Pomocníci pro práci s textem.',
   'QR codes and other generators.': 'QR kódy a další generátory.',
   'Browse all': 'Procházet vše',
+  'Pinned and recently used tools': 'Připnuté a naposledy použité nástroje',
+  Pinned: 'Připnuté',
+  'Recently used': 'Naposledy použité',
+  'Unpin {name}': 'Odepnout {name}',
+  'Pin {name} to the top': 'Připnout {name} nahoru',
+  Unpin: 'Odepnout',
+  'Pin to the top': 'Připnout nahoru',
   'Categories and tags': 'Kategorie a štítky',
 } as Record<string, string>;

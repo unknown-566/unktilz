@@ -5,6 +5,7 @@
 
 export default {
   // ---- audio ----
+  'keywords:vocal-remover': 'odstranit zpěv odstranění zpěvu odstranit vokály bez zpěvu karaoke instrumentálka podklad jen zpěv a cappella acapella izolovat zpěv rozdělit písničku stopy text písně vypnout slova ztlumit slovo cenzura písnička hudba umělá inteligence',
   'keywords:audio-cutter': 'stříhat zvuk střih střihač ořezat oříznout zkrátit písničku vystřihnout část vyříznout vyzvánění vyzváněcí tón zvuková vlna mp3 nahrávka',
   'keywords:color-picker': 'výběr barvy vybrat barvu barva barvy převod barev převodník hex na rgb rgb na hex kapátko kontrast barvoslepost odstíny světlejší tmavší doplňková paleta minecraft kódy barev mapart obarvená kůže',
   'keywords:image-palette': 'paleta barev paleta z obrázku barvy z obrázku hlavní barvy převládající barvy vytáhnout barvy barevné schéma odstíny fotka fotky gimp tailwind',

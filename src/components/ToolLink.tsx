@@ -1,6 +1,6 @@
 import type { Tool } from '../registry';
 import { preloadTool } from '../registry/preload';
-import { CategoryIcon } from './icons';
+import { ToolIcon } from './toolArt';
 import { ToolTags } from './ToolTags';
 import { useLaunch } from './Transition';
 
@@ -11,9 +11,9 @@ import { useLaunch } from './Transition';
 export function ToolLink({ tool }: { tool: Tool }) {
   const launch = useLaunch();
   return (
-    <a className="rel" href={`/t/${tool.slug}`} onClick={(e) => launch(e, tool.slug)} onMouseEnter={() => preloadTool(tool)} onFocus={() => preloadTool(tool)}>
+    <a className="rel" data-cat={tool.category} href={`/t/${tool.slug}`} onClick={(e) => launch(e, tool.slug)} onMouseEnter={() => preloadTool(tool)} onFocus={() => preloadTool(tool)}>
       <span className="card-icon" aria-hidden="true">
-        <CategoryIcon category={tool.category} />
+        <ToolIcon tool={tool} />
       </span>
       <span className="rel-text">
         <span className="rel-name">
