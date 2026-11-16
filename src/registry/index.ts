@@ -13,6 +13,7 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'video', label: t('Video') },
   { id: 'pdf', label: 'PDF' },
   { id: 'text', label: t('Text') },
+  { id: 'everyday', label: t('Everyday') },
   { id: 'calc', label: t('Generators') },
 ];
 

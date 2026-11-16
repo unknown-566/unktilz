@@ -1,6 +1,6 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 
-export type Category = 'minecraft' | 'dev' | 'image' | 'color' | 'audio' | 'video' | 'pdf' | 'text' | 'calc';
+export type Category = 'minecraft' | 'dev' | 'image' | 'color' | 'audio' | 'video' | 'pdf' | 'text' | 'everyday' | 'calc';
 
 export type OptionValue = string | number | boolean;
 export type Opts = Record<string, OptionValue>;

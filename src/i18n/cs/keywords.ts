@@ -41,6 +41,11 @@ export default {
   'keywords:uuid-generator': 'vygenerovat vytvořit generovat náhodné id identifikátor unikátní guid',
 
   // ---- calc & generators ----
+  'keywords:enchant-order': 'enchant enchanty očarování očarovat kovadlina pořadí kniha knihy spojit levely xp moc drahé too expensive mending',
+  'keywords:screen-recorder': 'nahrávání obrazovky nahrát obrazovku záznam obrazovky nahrávka video karta okno mikrofon zvuk hlas diktafon natočit návod',
+  'keywords:unit-converter': 'převod převodník jednotky jednotek měny měn kurz kurzy směna euro dolar koruna km míle kg libry stupně celsius fahrenheit palce stopy litry galony plocha objem rychlost čas',
+  'keywords:timer': 'časovač minutka odpočet stopky stopovat pomodoro soustředění učení přestávka budík kolo kola alarm',
+  'keywords:password-generator': 'heslo hesla generátor vytvořit vygenerovat náhodné silné bezpečné heslo síla hesla kontrola hesla prolomení pin slova fráze',
   'keywords:qr-code': 'qr kód kódy vytvořit vygenerovat generátor odkaz wifi heslo kontakt vizitka platba e-mail sms poloha místo událost logo naskenovat čárový kód',
 
   // ---- Minecraft ----

@@ -147,6 +147,8 @@ export default {
   Video: 'Video',
   Text: 'Text',
   Generators: 'Generátory',
+  Everyday: 'Každodenní',
+  'Passwords, units and money, timers.': 'Hesla, jednotky a peníze, časovače.',
 
   // ---- tool page ----
   '{name} · unktilz': '{name} · unktilz',

@@ -22,8 +22,11 @@ import gradient, { SAME as gradientSame } from './gradient';
 import text, { SAME as textSame } from './text';
 import resize, { SAME as resizeSame } from './resize';
 import dev, { SAME as devSame } from './dev';
+import everyday, { SAME as everydaySame } from './everyday';
+import mcEnchant, { SAME as mcEnchantSame } from './mcEnchant';
+import recorder, { SAME as recorderSame } from './recorder';
 import keywords from './keywords';
 
-const same = Object.fromEntries([...toolsSame, ...pdfSame, ...imageSame, ...videoSame, ...devqrSame, ...mcWorldSame, ...mcGiveSame, ...mcSummonSame, ...mcTextSame, ...mcSkinSame, ...mcPackSame, ...cryptoSame, ...audioSame, ...colorSame, ...paletteSame, ...gradientSame, ...textSame, ...resizeSame, ...devSame, ...vocalsSame].map((s) => [s, s]));
-const all: Record<string, string> = { ...same, ...app, ...tools, ...pdf, ...image, ...video, ...devqr, ...mcWorld, ...mcGive, ...mcSummon, ...mcText, ...mcSkin, ...mcPack, ...crypto, ...audio, ...color, ...palette, ...gradient, ...text, ...resize, ...dev, ...vocals, ...keywords };
+const same = Object.fromEntries([...toolsSame, ...pdfSame, ...imageSame, ...videoSame, ...devqrSame, ...mcWorldSame, ...mcGiveSame, ...mcSummonSame, ...mcTextSame, ...mcSkinSame, ...mcPackSame, ...cryptoSame, ...audioSame, ...colorSame, ...paletteSame, ...gradientSame, ...textSame, ...resizeSame, ...devSame, ...vocalsSame, ...everydaySame, ...mcEnchantSame, ...recorderSame].map((s) => [s, s]));
+const all: Record<string, string> = { ...same, ...app, ...tools, ...pdf, ...image, ...video, ...devqr, ...mcWorld, ...mcGive, ...mcSummon, ...mcText, ...mcSkin, ...mcPack, ...crypto, ...audio, ...color, ...palette, ...gradient, ...text, ...resize, ...dev, ...vocals, ...everyday, ...mcEnchant, ...recorder, ...keywords };
 export default all;

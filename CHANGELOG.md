@@ -2,7 +2,31 @@
 
 What changed in each version of unktilz. Version numbers go up like this: the middle number for new features, the last number for fixes.
 
-## [1.27.0] - 2026-11-16
+## [1.28.0] - 2026-11-16
+
+- New category: Everyday
+- New tool: Password generator: strong passwords, passphrases and PINs, and a check of how strong a password is
+- New tool: Unit & currency converter: length, weight, temperature and more, and money with today's exchange rates
+- New tool: Timer, stopwatch & pomodoro: they keep running while you use other tools
+- New tool: Enchantment order calculator: the cheapest order to put books on an item in the anvil
+- New tool: Screen recorder: record the screen, a window or a tab, with sound and microphone, as MP4 or WebM
+- 54 tools now
+
+### Added
+- Everyday category (light green, clock icon) on the home page, in the search and the category chips.
+- Password generator (`/t/password-generator`, Everyday): passwords from chosen kinds of characters (lowercase, uppercase, digits, symbols, without look-alike characters), passphrases from the EFF word list (7,776 words), and PINs. Shows the strength in bits and how long guessing would take. "Check one" reads a password you type and finds common passwords, words, years, runs and repeats in it. Everything is made on this computer with the browser's secure random numbers; earlier passwords are kept only until the page is closed.
+- Unit & currency converter (`/t/unit-converter`, Everyday): length, weight, temperature, area, volume, speed, time and money. Czech and English number formats are understood. The amount is shown in every unit at once; click one to convert to it. Money uses the reference rates of the European Central Bank (from frankfurter.dev), kept in this browser and fetched again after 6 hours; it works offline with the last rates.
+- Timer, stopwatch & pomodoro (`/t/timer`, Everyday): a timer with quick times and an own time (like 1:30 or 1h 15m), a stopwatch with laps (fastest and slowest marked), and a pomodoro with focus blocks and short and long breaks. They keep running on other pages of the site, show the time left in the tab's title, ring with a sound and can show a notification. Space, R and L work as shortcuts.
+- Enchantment order calculator (`/t/enchant-order`, Minecraft): pick an item and its enchantments, and it finds the order of anvil steps that costs the fewest levels (and keeps every step under 40 levels). Each step says what goes into the anvil and what it costs; incompatible enchantments are noted.
+- Screen recorder (`/t/screen-recorder`, Video): records the screen, a window or a tab, with the computer's sound and the microphone (with a level meter), a countdown, and pause. The recording is shown, then saved to the queue as MP4 or WebM (or MP3 when only the microphone is recorded). Nothing is uploaded.
+
+### Changed
+- The home page's About lists the Everyday category.
+
+### Fixed
+- Screen recordings in WebM now have their length set, so players can seek in them.
+
+ - 2026-11-16
 
 - New tool: Vocal remover: split a song into music and vocals on your computer, for karaoke or vocals only
 - Vocal remover finds the song's words: click a word to switch it off, or switch a word off everywhere, while the music plays on

@@ -25,6 +25,7 @@ const ABOUT: Record<Category, string> = {
   video: t('Convert and download videos, or make them look bad.'),
   pdf: t('Merge, split, organize, compress and convert PDFs.'),
   text: t('Helpers for working with text.'),
+  everyday: t('Passwords, units and money, timers.'),
   calc: t('QR codes and other generators.'),
 };
 

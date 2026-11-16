@@ -32,3 +32,7 @@ components themselves - whether alone, in a bundle, or as a ported version.
 ```
 
 The full license text is in the React Bits repository: https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md
+
+## EFF large word list
+
+The password generator's passphrases (`src/tools/everyday/password/words.ts`) use the EFF large word list for random passphrases, made by the Electronic Frontier Foundation, under the Creative Commons Attribution 3.0 United States license (https://creativecommons.org/licenses/by/3.0/us/). Source: https://www.eff.org/dice. The list is used as published, stored as one string.

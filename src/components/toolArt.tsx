@@ -229,6 +229,16 @@ const ART: Record<string, { icon: ReactNode; demo?: Demo; big?: boolean }> = {
     ),
     demo: { kind: 'type', from: 'lvl 0 → 30', to: '1,395 xp' },
   },
+  'enchant-order': {
+    icon: svg(
+      <>
+        <path d="M4 9h16l-3 4H7z" />
+        <path d="M9 13v3h6v-3M6 20h12l-2-4H8z" />
+        <path className="ta-pop" d="M12 2.5v3M8.5 4l1.2 1.6M15.5 4l-1.2 1.6" />
+      </>,
+    ),
+    demo: { kind: 'type', from: '7 books', to: '49 levels' },
+  },
   'stack-calculator': {
     icon: svg(
       <>
@@ -558,6 +568,46 @@ const ART: Record<string, { icon: ReactNode; demo?: Demo; big?: boolean }> = {
       </>,
     ),
     demo: { kind: 'type', from: 'Lorem ipsum dolor', to: '3 · 17' },
+  },
+  'screen-recorder': {
+    icon: svg(
+      <>
+        <rect x="2.5" y="4" width="19" height="13" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+        <circle className="ta-blink" cx="12" cy="10.5" r="2.6" {...fill} />
+      </>,
+    ),
+    demo: { kind: 'type', from: '● REC 00:42', to: 'screen-recording.mp4' },
+  },
+  // ---------- everyday ----------
+  'password-generator': {
+    icon: svg(
+      <>
+        <rect x="4" y="10" width="16" height="11" rx="2" />
+        <path className="ta-up" d="M8 10V7a4 4 0 0 1 8 0v3" />
+        <path className="ta-blink" d="M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" strokeWidth="2.6" />
+      </>,
+    ),
+    demo: { kind: 'type', from: '••••••••', to: 'Tq7#vL!m2pR9' },
+  },
+  'unit-converter': {
+    icon: svg(
+      <>
+        <path className="ta-r" d="M4 8h13l-3-3" />
+        <path className="ta-l" d="M20 16H7l3 3" />
+      </>,
+    ),
+    demo: { kind: 'type', from: '100 km', to: '62.137 mi' },
+  },
+  timer: {
+    icon: svg(
+      <>
+        <circle cx="12" cy="13.5" r="7.5" />
+        <path d="M10 2.5h4M12 2.5v3.5" />
+        <path className="ta-spin" style={{ transformOrigin: '12px 13.5px' }} d="M12 13.5V9" />
+      </>,
+    ),
+    demo: { kind: 'type', from: '25:00', to: '● ● ● ○' },
   },
   'qr-code': {
     big: true,

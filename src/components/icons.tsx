@@ -65,6 +65,13 @@ export function CategoryIcon({ category }: { category: Category }) {
           <path d="M15 12h6M15 16h6M15 20h4" />
         </svg>
       );
+    case 'everyday':
+      return (
+        <svg {...base}>
+          <circle cx="12" cy="13" r="8" />
+          <path d="M12 9v4l2.5 2.5M10 2h4M12 2v3" />
+        </svg>
+      );
     case 'calc':
       return (
         <svg {...base}>
